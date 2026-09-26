@@ -4,13 +4,16 @@ Nodes: technique cards, weakness (CWE), vulnerability class.
 Edges: technique -> exploits_weakness -> CWE, technique -> in_class -> class,
        CWE -> enables -> technique (reverse lookup for hypothesis generation).
 
-Regenerate after editing techniques.yaml: python3 knowledge/build_graph.py
+Regenerate after editing knowledge/techniques/*.yaml: python3 knowledge/build_graph.py
 """
 import json
 import os
 import re
+import sys
 
 BASE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(BASE, ".."))
+import kb  # noqa: E402 — enriched cards from knowledge/techniques/*.yaml
 
 # klass -> representative CWEs (MITRE CWE taxonomy)
 CLASS_CWE = {
@@ -28,6 +31,21 @@ CLASS_CWE = {
     "logic": ["CWE-840"],
     "ai-llm": ["CWE-1427", "CWE-1428"],
     "session": ["CWE-384", "CWE-613"],
+    "websocket": ["CWE-1385", "CWE-352"],
+    "mobile": ["CWE-312", "CWE-200", "CWE-798"],
+    "cloud": ["CWE-200", "CWE-732", "CWE-918"],
+    "rate-limit": ["CWE-307", "CWE-770"],
+    "race": ["CWE-362", "CWE-840"],
+    "business_logic": ["CWE-840", "CWE-841"],
+    "cache": ["CWE-444", "CWE-200"],
+    "smuggling": ["CWE-444"],
+    "upload": ["CWE-434"],
+    "open-redirect": ["CWE-601"],
+    "secrets": ["CWE-312", "CWE-798"],
+    "crypto": ["CWE-327", "CWE-312"],
+    "supply-chain": ["CWE-829"],
+    "takeover": ["CWE-200"],
+    "fuzzing": ["CWE-119", "CWE-787"],
     "crypto": ["CWE-327", "CWE-798"],
     "rate-limit": ["CWE-307", "CWE-799"],
     "cache": ["CWE-524"],
@@ -87,7 +105,7 @@ def parse_cards(path):
 
 
 def build():
-    cards = parse_cards(os.path.join(BASE, "techniques.yaml"))
+    cards = kb.load_techniques()
     nodes, edges = {}, []
     for c in cards:
         tid = c.get("id", "?")

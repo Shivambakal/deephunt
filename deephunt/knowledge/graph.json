@@ -1,5 +1,181 @@
 {
  "nodes": {
+  "AI-01": {
+   "type": "technique",
+   "name": "Indirect prompt injection across a share/collaboration boundary",
+   "klass": "ai-llm",
+   "impact": "High \u2014 Tier-1 in AI bounty tiers."
+  },
+  "class:ai-llm": {
+   "type": "class",
+   "name": "ai-llm"
+  },
+  "CWE-1427": {
+   "type": "weakness",
+   "name": "Reliance on HTTP Request Translation by AI Model"
+  },
+  "CWE-1428": {
+   "type": "weakness",
+   "name": "Reliance on HTTP Responses from AI Model"
+  },
+  "AI-02": {
+   "type": "technique",
+   "name": "System-prompt / instruction leakage via prompt engineering",
+   "klass": "ai-llm",
+   "impact": "Low (usually excluded)."
+  },
+  "AI-03": {
+   "type": "technique",
+   "name": "AI action/tool abuse (unauthorized tool calls from injected context)",
+   "klass": "ai-llm",
+   "impact": "Critical."
+  },
+  "AI-04": {
+   "type": "technique",
+   "name": "Indirect prompt injection via shared content",
+   "klass": "ai-llm",
+   "impact": "High \u2014 AI trust-boundary breaks are the current frontier."
+  },
+  "AI-05": {
+   "type": "technique",
+   "name": "LLM output handling flaws (XSS/tool-output injection)",
+   "klass": "ai-llm",
+   "impact": "Medium-High."
+  },
+  "API-01": {
+   "type": "technique",
+   "name": "Excessive data exposure / mass assignment",
+   "klass": "api",
+   "impact": "Medium-High."
+  },
+  "class:api": {
+   "type": "class",
+   "name": "api"
+  },
+  "CWE-639": {
+   "type": "weakness",
+   "name": "Authorization Bypass Through User-Controlled Key"
+  },
+  "CWE-862": {
+   "type": "weakness",
+   "name": "Missing Authorization"
+  },
+  "API-02": {
+   "type": "technique",
+   "name": "Unauthenticated / unthrottled enumeration endpoints",
+   "klass": "api",
+   "impact": "Medium."
+  },
+  "RATE-01": {
+   "type": "technique",
+   "name": "Missing rate limits enabling enumeration or cost abuse",
+   "klass": "rate-limit",
+   "impact": "Medium."
+  },
+  "class:rate-limit": {
+   "type": "class",
+   "name": "rate-limit"
+  },
+  "CWE-307": {
+   "type": "weakness",
+   "name": "Improper Restriction of Authentication Attempts"
+  },
+  "CWE-799": {
+   "type": "weakness",
+   "name": "Missing Rate Limiting"
+  },
+  "FUZZ-01": {
+   "type": "technique",
+   "name": "LLM-guided fuzz target selection (OSS-Fuzz-Gen pattern)",
+   "klass": "fuzzing",
+   "impact": "Medium \u2014 crashes hint at memory-safety issues."
+  },
+  "class:fuzzing": {
+   "type": "class",
+   "name": "fuzzing"
+  },
+  "CWE-119": {
+   "type": "weakness",
+   "name": "Buffer Errors"
+  },
+  "CWE-787": {
+   "type": "weakness",
+   "name": "Out-of-bounds Write"
+  },
+  "RATE-02": {
+   "type": "technique",
+   "name": "Rate-limit bypass via identity rotation",
+   "klass": "rate-limit",
+   "impact": "Medium \u2014 enables credential stuffing/brute force."
+  },
+  "API-03": {
+   "type": "technique",
+   "name": "API version replay (v1 bugs in v2/v3)",
+   "klass": "api",
+   "impact": "High."
+  },
+  "AUTHN-01": {
+   "type": "technique",
+   "name": "OTP/rate-limit bypass via response manipulation",
+   "klass": "authentication",
+   "impact": "High \u2014 account takeover."
+  },
+  "class:authentication": {
+   "type": "class",
+   "name": "authentication"
+  },
+  "CWE-287": {
+   "type": "weakness",
+   "name": "Improper Authentication"
+  },
+  "CWE-613": {
+   "type": "weakness",
+   "name": "Insufficient Session Expiration"
+  },
+  "AUTHN-02": {
+   "type": "technique",
+   "name": "Password reset token leakage / host header poisoning",
+   "klass": "authentication",
+   "impact": "High \u2014 account takeover."
+  },
+  "OAUTH-01": {
+   "type": "technique",
+   "name": "OAuth redirect_uri / state validation gaps",
+   "klass": "authentication",
+   "impact": "High \u2014 token theft."
+  },
+  "SESS-01": {
+   "type": "technique",
+   "name": "Session fixation / concurrent-session / logout flaws",
+   "klass": "session",
+   "impact": "Medium-High."
+  },
+  "class:session": {
+   "type": "class",
+   "name": "session"
+  },
+  "CWE-384": {
+   "type": "weakness",
+   "name": "Session Fixation"
+  },
+  "2FA-01": {
+   "type": "technique",
+   "name": "2FA enrollment bypass / recovery-code flaws",
+   "klass": "authentication",
+   "impact": "High."
+  },
+  "OAUTH-02": {
+   "type": "technique",
+   "name": "OAuth redirect_uri / state confusion",
+   "klass": "authentication",
+   "impact": "High \u2014 account takeover adjacent."
+  },
+  "SESS-02": {
+   "type": "technique",
+   "name": "Session/token confusion across subdomains",
+   "klass": "session",
+   "impact": "Medium-High."
+  },
   "IDOR-01": {
    "type": "technique",
    "name": "BOLA on numeric/UUID object IDs",
@@ -10,17 +186,9 @@
    "type": "class",
    "name": "authorization"
   },
-  "CWE-639": {
-   "type": "weakness",
-   "name": "Authorization Bypass Through User-Controlled Key"
-  },
   "CWE-285": {
    "type": "weakness",
    "name": "Improper Authorization"
-  },
-  "CWE-862": {
-   "type": "weakness",
-   "name": "Missing Authorization"
   },
   "IDOR-02": {
    "type": "technique",
@@ -40,33 +208,299 @@
    "klass": "authorization",
    "impact": "Medium-High."
   },
-  "AUTHN-01": {
+  "INVITE-01": {
    "type": "technique",
-   "name": "OTP/rate-limit bypass via response manipulation",
-   "klass": "authentication",
-   "impact": "High \u2014 account takeover."
+   "name": "Invite/token reuse and privilege confusion in teams/orgs",
+   "klass": "authorization",
+   "impact": "High."
   },
-  "class:authentication": {
+  "EXPORT-01": {
+   "type": "technique",
+   "name": "Data export / bulk download authorization gaps",
+   "klass": "authorization",
+   "impact": "High."
+  },
+  "RACE-01": {
+   "type": "technique",
+   "name": "Race on coupon/credit/refund/balance operations",
+   "klass": "race",
+   "impact": "High \u2014 financial."
+  },
+  "class:race": {
    "type": "class",
-   "name": "authentication"
+   "name": "race"
   },
-  "CWE-287": {
+  "CWE-362": {
    "type": "weakness",
-   "name": "Improper Authentication"
+   "name": "Race Condition"
   },
-  "CWE-307": {
-   "type": "weakness",
-   "name": "Improper Restriction of Authentication Attempts"
-  },
-  "CWE-613": {
-   "type": "weakness",
-   "name": "Insufficient Session Expiration"
-  },
-  "AUTHN-02": {
+  "RACE-02": {
    "type": "technique",
-   "name": "Password reset token leakage / host header poisoning",
-   "klass": "authentication",
-   "impact": "High \u2014 account takeover."
+   "name": "TOCTOU on email change / invite / share revocation",
+   "klass": "race",
+   "impact": "High."
+  },
+  "LOGIC-01": {
+   "type": "technique",
+   "name": "Price/quantity tampering in cart/checkout flows",
+   "klass": "business-logic",
+   "impact": "High \u2014 financial. (No real charges, ever.)"
+  },
+  "class:business-logic": {
+   "type": "class",
+   "name": "business-logic"
+  },
+  "CWE-840": {
+   "type": "weakness",
+   "name": "Business Logic Errors"
+  },
+  "CWE-841": {
+   "type": "weakness",
+   "name": "Behavioral Workflow"
+  },
+  "LOGIC-02": {
+   "type": "technique",
+   "name": "Workflow step-skipping (checkout, onboarding, KYC)",
+   "klass": "business-logic",
+   "impact": "Medium-High."
+  },
+  "INV-01": {
+   "type": "technique",
+   "name": "Security invariant violation (formal-methods lens)",
+   "klass": "logic",
+   "impact": "High \u2014 business-logic flaws pay well and resist scanners."
+  },
+  "class:logic": {
+   "type": "class",
+   "name": "logic"
+  },
+  "BLO-01": {
+   "type": "technique",
+   "name": "Business-logic abuse (OWASP BL cheat sheet)",
+   "klass": "business-logic",
+   "impact": "High \u2014 logic abuse is the least-scanned, best-paid class."
+  },
+  "BLO-02": {
+   "type": "technique",
+   "name": "Coupon/promo stacking and reuse abuse",
+   "klass": "business-logic",
+   "impact": "Medium \u2014 revenue loss; often paid as business-logic."
+  },
+  "BLO-03": {
+   "type": "technique",
+   "name": "Currency/price tampering on checkout",
+   "klass": "business-logic",
+   "impact": "High \u2014 direct financial impact."
+  },
+  "BLO-04": {
+   "type": "technique",
+   "name": "Referral/affiliate self-dealing",
+   "klass": "business-logic",
+   "impact": "Medium \u2014 scalable fraud."
+  },
+  "LOGIC-03": {
+   "type": "technique",
+   "name": "Negative/zero quantity and arithmetic abuse",
+   "klass": "business-logic",
+   "impact": "Medium-High \u2014 price manipulation."
+  },
+  "SUBTO-01": {
+   "type": "technique",
+   "name": "Subdomain takeover via dangling CNAME",
+   "klass": "cloud",
+   "impact": "High."
+  },
+  "class:cloud": {
+   "type": "class",
+   "name": "cloud"
+  },
+  "CWE-200": {
+   "type": "weakness",
+   "name": "Exposure of Sensitive Information"
+  },
+  "SUPPLY-01": {
+   "type": "technique",
+   "name": "Dependency confusion / known-vuln components",
+   "klass": "supply-chain",
+   "impact": "Medium."
+  },
+  "class:supply-chain": {
+   "type": "class",
+   "name": "supply-chain"
+  },
+  "CWE-829": {
+   "type": "weakness",
+   "name": "Inclusion of Functionality from Untrusted Source"
+  },
+  "CLD-02": {
+   "type": "technique",
+   "name": "SSRF to cloud instance metadata (IMDS)",
+   "klass": "cloud",
+   "impact": "Critical \u2014 cloud credential theft."
+  },
+  "CLD-03": {
+   "type": "technique",
+   "name": "Public cloud storage bucket exposure",
+   "klass": "cloud",
+   "impact": "High \u2014 data exposure."
+  },
+  "CLD-04": {
+   "type": "technique",
+   "name": "Overly permissive IAM role / privilege escalation path",
+   "klass": "cloud",
+   "impact": "High \u2014 cloud takeover."
+  },
+  "CLD-05": {
+   "type": "technique",
+   "name": "Serverless environment variable / secret exposure",
+   "klass": "cloud",
+   "impact": "High \u2014 secret disclosure."
+  },
+  "GQL-01": {
+   "type": "technique",
+   "name": "GraphQL introspection + field suggestion abuse",
+   "klass": "graphql",
+   "impact": "High."
+  },
+  "class:graphql": {
+   "type": "class",
+   "name": "graphql"
+  },
+  "GQL-04": {
+   "type": "technique",
+   "name": "GraphQL field-level authorization gaps",
+   "klass": "graphql",
+   "impact": "High."
+  },
+  "GQL-02": {
+   "type": "technique",
+   "name": "GraphQL query batching for brute-force/amplification",
+   "klass": "graphql",
+   "impact": "Medium-High \u2014 auth brute-force bypass."
+  },
+  "GQL-03": {
+   "type": "technique",
+   "name": "Persisted query / allowlist bypass",
+   "klass": "graphql",
+   "impact": "Medium \u2014 restriction bypass."
+  },
+  "HW-01": {
+   "type": "technique",
+   "name": "Speculative-execution info leak (Spectre-class)",
+   "klass": "hardware",
+   "impact": "Critical in lab; bounty-scope only with demonstrated tenant leak."
+  },
+  "class:hardware": {
+   "type": "class",
+   "name": "hardware"
+  },
+  "HW-02": {
+   "type": "technique",
+   "name": "Rowhammer-style memory disturbance",
+   "klass": "hardware",
+   "impact": "Critical (lab-only)."
+  },
+  "HW-03": {
+   "type": "technique",
+   "name": "Firmware update without signature verification",
+   "klass": "hardware",
+   "impact": "High \u2014 persistent compromise."
+  },
+  "HW-04": {
+   "type": "technique",
+   "name": "Debug interfaces left enabled (JTAG/UART)",
+   "klass": "hardware",
+   "impact": "High \u2014 full device control."
+  },
+  "HW-05": {
+   "type": "technique",
+   "name": "BMC/IPMI with default or weak credentials",
+   "klass": "hardware",
+   "impact": "Critical \u2014 out-of-band control."
+  },
+  "HW-06": {
+   "type": "technique",
+   "name": "DMA via exposed high-speed ports",
+   "klass": "hardware",
+   "impact": "High (lab-only)."
+  },
+  "HW-07": {
+   "type": "technique",
+   "name": "TPM / Secure Boot misconfiguration",
+   "klass": "hardware",
+   "impact": "High."
+  },
+  "HW-08": {
+   "type": "technique",
+   "name": "Power/timing side channels on crypto",
+   "klass": "hardware",
+   "impact": "Medium-High."
+  },
+  "HW-09": {
+   "type": "technique",
+   "name": "Fault injection (voltage/clock glitching)",
+   "klass": "hardware",
+   "impact": "Critical (lab-only)."
+  },
+  "HW-10": {
+   "type": "technique",
+   "name": "Supply-chain implant indicators",
+   "klass": "hardware",
+   "impact": "High."
+  },
+  "HW-11": {
+   "type": "technique",
+   "name": "Coprocessor attack surface (ME/PSP-class)",
+   "klass": "hardware",
+   "impact": "Critical (lab-only)."
+  },
+  "HW-12": {
+   "type": "technique",
+   "name": "Sensor/input spoofing (mobile/IoT)",
+   "klass": "hardware",
+   "impact": "Medium-High."
+  },
+  "MOB-01": {
+   "type": "technique",
+   "name": "Deep link / universal link hijacking",
+   "klass": "mobile",
+   "impact": "Medium-High \u2014 account takeover via link."
+  },
+  "class:mobile": {
+   "type": "class",
+   "name": "mobile"
+  },
+  "CWE-312": {
+   "type": "weakness",
+   "name": "Cleartext Storage of Sensitive Info"
+  },
+  "CWE-798": {
+   "type": "weakness",
+   "name": "Hard-coded Credentials"
+  },
+  "MOB-02": {
+   "type": "technique",
+   "name": "Insecure local storage of secrets",
+   "klass": "mobile",
+   "impact": "Medium \u2014 local attacker / malware extraction."
+  },
+  "MOB-03": {
+   "type": "technique",
+   "name": "Missing certificate pinning enables MITM",
+   "klass": "mobile",
+   "impact": "Medium \u2014 network attacker credential theft."
+  },
+  "MOB-04": {
+   "type": "technique",
+   "name": "Exported component / intent spoofing",
+   "klass": "mobile",
+   "impact": "Medium-High \u2014 local privilege escalation."
+  },
+  "MOB-05": {
+   "type": "technique",
+   "name": "Biometric auth fallback bypass",
+   "klass": "mobile",
+   "impact": "Medium \u2014 local device attacker."
   },
   "JWT-01": {
    "type": "technique",
@@ -81,16 +515,6 @@
   "CWE-327": {
    "type": "weakness",
    "name": "Broken Crypto"
-  },
-  "CWE-798": {
-   "type": "weakness",
-   "name": "Hard-coded Credentials"
-  },
-  "OAUTH-01": {
-   "type": "technique",
-   "name": "OAuth redirect_uri / state confusion",
-   "klass": "authentication",
-   "impact": "High \u2014 account takeover adjacent."
   },
   "SSRF-01": {
    "type": "technique",
@@ -108,9 +532,9 @@
   },
   "SSRF-02": {
    "type": "technique",
-   "name": "SSRF via parser differentials",
+   "name": "SSRF allowlist bypass via parser differentials",
    "klass": "ssrf",
-   "impact": "High."
+   "impact": "Critical."
   },
   "XSS-01": {
    "type": "technique",
@@ -160,106 +584,6 @@
    "klass": "injection",
    "impact": "Critical."
   },
-  "RACE-01": {
-   "type": "technique",
-   "name": "Race on coupon/credit/refund/balance operations",
-   "klass": "race",
-   "impact": "High \u2014 financial."
-  },
-  "class:race": {
-   "type": "class",
-   "name": "race"
-  },
-  "CWE-362": {
-   "type": "weakness",
-   "name": "Race Condition"
-  },
-  "RACE-02": {
-   "type": "technique",
-   "name": "TOCTOU on email change / invite / share revocation",
-   "klass": "race",
-   "impact": "High."
-  },
-  "LOGIC-01": {
-   "type": "technique",
-   "name": "Price/quantity tampering in cart/checkout flows",
-   "klass": "business-logic",
-   "impact": "High \u2014 financial. (No real charges, ever.)"
-  },
-  "class:business-logic": {
-   "type": "class",
-   "name": "business-logic"
-  },
-  "CWE-840": {
-   "type": "weakness",
-   "name": "Business Logic Errors"
-  },
-  "CWE-841": {
-   "type": "weakness",
-   "name": "Behavioral Workflow"
-  },
-  "LOGIC-02": {
-   "type": "technique",
-   "name": "Workflow step-skipping (checkout, onboarding, KYC)",
-   "klass": "business-logic",
-   "impact": "Medium-High."
-  },
-  "API-01": {
-   "type": "technique",
-   "name": "Excessive data exposure / mass assignment",
-   "klass": "api",
-   "impact": "Medium-High."
-  },
-  "class:api": {
-   "type": "class",
-   "name": "api"
-  },
-  "API-02": {
-   "type": "technique",
-   "name": "Unauthenticated / unthrottled enumeration endpoints",
-   "klass": "api",
-   "impact": "Medium."
-  },
-  "GQL-01": {
-   "type": "technique",
-   "name": "GraphQL field-level authorization gaps",
-   "klass": "authorization",
-   "impact": "High."
-  },
-  "class:graphql": {
-   "type": "class",
-   "name": "graphql"
-  },
-  "AI-01": {
-   "type": "technique",
-   "name": "Indirect prompt injection via shared content",
-   "klass": "ai-llm",
-   "impact": "High \u2014 AI trust-boundary breaks are the current frontier."
-  },
-  "class:ai-llm": {
-   "type": "class",
-   "name": "ai-llm"
-  },
-  "CWE-1427": {
-   "type": "weakness",
-   "name": "Reliance on HTTP Request Translation by AI Model"
-  },
-  "CWE-1428": {
-   "type": "weakness",
-   "name": "Reliance on HTTP Responses from AI Model"
-  },
-  "AI-02": {
-   "type": "technique",
-   "name": "LLM output handling flaws (XSS/tool-output injection)",
-   "klass": "ai-llm",
-   "impact": "Medium-High."
-  },
-  "AI-03": {
-   "type": "technique",
-   "name": "AI action/tool abuse (unauthorized tool calls from injected context)",
-   "klass": "ai-llm",
-   "impact": "Critical."
-  },
   "UPLOAD-01": {
    "type": "technique",
    "name": "Unrestricted file upload (type/extension/content bypass)",
@@ -290,7 +614,7 @@
   },
   "CACHE-01": {
    "type": "technique",
-   "name": "Web cache poisoning via unkeyed inputs",
+   "name": "Web cache poisoning / deception",
    "klass": "cache",
    "impact": "High."
   },
@@ -302,20 +626,6 @@
    "type": "weakness",
    "name": "Cached Sensitive Data"
   },
-  "SUBTO-01": {
-   "type": "technique",
-   "name": "Subdomain takeover via dangling CNAME",
-   "klass": "cloud",
-   "impact": "High."
-  },
-  "class:cloud": {
-   "type": "class",
-   "name": "cloud"
-  },
-  "CWE-200": {
-   "type": "weakness",
-   "name": "Exposure of Sensitive Information"
-  },
   "SECRETS-01": {
    "type": "technique",
    "name": "Secrets/keys in JS bundles and public repos",
@@ -325,24 +635,6 @@
   "class:secrets": {
    "type": "class",
    "name": "secrets"
-  },
-  "CWE-312": {
-   "type": "weakness",
-   "name": "Cleartext Storage of Sensitive Info"
-  },
-  "WS-01": {
-   "type": "technique",
-   "name": "WebSocket authorization and CSRF",
-   "klass": "websocket",
-   "impact": "Medium-High."
-  },
-  "class:websocket": {
-   "type": "class",
-   "name": "websocket"
-  },
-  "CWE-1385": {
-   "type": "weakness",
-   "name": "Missing Origin Validation in WebSockets"
   },
   "REDIR-01": {
    "type": "technique",
@@ -378,52 +670,6 @@
    "type": "weakness",
    "name": "HTTP Request Smuggling"
   },
-  "SESS-01": {
-   "type": "technique",
-   "name": "Session fixation / concurrent-session / logout flaws",
-   "klass": "session",
-   "impact": "Medium-High."
-  },
-  "class:session": {
-   "type": "class",
-   "name": "session"
-  },
-  "CWE-384": {
-   "type": "weakness",
-   "name": "Session Fixation"
-  },
-  "2FA-01": {
-   "type": "technique",
-   "name": "2FA enrollment bypass / recovery-code flaws",
-   "klass": "authentication",
-   "impact": "High."
-  },
-  "INVITE-01": {
-   "type": "technique",
-   "name": "Invite/token reuse and privilege confusion in teams/orgs",
-   "klass": "authorization",
-   "impact": "High."
-  },
-  "EXPORT-01": {
-   "type": "technique",
-   "name": "Data export / bulk download authorization gaps",
-   "klass": "authorization",
-   "impact": "High."
-  },
-  "RATE-01": {
-   "type": "technique",
-   "name": "Missing rate limits enabling enumeration or cost abuse",
-   "klass": "rate-limit",
-   "impact": "Medium."
-  },
-  "class:rate-limit": {
-   "type": "class",
-   "name": "rate-limit"
-  },
-  "CWE-799": {
-   "type": "weakness",
-   "name": "Missing Rate Limiting"
-  },
   "PROTO-01": {
    "type": "technique",
    "name": "Prototype pollution in JS-heavy apps",
@@ -448,45 +694,17 @@
    "klass": "injection",
    "impact": "High \u2014 finds injection classes scanners miss."
   },
-  "INV-01": {
+  "SSRF-03": {
    "type": "technique",
-   "name": "Security invariant violation (formal-methods lens)",
-   "klass": "logic",
-   "impact": "High \u2014 business-logic flaws pay well and resist scanners."
+   "name": "SSRF via parser differentials",
+   "klass": "ssrf",
+   "impact": "High."
   },
-  "class:logic": {
-   "type": "class",
-   "name": "logic"
-  },
-  "BLO-01": {
+  "CACHE-02": {
    "type": "technique",
-   "name": "Business-logic abuse (OWASP BL cheat sheet)",
-   "klass": "business-logic",
-   "impact": "High \u2014 logic abuse is the least-scanned, best-paid class."
-  },
-  "FUZZ-01": {
-   "type": "technique",
-   "name": "LLM-guided fuzz target selection (OSS-Fuzz-Gen pattern)",
-   "klass": "fuzzing",
-   "impact": "Medium \u2014 crashes hint at memory-safety issues."
-  },
-  "class:fuzzing": {
-   "type": "class",
-   "name": "fuzzing"
-  },
-  "CWE-119": {
-   "type": "weakness",
-   "name": "Buffer Errors"
-  },
-  "CWE-787": {
-   "type": "weakness",
-   "name": "Out-of-bounds Write"
-  },
-  "RATE-02": {
-   "type": "technique",
-   "name": "Rate-limit bypass via identity rotation",
-   "klass": "rate-limit",
-   "impact": "Medium \u2014 enables credential stuffing/brute force."
+   "name": "Web cache poisoning via unkeyed inputs",
+   "klass": "cache",
+   "impact": "High."
   },
   "CORS-02": {
    "type": "technique",
@@ -508,179 +726,326 @@
    "type": "weakness",
    "name": "Reliance on Reverse DNS"
   },
-  "API-03": {
-   "type": "technique",
-   "name": "API version replay (v1 bugs in v2/v3)",
-   "klass": "api",
-   "impact": "High."
-  },
-  "SESS-02": {
-   "type": "technique",
-   "name": "Session/token confusion across subdomains",
-   "klass": "session",
-   "impact": "Medium-High."
-  },
   "WAF-01": {
    "type": "technique",
    "name": "WAF/filter bypass via encoding differentials",
    "klass": "injection",
    "impact": "Medium."
   },
-  "SUPPLY-01": {
+  "WS-01": {
    "type": "technique",
-   "name": "Dependency confusion / known-vuln components",
-   "klass": "supply-chain",
-   "impact": "Medium."
+   "name": "WebSocket authorization gaps (missing origin/token checks)",
+   "klass": "websocket",
+   "impact": "High."
   },
-  "class:supply-chain": {
+  "class:websocket": {
    "type": "class",
-   "name": "supply-chain"
+   "name": "websocket"
   },
-  "CWE-829": {
+  "CWE-1385": {
    "type": "weakness",
-   "name": "Inclusion of Functionality from Untrusted Source"
+   "name": "Missing Origin Validation in WebSockets"
+  },
+  "WS-02": {
+   "type": "technique",
+   "name": "WebSocket authorization and CSRF",
+   "klass": "websocket",
+   "impact": "Medium-High."
+  },
+  "WS-03": {
+   "type": "technique",
+   "name": "WebSocket handshake without authentication",
+   "klass": "websocket",
+   "impact": "High \u2014 real-time data leak."
+  },
+  "WS-04": {
+   "type": "technique",
+   "name": "WebSocket message replay / forgery",
+   "klass": "websocket",
+   "impact": "Medium-High \u2014 action forgery."
+  },
+  "WS-05": {
+   "type": "technique",
+   "name": "Cross-site WebSocket hijacking (missing Origin check)",
+   "klass": "websocket",
+   "impact": "High \u2014 CSWSH, equivalent to CSRF on real-time actions."
   }
  },
  "edges": [
   [
-   "IDOR-01",
+   "AI-01",
    "in_class",
-   "class:authorization"
+   "class:ai-llm"
   ],
   [
-   "IDOR-01",
+   "AI-01",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-01"
+  ],
+  [
+   "AI-01",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-01"
+  ],
+  [
+   "AI-02",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-02",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-02"
+  ],
+  [
+   "AI-02",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-02"
+  ],
+  [
+   "AI-03",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-03",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-03"
+  ],
+  [
+   "AI-03",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-03"
+  ],
+  [
+   "AI-04",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-04",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-04"
+  ],
+  [
+   "AI-04",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-04"
+  ],
+  [
+   "AI-05",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-05",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-05"
+  ],
+  [
+   "AI-05",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-05"
+  ],
+  [
+   "API-01",
+   "in_class",
+   "class:api"
+  ],
+  [
+   "API-01",
    "exploits_weakness",
    "CWE-639"
   ],
   [
    "CWE-639",
    "enables",
-   "IDOR-01"
+   "API-01"
   ],
   [
-   "IDOR-01",
-   "exploits_weakness",
-   "CWE-285"
-  ],
-  [
-   "CWE-285",
-   "enables",
-   "IDOR-01"
-  ],
-  [
-   "IDOR-01",
+   "API-01",
    "exploits_weakness",
    "CWE-862"
   ],
   [
    "CWE-862",
    "enables",
-   "IDOR-01"
+   "API-01"
   ],
   [
-   "IDOR-02",
+   "API-02",
    "in_class",
-   "class:authorization"
+   "class:api"
   ],
   [
-   "IDOR-02",
+   "API-02",
    "exploits_weakness",
    "CWE-639"
   ],
   [
    "CWE-639",
    "enables",
-   "IDOR-02"
+   "API-02"
   ],
   [
-   "IDOR-02",
-   "exploits_weakness",
-   "CWE-285"
-  ],
-  [
-   "CWE-285",
-   "enables",
-   "IDOR-02"
-  ],
-  [
-   "IDOR-02",
+   "API-02",
    "exploits_weakness",
    "CWE-862"
   ],
   [
    "CWE-862",
    "enables",
-   "IDOR-02"
+   "API-02"
   ],
   [
-   "AUTHZ-01",
+   "RATE-01",
    "in_class",
-   "class:authorization"
+   "class:rate-limit"
   ],
   [
-   "AUTHZ-01",
+   "RATE-01",
+   "exploits_weakness",
+   "CWE-307"
+  ],
+  [
+   "CWE-307",
+   "enables",
+   "RATE-01"
+  ],
+  [
+   "RATE-01",
+   "exploits_weakness",
+   "CWE-799"
+  ],
+  [
+   "CWE-799",
+   "enables",
+   "RATE-01"
+  ],
+  [
+   "FUZZ-01",
+   "in_class",
+   "class:fuzzing"
+  ],
+  [
+   "FUZZ-01",
+   "exploits_weakness",
+   "CWE-119"
+  ],
+  [
+   "CWE-119",
+   "enables",
+   "FUZZ-01"
+  ],
+  [
+   "FUZZ-01",
+   "exploits_weakness",
+   "CWE-787"
+  ],
+  [
+   "CWE-787",
+   "enables",
+   "FUZZ-01"
+  ],
+  [
+   "RATE-02",
+   "in_class",
+   "class:rate-limit"
+  ],
+  [
+   "RATE-02",
+   "exploits_weakness",
+   "CWE-307"
+  ],
+  [
+   "CWE-307",
+   "enables",
+   "RATE-02"
+  ],
+  [
+   "RATE-02",
+   "exploits_weakness",
+   "CWE-799"
+  ],
+  [
+   "CWE-799",
+   "enables",
+   "RATE-02"
+  ],
+  [
+   "API-03",
+   "in_class",
+   "class:api"
+  ],
+  [
+   "API-03",
    "exploits_weakness",
    "CWE-639"
   ],
   [
    "CWE-639",
    "enables",
-   "AUTHZ-01"
+   "API-03"
   ],
   [
-   "AUTHZ-01",
-   "exploits_weakness",
-   "CWE-285"
-  ],
-  [
-   "CWE-285",
-   "enables",
-   "AUTHZ-01"
-  ],
-  [
-   "AUTHZ-01",
+   "API-03",
    "exploits_weakness",
    "CWE-862"
   ],
   [
    "CWE-862",
    "enables",
-   "AUTHZ-01"
-  ],
-  [
-   "AUTHZ-02",
-   "in_class",
-   "class:authorization"
-  ],
-  [
-   "AUTHZ-02",
-   "exploits_weakness",
-   "CWE-639"
-  ],
-  [
-   "CWE-639",
-   "enables",
-   "AUTHZ-02"
-  ],
-  [
-   "AUTHZ-02",
-   "exploits_weakness",
-   "CWE-285"
-  ],
-  [
-   "CWE-285",
-   "enables",
-   "AUTHZ-02"
-  ],
-  [
-   "AUTHZ-02",
-   "exploits_weakness",
-   "CWE-862"
-  ],
-  [
-   "CWE-862",
-   "enables",
-   "AUTHZ-02"
+   "API-03"
   ],
   [
    "AUTHN-01",
@@ -751,6 +1116,1016 @@
    "CWE-613",
    "enables",
    "AUTHN-02"
+  ],
+  [
+   "OAUTH-01",
+   "in_class",
+   "class:authentication"
+  ],
+  [
+   "OAUTH-01",
+   "exploits_weakness",
+   "CWE-287"
+  ],
+  [
+   "CWE-287",
+   "enables",
+   "OAUTH-01"
+  ],
+  [
+   "OAUTH-01",
+   "exploits_weakness",
+   "CWE-307"
+  ],
+  [
+   "CWE-307",
+   "enables",
+   "OAUTH-01"
+  ],
+  [
+   "OAUTH-01",
+   "exploits_weakness",
+   "CWE-613"
+  ],
+  [
+   "CWE-613",
+   "enables",
+   "OAUTH-01"
+  ],
+  [
+   "SESS-01",
+   "in_class",
+   "class:session"
+  ],
+  [
+   "SESS-01",
+   "exploits_weakness",
+   "CWE-384"
+  ],
+  [
+   "CWE-384",
+   "enables",
+   "SESS-01"
+  ],
+  [
+   "SESS-01",
+   "exploits_weakness",
+   "CWE-613"
+  ],
+  [
+   "CWE-613",
+   "enables",
+   "SESS-01"
+  ],
+  [
+   "2FA-01",
+   "in_class",
+   "class:authentication"
+  ],
+  [
+   "2FA-01",
+   "exploits_weakness",
+   "CWE-287"
+  ],
+  [
+   "CWE-287",
+   "enables",
+   "2FA-01"
+  ],
+  [
+   "2FA-01",
+   "exploits_weakness",
+   "CWE-307"
+  ],
+  [
+   "CWE-307",
+   "enables",
+   "2FA-01"
+  ],
+  [
+   "2FA-01",
+   "exploits_weakness",
+   "CWE-613"
+  ],
+  [
+   "CWE-613",
+   "enables",
+   "2FA-01"
+  ],
+  [
+   "OAUTH-02",
+   "in_class",
+   "class:authentication"
+  ],
+  [
+   "OAUTH-02",
+   "exploits_weakness",
+   "CWE-287"
+  ],
+  [
+   "CWE-287",
+   "enables",
+   "OAUTH-02"
+  ],
+  [
+   "OAUTH-02",
+   "exploits_weakness",
+   "CWE-307"
+  ],
+  [
+   "CWE-307",
+   "enables",
+   "OAUTH-02"
+  ],
+  [
+   "OAUTH-02",
+   "exploits_weakness",
+   "CWE-613"
+  ],
+  [
+   "CWE-613",
+   "enables",
+   "OAUTH-02"
+  ],
+  [
+   "SESS-02",
+   "in_class",
+   "class:session"
+  ],
+  [
+   "SESS-02",
+   "exploits_weakness",
+   "CWE-384"
+  ],
+  [
+   "CWE-384",
+   "enables",
+   "SESS-02"
+  ],
+  [
+   "SESS-02",
+   "exploits_weakness",
+   "CWE-613"
+  ],
+  [
+   "CWE-613",
+   "enables",
+   "SESS-02"
+  ],
+  [
+   "IDOR-01",
+   "in_class",
+   "class:authorization"
+  ],
+  [
+   "IDOR-01",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "IDOR-01"
+  ],
+  [
+   "IDOR-01",
+   "exploits_weakness",
+   "CWE-285"
+  ],
+  [
+   "CWE-285",
+   "enables",
+   "IDOR-01"
+  ],
+  [
+   "IDOR-01",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "IDOR-01"
+  ],
+  [
+   "IDOR-02",
+   "in_class",
+   "class:authorization"
+  ],
+  [
+   "IDOR-02",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "IDOR-02"
+  ],
+  [
+   "IDOR-02",
+   "exploits_weakness",
+   "CWE-285"
+  ],
+  [
+   "CWE-285",
+   "enables",
+   "IDOR-02"
+  ],
+  [
+   "IDOR-02",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "IDOR-02"
+  ],
+  [
+   "AUTHZ-01",
+   "in_class",
+   "class:authorization"
+  ],
+  [
+   "AUTHZ-01",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "AUTHZ-01"
+  ],
+  [
+   "AUTHZ-01",
+   "exploits_weakness",
+   "CWE-285"
+  ],
+  [
+   "CWE-285",
+   "enables",
+   "AUTHZ-01"
+  ],
+  [
+   "AUTHZ-01",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "AUTHZ-01"
+  ],
+  [
+   "AUTHZ-02",
+   "in_class",
+   "class:authorization"
+  ],
+  [
+   "AUTHZ-02",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "AUTHZ-02"
+  ],
+  [
+   "AUTHZ-02",
+   "exploits_weakness",
+   "CWE-285"
+  ],
+  [
+   "CWE-285",
+   "enables",
+   "AUTHZ-02"
+  ],
+  [
+   "AUTHZ-02",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "AUTHZ-02"
+  ],
+  [
+   "INVITE-01",
+   "in_class",
+   "class:authorization"
+  ],
+  [
+   "INVITE-01",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "INVITE-01"
+  ],
+  [
+   "INVITE-01",
+   "exploits_weakness",
+   "CWE-285"
+  ],
+  [
+   "CWE-285",
+   "enables",
+   "INVITE-01"
+  ],
+  [
+   "INVITE-01",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "INVITE-01"
+  ],
+  [
+   "EXPORT-01",
+   "in_class",
+   "class:authorization"
+  ],
+  [
+   "EXPORT-01",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "EXPORT-01"
+  ],
+  [
+   "EXPORT-01",
+   "exploits_weakness",
+   "CWE-285"
+  ],
+  [
+   "CWE-285",
+   "enables",
+   "EXPORT-01"
+  ],
+  [
+   "EXPORT-01",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "EXPORT-01"
+  ],
+  [
+   "RACE-01",
+   "in_class",
+   "class:race"
+  ],
+  [
+   "RACE-01",
+   "exploits_weakness",
+   "CWE-362"
+  ],
+  [
+   "CWE-362",
+   "enables",
+   "RACE-01"
+  ],
+  [
+   "RACE-02",
+   "in_class",
+   "class:race"
+  ],
+  [
+   "RACE-02",
+   "exploits_weakness",
+   "CWE-362"
+  ],
+  [
+   "CWE-362",
+   "enables",
+   "RACE-02"
+  ],
+  [
+   "LOGIC-01",
+   "in_class",
+   "class:business-logic"
+  ],
+  [
+   "LOGIC-01",
+   "exploits_weakness",
+   "CWE-840"
+  ],
+  [
+   "CWE-840",
+   "enables",
+   "LOGIC-01"
+  ],
+  [
+   "LOGIC-01",
+   "exploits_weakness",
+   "CWE-841"
+  ],
+  [
+   "CWE-841",
+   "enables",
+   "LOGIC-01"
+  ],
+  [
+   "LOGIC-02",
+   "in_class",
+   "class:business-logic"
+  ],
+  [
+   "LOGIC-02",
+   "exploits_weakness",
+   "CWE-840"
+  ],
+  [
+   "CWE-840",
+   "enables",
+   "LOGIC-02"
+  ],
+  [
+   "LOGIC-02",
+   "exploits_weakness",
+   "CWE-841"
+  ],
+  [
+   "CWE-841",
+   "enables",
+   "LOGIC-02"
+  ],
+  [
+   "INV-01",
+   "in_class",
+   "class:logic"
+  ],
+  [
+   "INV-01",
+   "exploits_weakness",
+   "CWE-840"
+  ],
+  [
+   "CWE-840",
+   "enables",
+   "INV-01"
+  ],
+  [
+   "BLO-01",
+   "in_class",
+   "class:business-logic"
+  ],
+  [
+   "BLO-01",
+   "exploits_weakness",
+   "CWE-840"
+  ],
+  [
+   "CWE-840",
+   "enables",
+   "BLO-01"
+  ],
+  [
+   "BLO-01",
+   "exploits_weakness",
+   "CWE-841"
+  ],
+  [
+   "CWE-841",
+   "enables",
+   "BLO-01"
+  ],
+  [
+   "BLO-02",
+   "in_class",
+   "class:business-logic"
+  ],
+  [
+   "BLO-02",
+   "exploits_weakness",
+   "CWE-840"
+  ],
+  [
+   "CWE-840",
+   "enables",
+   "BLO-02"
+  ],
+  [
+   "BLO-02",
+   "exploits_weakness",
+   "CWE-841"
+  ],
+  [
+   "CWE-841",
+   "enables",
+   "BLO-02"
+  ],
+  [
+   "BLO-03",
+   "in_class",
+   "class:business-logic"
+  ],
+  [
+   "BLO-03",
+   "exploits_weakness",
+   "CWE-840"
+  ],
+  [
+   "CWE-840",
+   "enables",
+   "BLO-03"
+  ],
+  [
+   "BLO-03",
+   "exploits_weakness",
+   "CWE-841"
+  ],
+  [
+   "CWE-841",
+   "enables",
+   "BLO-03"
+  ],
+  [
+   "BLO-04",
+   "in_class",
+   "class:business-logic"
+  ],
+  [
+   "BLO-04",
+   "exploits_weakness",
+   "CWE-840"
+  ],
+  [
+   "CWE-840",
+   "enables",
+   "BLO-04"
+  ],
+  [
+   "BLO-04",
+   "exploits_weakness",
+   "CWE-841"
+  ],
+  [
+   "CWE-841",
+   "enables",
+   "BLO-04"
+  ],
+  [
+   "LOGIC-03",
+   "in_class",
+   "class:business-logic"
+  ],
+  [
+   "LOGIC-03",
+   "exploits_weakness",
+   "CWE-840"
+  ],
+  [
+   "CWE-840",
+   "enables",
+   "LOGIC-03"
+  ],
+  [
+   "LOGIC-03",
+   "exploits_weakness",
+   "CWE-841"
+  ],
+  [
+   "CWE-841",
+   "enables",
+   "LOGIC-03"
+  ],
+  [
+   "SUBTO-01",
+   "in_class",
+   "class:cloud"
+  ],
+  [
+   "SUBTO-01",
+   "exploits_weakness",
+   "CWE-200"
+  ],
+  [
+   "CWE-200",
+   "enables",
+   "SUBTO-01"
+  ],
+  [
+   "SUPPLY-01",
+   "in_class",
+   "class:supply-chain"
+  ],
+  [
+   "SUPPLY-01",
+   "exploits_weakness",
+   "CWE-829"
+  ],
+  [
+   "CWE-829",
+   "enables",
+   "SUPPLY-01"
+  ],
+  [
+   "CLD-02",
+   "in_class",
+   "class:cloud"
+  ],
+  [
+   "CLD-02",
+   "exploits_weakness",
+   "CWE-200"
+  ],
+  [
+   "CWE-200",
+   "enables",
+   "CLD-02"
+  ],
+  [
+   "CLD-03",
+   "in_class",
+   "class:cloud"
+  ],
+  [
+   "CLD-03",
+   "exploits_weakness",
+   "CWE-200"
+  ],
+  [
+   "CWE-200",
+   "enables",
+   "CLD-03"
+  ],
+  [
+   "CLD-04",
+   "in_class",
+   "class:cloud"
+  ],
+  [
+   "CLD-04",
+   "exploits_weakness",
+   "CWE-200"
+  ],
+  [
+   "CWE-200",
+   "enables",
+   "CLD-04"
+  ],
+  [
+   "CLD-05",
+   "in_class",
+   "class:cloud"
+  ],
+  [
+   "CLD-05",
+   "exploits_weakness",
+   "CWE-200"
+  ],
+  [
+   "CWE-200",
+   "enables",
+   "CLD-05"
+  ],
+  [
+   "GQL-01",
+   "in_class",
+   "class:graphql"
+  ],
+  [
+   "GQL-01",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "GQL-01"
+  ],
+  [
+   "GQL-01",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "GQL-01"
+  ],
+  [
+   "GQL-04",
+   "in_class",
+   "class:graphql"
+  ],
+  [
+   "GQL-04",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "GQL-04"
+  ],
+  [
+   "GQL-04",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "GQL-04"
+  ],
+  [
+   "GQL-02",
+   "in_class",
+   "class:graphql"
+  ],
+  [
+   "GQL-02",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "GQL-02"
+  ],
+  [
+   "GQL-02",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "GQL-02"
+  ],
+  [
+   "GQL-03",
+   "in_class",
+   "class:graphql"
+  ],
+  [
+   "GQL-03",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "GQL-03"
+  ],
+  [
+   "GQL-03",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "GQL-03"
+  ],
+  [
+   "HW-01",
+   "in_class",
+   "class:hardware"
+  ],
+  [
+   "HW-02",
+   "in_class",
+   "class:hardware"
+  ],
+  [
+   "HW-03",
+   "in_class",
+   "class:hardware"
+  ],
+  [
+   "HW-04",
+   "in_class",
+   "class:hardware"
+  ],
+  [
+   "HW-05",
+   "in_class",
+   "class:hardware"
+  ],
+  [
+   "HW-06",
+   "in_class",
+   "class:hardware"
+  ],
+  [
+   "HW-07",
+   "in_class",
+   "class:hardware"
+  ],
+  [
+   "HW-08",
+   "in_class",
+   "class:hardware"
+  ],
+  [
+   "HW-09",
+   "in_class",
+   "class:hardware"
+  ],
+  [
+   "HW-10",
+   "in_class",
+   "class:hardware"
+  ],
+  [
+   "HW-11",
+   "in_class",
+   "class:hardware"
+  ],
+  [
+   "HW-12",
+   "in_class",
+   "class:hardware"
+  ],
+  [
+   "MOB-01",
+   "in_class",
+   "class:mobile"
+  ],
+  [
+   "MOB-01",
+   "exploits_weakness",
+   "CWE-312"
+  ],
+  [
+   "CWE-312",
+   "enables",
+   "MOB-01"
+  ],
+  [
+   "MOB-01",
+   "exploits_weakness",
+   "CWE-200"
+  ],
+  [
+   "CWE-200",
+   "enables",
+   "MOB-01"
+  ],
+  [
+   "MOB-01",
+   "exploits_weakness",
+   "CWE-798"
+  ],
+  [
+   "CWE-798",
+   "enables",
+   "MOB-01"
+  ],
+  [
+   "MOB-02",
+   "in_class",
+   "class:mobile"
+  ],
+  [
+   "MOB-02",
+   "exploits_weakness",
+   "CWE-312"
+  ],
+  [
+   "CWE-312",
+   "enables",
+   "MOB-02"
+  ],
+  [
+   "MOB-02",
+   "exploits_weakness",
+   "CWE-200"
+  ],
+  [
+   "CWE-200",
+   "enables",
+   "MOB-02"
+  ],
+  [
+   "MOB-02",
+   "exploits_weakness",
+   "CWE-798"
+  ],
+  [
+   "CWE-798",
+   "enables",
+   "MOB-02"
+  ],
+  [
+   "MOB-03",
+   "in_class",
+   "class:mobile"
+  ],
+  [
+   "MOB-03",
+   "exploits_weakness",
+   "CWE-312"
+  ],
+  [
+   "CWE-312",
+   "enables",
+   "MOB-03"
+  ],
+  [
+   "MOB-03",
+   "exploits_weakness",
+   "CWE-200"
+  ],
+  [
+   "CWE-200",
+   "enables",
+   "MOB-03"
+  ],
+  [
+   "MOB-03",
+   "exploits_weakness",
+   "CWE-798"
+  ],
+  [
+   "CWE-798",
+   "enables",
+   "MOB-03"
+  ],
+  [
+   "MOB-04",
+   "in_class",
+   "class:mobile"
+  ],
+  [
+   "MOB-04",
+   "exploits_weakness",
+   "CWE-312"
+  ],
+  [
+   "CWE-312",
+   "enables",
+   "MOB-04"
+  ],
+  [
+   "MOB-04",
+   "exploits_weakness",
+   "CWE-200"
+  ],
+  [
+   "CWE-200",
+   "enables",
+   "MOB-04"
+  ],
+  [
+   "MOB-04",
+   "exploits_weakness",
+   "CWE-798"
+  ],
+  [
+   "CWE-798",
+   "enables",
+   "MOB-04"
+  ],
+  [
+   "MOB-05",
+   "in_class",
+   "class:mobile"
+  ],
+  [
+   "MOB-05",
+   "exploits_weakness",
+   "CWE-312"
+  ],
+  [
+   "CWE-312",
+   "enables",
+   "MOB-05"
+  ],
+  [
+   "MOB-05",
+   "exploits_weakness",
+   "CWE-200"
+  ],
+  [
+   "CWE-200",
+   "enables",
+   "MOB-05"
+  ],
+  [
+   "MOB-05",
+   "exploits_weakness",
+   "CWE-798"
+  ],
+  [
+   "CWE-798",
+   "enables",
+   "MOB-05"
   ],
   [
    "JWT-01",
@@ -776,41 +2151,6 @@
    "CWE-798",
    "enables",
    "JWT-01"
-  ],
-  [
-   "OAUTH-01",
-   "in_class",
-   "class:authentication"
-  ],
-  [
-   "OAUTH-01",
-   "exploits_weakness",
-   "CWE-287"
-  ],
-  [
-   "CWE-287",
-   "enables",
-   "OAUTH-01"
-  ],
-  [
-   "OAUTH-01",
-   "exploits_weakness",
-   "CWE-307"
-  ],
-  [
-   "CWE-307",
-   "enables",
-   "OAUTH-01"
-  ],
-  [
-   "OAUTH-01",
-   "exploits_weakness",
-   "CWE-613"
-  ],
-  [
-   "CWE-613",
-   "enables",
-   "OAUTH-01"
   ],
   [
    "SSRF-01",
@@ -963,236 +2303,6 @@
    "SSTI-01"
   ],
   [
-   "RACE-01",
-   "in_class",
-   "class:race"
-  ],
-  [
-   "RACE-01",
-   "exploits_weakness",
-   "CWE-362"
-  ],
-  [
-   "CWE-362",
-   "enables",
-   "RACE-01"
-  ],
-  [
-   "RACE-02",
-   "in_class",
-   "class:race"
-  ],
-  [
-   "RACE-02",
-   "exploits_weakness",
-   "CWE-362"
-  ],
-  [
-   "CWE-362",
-   "enables",
-   "RACE-02"
-  ],
-  [
-   "LOGIC-01",
-   "in_class",
-   "class:business-logic"
-  ],
-  [
-   "LOGIC-01",
-   "exploits_weakness",
-   "CWE-840"
-  ],
-  [
-   "CWE-840",
-   "enables",
-   "LOGIC-01"
-  ],
-  [
-   "LOGIC-01",
-   "exploits_weakness",
-   "CWE-841"
-  ],
-  [
-   "CWE-841",
-   "enables",
-   "LOGIC-01"
-  ],
-  [
-   "LOGIC-02",
-   "in_class",
-   "class:business-logic"
-  ],
-  [
-   "LOGIC-02",
-   "exploits_weakness",
-   "CWE-840"
-  ],
-  [
-   "CWE-840",
-   "enables",
-   "LOGIC-02"
-  ],
-  [
-   "LOGIC-02",
-   "exploits_weakness",
-   "CWE-841"
-  ],
-  [
-   "CWE-841",
-   "enables",
-   "LOGIC-02"
-  ],
-  [
-   "API-01",
-   "in_class",
-   "class:api"
-  ],
-  [
-   "API-01",
-   "exploits_weakness",
-   "CWE-639"
-  ],
-  [
-   "CWE-639",
-   "enables",
-   "API-01"
-  ],
-  [
-   "API-01",
-   "exploits_weakness",
-   "CWE-862"
-  ],
-  [
-   "CWE-862",
-   "enables",
-   "API-01"
-  ],
-  [
-   "API-02",
-   "in_class",
-   "class:api"
-  ],
-  [
-   "API-02",
-   "exploits_weakness",
-   "CWE-639"
-  ],
-  [
-   "CWE-639",
-   "enables",
-   "API-02"
-  ],
-  [
-   "API-02",
-   "exploits_weakness",
-   "CWE-862"
-  ],
-  [
-   "CWE-862",
-   "enables",
-   "API-02"
-  ],
-  [
-   "GQL-01",
-   "in_class",
-   "class:graphql"
-  ],
-  [
-   "GQL-01",
-   "exploits_weakness",
-   "CWE-639"
-  ],
-  [
-   "CWE-639",
-   "enables",
-   "GQL-01"
-  ],
-  [
-   "GQL-01",
-   "exploits_weakness",
-   "CWE-862"
-  ],
-  [
-   "CWE-862",
-   "enables",
-   "GQL-01"
-  ],
-  [
-   "AI-01",
-   "in_class",
-   "class:ai-llm"
-  ],
-  [
-   "AI-01",
-   "exploits_weakness",
-   "CWE-1427"
-  ],
-  [
-   "CWE-1427",
-   "enables",
-   "AI-01"
-  ],
-  [
-   "AI-01",
-   "exploits_weakness",
-   "CWE-1428"
-  ],
-  [
-   "CWE-1428",
-   "enables",
-   "AI-01"
-  ],
-  [
-   "AI-02",
-   "in_class",
-   "class:ai-llm"
-  ],
-  [
-   "AI-02",
-   "exploits_weakness",
-   "CWE-1427"
-  ],
-  [
-   "CWE-1427",
-   "enables",
-   "AI-02"
-  ],
-  [
-   "AI-02",
-   "exploits_weakness",
-   "CWE-1428"
-  ],
-  [
-   "CWE-1428",
-   "enables",
-   "AI-02"
-  ],
-  [
-   "AI-03",
-   "in_class",
-   "class:ai-llm"
-  ],
-  [
-   "AI-03",
-   "exploits_weakness",
-   "CWE-1427"
-  ],
-  [
-   "CWE-1427",
-   "enables",
-   "AI-03"
-  ],
-  [
-   "AI-03",
-   "exploits_weakness",
-   "CWE-1428"
-  ],
-  [
-   "CWE-1428",
-   "enables",
-   "AI-03"
-  ],
-  [
    "UPLOAD-01",
    "in_class",
    "class:upload"
@@ -1238,21 +2348,6 @@
    "CACHE-01"
   ],
   [
-   "SUBTO-01",
-   "in_class",
-   "class:cloud"
-  ],
-  [
-   "SUBTO-01",
-   "exploits_weakness",
-   "CWE-200"
-  ],
-  [
-   "CWE-200",
-   "enables",
-   "SUBTO-01"
-  ],
-  [
    "SECRETS-01",
    "in_class",
    "class:secrets"
@@ -1276,21 +2371,6 @@
    "CWE-312",
    "enables",
    "SECRETS-01"
-  ],
-  [
-   "WS-01",
-   "in_class",
-   "class:websocket"
-  ],
-  [
-   "WS-01",
-   "exploits_weakness",
-   "CWE-1385"
-  ],
-  [
-   "CWE-1385",
-   "enables",
-   "WS-01"
   ],
   [
    "REDIR-01",
@@ -1366,161 +2446,6 @@
    "CWE-444",
    "enables",
    "MASS-01"
-  ],
-  [
-   "SESS-01",
-   "in_class",
-   "class:session"
-  ],
-  [
-   "SESS-01",
-   "exploits_weakness",
-   "CWE-384"
-  ],
-  [
-   "CWE-384",
-   "enables",
-   "SESS-01"
-  ],
-  [
-   "SESS-01",
-   "exploits_weakness",
-   "CWE-613"
-  ],
-  [
-   "CWE-613",
-   "enables",
-   "SESS-01"
-  ],
-  [
-   "2FA-01",
-   "in_class",
-   "class:authentication"
-  ],
-  [
-   "2FA-01",
-   "exploits_weakness",
-   "CWE-287"
-  ],
-  [
-   "CWE-287",
-   "enables",
-   "2FA-01"
-  ],
-  [
-   "2FA-01",
-   "exploits_weakness",
-   "CWE-307"
-  ],
-  [
-   "CWE-307",
-   "enables",
-   "2FA-01"
-  ],
-  [
-   "2FA-01",
-   "exploits_weakness",
-   "CWE-613"
-  ],
-  [
-   "CWE-613",
-   "enables",
-   "2FA-01"
-  ],
-  [
-   "INVITE-01",
-   "in_class",
-   "class:authorization"
-  ],
-  [
-   "INVITE-01",
-   "exploits_weakness",
-   "CWE-639"
-  ],
-  [
-   "CWE-639",
-   "enables",
-   "INVITE-01"
-  ],
-  [
-   "INVITE-01",
-   "exploits_weakness",
-   "CWE-285"
-  ],
-  [
-   "CWE-285",
-   "enables",
-   "INVITE-01"
-  ],
-  [
-   "INVITE-01",
-   "exploits_weakness",
-   "CWE-862"
-  ],
-  [
-   "CWE-862",
-   "enables",
-   "INVITE-01"
-  ],
-  [
-   "EXPORT-01",
-   "in_class",
-   "class:authorization"
-  ],
-  [
-   "EXPORT-01",
-   "exploits_weakness",
-   "CWE-639"
-  ],
-  [
-   "CWE-639",
-   "enables",
-   "EXPORT-01"
-  ],
-  [
-   "EXPORT-01",
-   "exploits_weakness",
-   "CWE-285"
-  ],
-  [
-   "CWE-285",
-   "enables",
-   "EXPORT-01"
-  ],
-  [
-   "EXPORT-01",
-   "exploits_weakness",
-   "CWE-862"
-  ],
-  [
-   "CWE-862",
-   "enables",
-   "EXPORT-01"
-  ],
-  [
-   "RATE-01",
-   "in_class",
-   "class:rate-limit"
-  ],
-  [
-   "RATE-01",
-   "exploits_weakness",
-   "CWE-307"
-  ],
-  [
-   "CWE-307",
-   "enables",
-   "RATE-01"
-  ],
-  [
-   "RATE-01",
-   "exploits_weakness",
-   "CWE-799"
-  ],
-  [
-   "CWE-799",
-   "enables",
-   "RATE-01"
   ],
   [
    "PROTO-01",
@@ -1673,244 +2598,34 @@
    "SEM-01"
   ],
   [
-   "INV-01",
-   "in_class",
-   "class:logic"
-  ],
-  [
-   "INV-01",
-   "exploits_weakness",
-   "CWE-840"
-  ],
-  [
-   "CWE-840",
-   "enables",
-   "INV-01"
-  ],
-  [
-   "BLO-01",
-   "in_class",
-   "class:business-logic"
-  ],
-  [
-   "BLO-01",
-   "exploits_weakness",
-   "CWE-840"
-  ],
-  [
-   "CWE-840",
-   "enables",
-   "BLO-01"
-  ],
-  [
-   "BLO-01",
-   "exploits_weakness",
-   "CWE-841"
-  ],
-  [
-   "CWE-841",
-   "enables",
-   "BLO-01"
-  ],
-  [
-   "AI-01",
-   "in_class",
-   "class:ai-llm"
-  ],
-  [
-   "AI-01",
-   "exploits_weakness",
-   "CWE-1427"
-  ],
-  [
-   "CWE-1427",
-   "enables",
-   "AI-01"
-  ],
-  [
-   "AI-01",
-   "exploits_weakness",
-   "CWE-1428"
-  ],
-  [
-   "CWE-1428",
-   "enables",
-   "AI-01"
-  ],
-  [
-   "AI-02",
-   "in_class",
-   "class:ai-llm"
-  ],
-  [
-   "AI-02",
-   "exploits_weakness",
-   "CWE-1427"
-  ],
-  [
-   "CWE-1427",
-   "enables",
-   "AI-02"
-  ],
-  [
-   "AI-02",
-   "exploits_weakness",
-   "CWE-1428"
-  ],
-  [
-   "CWE-1428",
-   "enables",
-   "AI-02"
-  ],
-  [
-   "GQL-01",
-   "in_class",
-   "class:authorization"
-  ],
-  [
-   "GQL-01",
-   "exploits_weakness",
-   "CWE-639"
-  ],
-  [
-   "CWE-639",
-   "enables",
-   "GQL-01"
-  ],
-  [
-   "GQL-01",
-   "exploits_weakness",
-   "CWE-285"
-  ],
-  [
-   "CWE-285",
-   "enables",
-   "GQL-01"
-  ],
-  [
-   "GQL-01",
-   "exploits_weakness",
-   "CWE-862"
-  ],
-  [
-   "CWE-862",
-   "enables",
-   "GQL-01"
-  ],
-  [
-   "OAUTH-01",
-   "in_class",
-   "class:authentication"
-  ],
-  [
-   "OAUTH-01",
-   "exploits_weakness",
-   "CWE-287"
-  ],
-  [
-   "CWE-287",
-   "enables",
-   "OAUTH-01"
-  ],
-  [
-   "OAUTH-01",
-   "exploits_weakness",
-   "CWE-307"
-  ],
-  [
-   "CWE-307",
-   "enables",
-   "OAUTH-01"
-  ],
-  [
-   "OAUTH-01",
-   "exploits_weakness",
-   "CWE-613"
-  ],
-  [
-   "CWE-613",
-   "enables",
-   "OAUTH-01"
-  ],
-  [
-   "SSRF-02",
+   "SSRF-03",
    "in_class",
    "class:ssrf"
   ],
   [
-   "SSRF-02",
+   "SSRF-03",
    "exploits_weakness",
    "CWE-918"
   ],
   [
    "CWE-918",
    "enables",
-   "SSRF-02"
+   "SSRF-03"
   ],
   [
-   "CACHE-01",
+   "CACHE-02",
    "in_class",
    "class:cache"
   ],
   [
-   "CACHE-01",
+   "CACHE-02",
    "exploits_weakness",
    "CWE-524"
   ],
   [
    "CWE-524",
    "enables",
-   "CACHE-01"
-  ],
-  [
-   "FUZZ-01",
-   "in_class",
-   "class:fuzzing"
-  ],
-  [
-   "FUZZ-01",
-   "exploits_weakness",
-   "CWE-119"
-  ],
-  [
-   "CWE-119",
-   "enables",
-   "FUZZ-01"
-  ],
-  [
-   "FUZZ-01",
-   "exploits_weakness",
-   "CWE-787"
-  ],
-  [
-   "CWE-787",
-   "enables",
-   "FUZZ-01"
-  ],
-  [
-   "RATE-02",
-   "in_class",
-   "class:rate-limit"
-  ],
-  [
-   "RATE-02",
-   "exploits_weakness",
-   "CWE-307"
-  ],
-  [
-   "CWE-307",
-   "enables",
-   "RATE-02"
-  ],
-  [
-   "RATE-02",
-   "exploits_weakness",
-   "CWE-799"
-  ],
-  [
-   "CWE-799",
-   "enables",
-   "RATE-02"
+   "CACHE-02"
   ],
   [
    "CORS-02",
@@ -1941,56 +2656,6 @@
    "CWE-350",
    "enables",
    "TO-02"
-  ],
-  [
-   "API-03",
-   "in_class",
-   "class:api"
-  ],
-  [
-   "API-03",
-   "exploits_weakness",
-   "CWE-639"
-  ],
-  [
-   "CWE-639",
-   "enables",
-   "API-03"
-  ],
-  [
-   "API-03",
-   "exploits_weakness",
-   "CWE-862"
-  ],
-  [
-   "CWE-862",
-   "enables",
-   "API-03"
-  ],
-  [
-   "SESS-02",
-   "in_class",
-   "class:session"
-  ],
-  [
-   "SESS-02",
-   "exploits_weakness",
-   "CWE-384"
-  ],
-  [
-   "CWE-384",
-   "enables",
-   "SESS-02"
-  ],
-  [
-   "SESS-02",
-   "exploits_weakness",
-   "CWE-613"
-  ],
-  [
-   "CWE-613",
-   "enables",
-   "SESS-02"
   ],
   [
    "WAF-01",
@@ -2053,24 +2718,69 @@
    "WS-01"
   ],
   [
-   "SUPPLY-01",
+   "WS-02",
    "in_class",
-   "class:supply-chain"
+   "class:websocket"
   ],
   [
-   "SUPPLY-01",
+   "WS-02",
    "exploits_weakness",
-   "CWE-829"
+   "CWE-1385"
   ],
   [
-   "CWE-829",
+   "CWE-1385",
    "enables",
-   "SUPPLY-01"
+   "WS-02"
+  ],
+  [
+   "WS-03",
+   "in_class",
+   "class:websocket"
+  ],
+  [
+   "WS-03",
+   "exploits_weakness",
+   "CWE-1385"
+  ],
+  [
+   "CWE-1385",
+   "enables",
+   "WS-03"
+  ],
+  [
+   "WS-04",
+   "in_class",
+   "class:websocket"
+  ],
+  [
+   "WS-04",
+   "exploits_weakness",
+   "CWE-1385"
+  ],
+  [
+   "CWE-1385",
+   "enables",
+   "WS-04"
+  ],
+  [
+   "WS-05",
+   "in_class",
+   "class:websocket"
+  ],
+  [
+   "WS-05",
+   "exploits_weakness",
+   "CWE-1385"
+  ],
+  [
+   "CWE-1385",
+   "enables",
+   "WS-05"
   ]
  ],
  "stats": {
-  "techniques": 59,
+  "techniques": 89,
   "weaknesses": 32,
-  "classes": 25
+  "classes": 27
  }
 }

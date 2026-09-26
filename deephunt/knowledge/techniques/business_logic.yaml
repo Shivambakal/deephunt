@@ -1,0 +1,177 @@
+# DEEPHUNT technique cards — business_logic domain
+# Enriched: requires/signals/questions/evidence/followups per card.
+# Source of truth for kb.load_techniques(). 10 cards.
+
+- id: RACE-01
+  name: Race on coupon/credit/refund/balance operations
+  klass: race
+  requires: [http_observation]
+  signals: ["coupon", "credit", "balance", "refund", "redeem", "wallet"]
+  questions:
+    - "Is there a check-then-act gap?"
+    - "What resource is finite — balance, stock, coupon uses?"
+    - "Does the backend serialize the critical section?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [parallelize_requests, measure_serialization]
+  test: >
+    Fire 5-10 parallel requests for a redeem/spend action on owned accounts (single short burst, not a flood). Compare final balance vs expected. Predict -> probe -> prove with ledger math.
+  impact_hint: High — financial.
+
+- id: RACE-02
+  name: TOCTOU on email change / invite / share revocation
+  klass: race
+  requires: [http_observation]
+  signals: ["invite", "share", "revoke", "email", "verify"]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    Overlap the revoke with in-flight requests: mint ticket/link, revoke, then immediately redeem. Also overlap email-change with verification send.
+  impact_hint: High.
+
+- id: LOGIC-01
+  name: Price/quantity tampering in cart/checkout flows
+  klass: business-logic
+  requires: [http_observation]
+  signals: ["cart", "checkout", "price", "amount", "quantity", "order"]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    Tamper price/quantity client-side and in the API body (owned account, do NOT complete real payment). Prove server trusts client math.
+  impact_hint: High — financial. (No real charges, ever.)
+
+- id: LOGIC-02
+  name: Workflow step-skipping (checkout, onboarding, KYC)
+  klass: business-logic
+  requires: [http_observation]
+  signals: ["step", "wizard", "onboarding", "checkout", "verify"]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    Call later-step APIs without completing earlier steps (owned account). Many flows gate in UI only.
+  impact_hint: Medium-High.
+
+- id: INV-01
+  name: Security invariant violation (formal-methods lens)
+  klass: logic
+  requires: [http_observation]
+  signals: ["balance", "role", "owner", "state", "transition", "approve", "transfer"]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    State the invariant ("only X may do Y to Z"). Design the cheapest observation that would violate it using owned identities. A violation is a logic flaw by construction, not a payload guess.
+  impact_hint: High — business-logic flaws pay well and resist scanners.
+
+- id: BLO-01
+  name: Business-logic abuse (OWASP BL cheat sheet)
+  klass: business-logic
+  requires: [http_observation]
+  signals: ["checkout", "coupon", "quantity", "price", "refund", "vote", "limit", "quota"]
+  questions:
+    - "What is the valid order lifecycle?"
+    - "Which transition is missing a guard?"
+    - "Can a cancelled/expired state be revived?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [map_full_workflow, test_adjacent_transitions]
+  test: >
+    Map the intended state machine (cart->pay->fulfill). Attempt illegal transitions: negative quantities, coupon stacking, race on limited inventory, refund>charge. Compare against the documented flow; deviations are candidates.
+  impact_hint: High — logic abuse is the least-scanned, best-paid class.
+
+- id: BLO-02
+  name: Coupon/promo stacking and reuse abuse
+  klass: business-logic
+  requires: [understood_workflow, observed_states]
+  signals: ["coupon", "promo", "discount", "voucher", "cart"]
+  questions:
+    - "Is the coupon single-use — and is that enforced server-side?"
+    - "Can codes stack beyond the intended combination?"
+    - "Does the discount survive cart mutation after application?"
+  evidence:
+    positive: [coupon_reused, stacking_beyond_policy, discount_survives_mutation]
+    negative: [single_use_enforced, stacking_limited, revalidated_on_change]
+  followups: [reuse_coupon, stack_codes, mutate_cart_after_apply]
+  test: >
+    With owned accounts: apply a single-use coupon twice (replay, second account, race). Stack multiple codes. Change cart contents after discount. Compare final totals.
+  impact_hint: Medium — revenue loss; often paid as business-logic.
+
+- id: BLO-03
+  name: Currency/price tampering on checkout
+  klass: business-logic
+  requires: [understood_workflow, observed_states]
+  signals: ["price", "amount", "currency", "total", "checkout"]
+  questions:
+    - "Is the price trusted from the client request?"
+    - "Does changing currency change the charged amount?"
+    - "Is the total recomputed server-side at payment time?"
+  evidence:
+    positive: [client_price_honored, currency_changes_amount, total_not_recomputed]
+    negative: [server_side_pricing, currency_fixed, total_recomputed]
+  followups: [tamper_price_param, switch_currency, race_price_change]
+  test: >
+    Intercept checkout: modify price/amount/currency params. Try currency switch mid-flow. Verify what the payment provider is actually charged (use test mode / $0 SKUs).
+  impact_hint: High — direct financial impact.
+
+- id: BLO-04
+  name: Referral/affiliate self-dealing
+  klass: business-logic
+  requires: [understood_workflow]
+  signals: ["referral", "affiliate", "invite", "reward", "credit"]
+  questions:
+    - "Can an account refer itself (second account, same device/IP)?"
+    - "Is the reward granted before the referee does anything real?"
+    - "Are referral rewards capped or rate-limited?"
+  evidence:
+    positive: [self_referral_paid, reward_before_action, no_cap]
+    negative: [self_referral_blocked, reward_on_verified_action, capped]
+  followups: [self_refer, farm_rewards, check_caps]
+  test: >
+    Two owned accounts: A refers B, B signs up minimally. Check if A is credited. Try loops of fresh accounts for farming.
+  impact_hint: Medium — scalable fraud.
+
+- id: LOGIC-03
+  name: Negative/zero quantity and arithmetic abuse
+  klass: business-logic
+  requires: [understood_workflow]
+  signals: ["quantity", "qty", "amount", "cart", "order"]
+  questions:
+    - "Are quantity bounds validated server-side?"
+    - "What does quantity=-1 or 0 do to the total?"
+    - "Do refunds/credits derive from the same arithmetic?"
+  evidence:
+    positive: [negative_qty_accepted, total_decreases, refund_exceeds_payment]
+    negative: [bounds_validated, qty_clamped, refund_capped]
+  followups: [negative_quantity, zero_quantity, fractional_quantity]
+  test: >
+    Set qty to -1, 0, 99999999, 0.5 on cart/order update. Observe totals, inventory, and any credit/refund flows.
+  impact_hint: Medium-High — price manipulation.

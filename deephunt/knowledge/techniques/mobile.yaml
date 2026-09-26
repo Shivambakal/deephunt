@@ -1,0 +1,88 @@
+# DEEPHUNT technique cards — mobile domain
+# Enriched: requires/signals/questions/evidence/followups per card.
+# Source of truth for kb.load_techniques(). 5 cards.
+
+- id: MOB-01
+  name: Deep link / universal link hijacking
+  klass: mobile
+  requires: [mobile_app_surface]
+  signals: ["deeplink", "intent://", "myapp://", "applinks", "universal"]
+  questions:
+    - "Which deep links carry auth tokens or actions?"
+    - "Can a malicious link trigger a sensitive action without confirmation?"
+    - "Are link parameters validated before use?"
+  evidence:
+    positive: [token_in_deeplink, action_without_confirm, param_not_validated]
+    negative: [no_sensitive_deeplinks, confirm_before_action, params_validated]
+  followups: [craft_malicious_link, test_token_leak, fuzz_link_params]
+  test: >
+    Enumerate deep link schemes (manifest/assetlinks). Craft links with tokens and actions; observe handling. Check for token leakage via referrer.
+  impact_hint: Medium-High — account takeover via link.
+
+- id: MOB-02
+  name: Insecure local storage of secrets
+  klass: mobile
+  requires: [mobile_app_surface]
+  signals: ["sharedpreferences", "keystore", "sqlite", "storage", "token"]
+  questions:
+    - "Are tokens/keys stored in plaintext prefs or files?"
+    - "Is the platform keystore actually used?"
+    - "What survives app uninstall / backup?"
+  evidence:
+    positive: [plaintext_token_storage, backup_includes_secrets, world_readable]
+    negative: [keystore_used, encrypted_storage, backup_excluded]
+  followups: [inspect_app_storage, check_backup_rules, test_rooted_access]
+  test: >
+    On an owned test device: inspect app sandbox storage for tokens/keys in plaintext. Check backup manifests and file permissions.
+  impact_hint: Medium — local attacker / malware extraction.
+
+- id: MOB-03
+  name: Missing certificate pinning enables MITM
+  klass: mobile
+  requires: [mobile_app_surface]
+  signals: ["https", "certificate", "pinning", "tls", "api"]
+  questions:
+    - "Does the app pin its API certificate?"
+    - "Can a lab proxy with a custom CA intercept API traffic?"
+    - "Are tokens visible in intercepted traffic?"
+  evidence:
+    positive: [no_pinning, traffic_interceptable, token_visible]
+    negative: [pinning_enforced, intercept_blocked]
+  followups: [proxy_with_custom_ca, inspect_token_exposure]
+  test: >
+    Route owned test device traffic through a lab proxy with installed CA. Observe whether API calls succeed and what secrets are visible.
+  impact_hint: Medium — network attacker credential theft.
+
+- id: MOB-04
+  name: Exported component / intent spoofing
+  klass: mobile
+  requires: [mobile_app_surface]
+  signals: ["exported", "intent", "activity", "broadcast", "deeplink"]
+  questions:
+    - "Which activities/services are exported?"
+    - "Can another app invoke them with crafted extras?"
+    - "Do exported components re-check authorization?"
+  evidence:
+    positive: [exported_sensitive_component, intent_extras_trusted, no_recheck]
+    negative: [not_exported, extras_validated, authz_rechecked]
+  followups: [enumerate_exported, craft_intent, test_extras_trust]
+  test: >
+    Parse the manifest for exported components. Send crafted intents with extras from a second lab app; observe privileged actions.
+  impact_hint: Medium-High — local privilege escalation.
+
+- id: MOB-05
+  name: Biometric auth fallback bypass
+  klass: mobile
+  requires: [mobile_app_surface]
+  signals: ["biometric", "fingerprint", "faceid", "fallback", "pin"]
+  questions:
+    - "What happens when biometrics fail or are unavailable?"
+    - "Is the fallback (PIN/pattern) weaker and brute-forceable?"
+    - "Is biometric success verified server-side for sensitive actions?"
+  evidence:
+    positive: [weak_fallback, fallback_bruteforceable, client_only_check]
+    negative: [strong_fallback, fallback_rate_limited, server_verified]
+  followups: [trigger_fallback, bruteforce_fallback, bypass_biometric]
+  test: >
+    Force biometric failure; examine fallback strength and rate limiting. Check whether sensitive actions re-verify server-side.
+  impact_hint: Medium — local device attacker.

@@ -1,0 +1,91 @@
+# DEEPHUNT technique cards — ai_llm domain
+# Enriched: requires/signals/questions/evidence/followups per card.
+# Source of truth for kb.load_techniques(). 5 cards.
+
+- id: AI-01
+  name: Indirect prompt injection across a share/collaboration boundary
+  klass: ai-llm
+  requires: [http_observation]
+  signals: ["assistant", "ai", "copilot", "chat", "share", "space", "prompt"]
+  questions:
+    - "Whose content reaches the model — and is it marked untrusted?"
+    - "Does model output drive actions (tools, emails, publishes)?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [map_content_flows, test_tool_boundaries]
+  test: >
+    Attacker plants instructions in shared content; victim queries the AI in their own context (owned accounts, canary in victim's private data). Success = canary disclosure or unauthorized action. Control = benign content.
+  impact_hint: High — Tier-1 in AI bounty tiers.
+
+- id: AI-02
+  name: System-prompt / instruction leakage via prompt engineering
+  klass: ai-llm
+  requires: [http_observation]
+  signals: ["assistant", "ai", "system", "instructions"]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    Ask the assistant to reveal its instructions (owned session). Many programs explicitly exclude this — check the test plan FIRST; often out of scope.
+  impact_hint: Low (usually excluded).
+
+- id: AI-03
+  name: AI action/tool abuse (unauthorized tool calls from injected context)
+  klass: ai-llm
+  requires: [http_observation]
+  signals: ["assistant", "tool", "action", "plugin", "function"]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    Inject instructions that trigger the assistant's tools (email send, file share, calendar) in the victim's session. Prove the unauthorized action with owned accounts only.
+  impact_hint: Critical.
+
+- id: AI-04
+  name: Indirect prompt injection via shared content
+  klass: ai-llm
+  requires: [http_observation]
+  signals: ["ai", "assistant", "prompt", "summar", "copilot", "chat", "generate"]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    Plant a benign instruction in content the victim's AI will ingest (shared doc, page, file). Observe whether the AI's output to the victim reflects the planted instruction. Use canary tokens; never exfiltrate real data.
+  impact_hint: High — AI trust-boundary breaks are the current frontier.
+
+- id: AI-05
+  name: LLM output handling flaws (XSS/tool-output injection)
+  klass: ai-llm
+  requires: [http_observation]
+  signals: ["ai", "assistant", "markdown", "render", "chat"]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    Get the AI to emit markdown/HTML/URLs. Check whether the frontend renders it unsanitized (stored XSS via model output) or follows tool calls the model was tricked into making.
+  impact_hint: Medium-High.

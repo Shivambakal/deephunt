@@ -1,0 +1,74 @@
+# Security invariants — statements that must hold. A violated invariant is a finding.
+# Each: id, statement, why_it_matters, how_to_test, related_techniques.
+
+- id: INV-AUTHZ-01
+  statement: "Only the owner role (or a strictly higher role) may modify an owned object."
+  why_it_matters: "Violation = BOLA/IDOR, the most paid bounty class."
+  how_to_test: "Two owned accounts; B requests A's object for GET/PUT/DELETE; any 200 with foreign data violates."
+  related_techniques: ["IDOR-01", "IDOR-02", "AUTHZ-01"]
+
+- id: INV-AUTHZ-02
+  statement: "An object readable by role R must not be enumerable by a role below R."
+  why_it_matters: "Read-one vs list-all gaps leak entire datasets."
+  how_to_test: "As low-priv identity, try list/search endpoints for objects you can read individually."
+  related_techniques: ["IDOR-01", "AUTHZ-02"]
+
+- id: INV-AUTHN-01
+  statement: "Authentication state must not leak across trust boundaries."
+  why_it_matters: "Session fixation, cookie tossing, subdomain cookie leaks."
+  how_to_test: "Check cookie Domain/SameSite; test session validity across subdomains and after logout."
+  related_techniques: ["SESS-01", "SESS-02", "CORS-01"]
+
+- id: INV-STATE-01
+  statement: "State transitions require the authority the transition claims."
+  why_it_matters: "Business-logic flaws are invalid transitions executed without the required authority."
+  how_to_test: "Map the workflow states; attempt every non-adjacent transition directly via API."
+  related_techniques: ["BLO-01", "BLO-02", "LOGIC-03", "RACE-01"]
+
+- id: INV-STATE-02
+  statement: "A terminal state (cancelled, refunded, expired) must not be revivable."
+  why_it_matters: "Revival bugs resurrect discounts, trials, and access."
+  how_to_test: "Drive an object to a terminal state, then replay earlier transitions."
+  related_techniques: ["BLO-01", "LOGIC-02"]
+
+- id: INV-CRYPTO-01
+  statement: "Secrets must never be recoverable from client-visible material."
+  why_it_matters: "JS bundles, errors, and URLs are attacker-readable."
+  how_to_test: "Grep frontend bundles and error paths for keys/tokens; check URL params."
+  related_techniques: ["SECRETS-01", "AI-02"]
+
+- id: INV-INPUT-01
+  statement: "Untrusted input must be neutralized at the trust boundary, in the correct output context."
+  why_it_matters: "Wrong-context encoding is the classic XSS/SQLi root cause."
+  how_to_test: "Trace input to sink; verify encoding matches the sink context (HTML vs JS vs URL vs SQL)."
+  related_techniques: ["XSS-01", "XSS-02", "SQLI-01"]
+
+- id: INV-LIMIT-01
+  statement: "Every security-relevant limit must be enforced server-side, per the identity that matters."
+  why_it_matters: "Client-side limits and per-IP limits are routinely bypassed."
+  how_to_test: "Bypass the UI; rotate the limited dimension (IP via headers, account, endpoint variant)."
+  related_techniques: ["RATE-01", "RATE-02", "AUTHN-01", "GQL-02"]
+
+- id: INV-CACHE-01
+  statement: "No cache may serve one identity's response to another."
+  why_it_matters: "Web cache poisoning/deception turns a reflection into mass disclosure."
+  how_to_test: "Identify unkeyed inputs; poison as attacker, fetch as victim."
+  related_techniques: ["CACHE-01", "CACHE-02"]
+
+- id: INV-SSRF-01
+  statement: "A server-side fetcher must never reach attacker-chosen internal addresses."
+  why_it_matters: "SSRF → cloud metadata → credential theft is critical."
+  how_to_test: "Point URL-fetch features at internal/metadata addresses; test parser differentials."
+  related_techniques: ["SSRF-01", "SSRF-02", "SSRF-03", "CLD-02"]
+
+- id: INV-WS-01
+  statement: "A real-time channel must authenticate the handshake AND authorize every subscription."
+  why_it_matters: "Unauthenticated sockets leak live data and accept forged actions."
+  how_to_test: "Open WS without auth; subscribe to foreign channels; replay messages."
+  related_techniques: ["WS-01", "WS-02", "WS-03", "WS-04", "WS-05"]
+
+- id: INV-GQL-01
+  statement: "GraphQL authorization must be enforced per field, not per query."
+  why_it_matters: "One unprotected field in a protected query leaks the object."
+  how_to_test: "As low-priv user, request sensitive fields individually; introspect for hidden types."
+  related_techniques: ["GQL-01", "GQL-04"]

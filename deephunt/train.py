@@ -5,37 +5,14 @@ from __future__ import annotations
 import os
 import re
 
-BASE = os.path.dirname(os.path.abspath(__file__))
-KNOWLEDGE = os.path.join(BASE, "knowledge", "techniques.yaml")
+import kb  # noqa: E402  — enriched technique cards from knowledge/techniques/*.yaml
 
-_cache = None
+BASE = os.path.dirname(os.path.abspath(__file__))
 
 
 def load_techniques():
-    global _cache
-    if _cache is not None:
-        return _cache
-    text = open(KNOWLEDGE).read()
-    cards, cur = [], None
-    for raw in text.splitlines():
-        if raw.startswith("- id: "):
-            if cur:
-                cards.append(cur)
-            cur = {"id": raw.split(": ", 1)[1].strip(), "signals": []}
-        elif cur is not None and ":" in raw:
-            k, v = raw.strip().split(":", 1)
-            k, v = k.strip(), v.strip()
-            if k == "signals":
-                cur["signals"] = [s.strip().strip("'\"")
-                                  for s in v.strip("[]").split(",") if s.strip()]
-            elif k in ("name", "klass", "impact_hint"):
-                cur[k] = v
-            elif k == "test":
-                cur["test"] = v
-    if cur:
-        cards.append(cur)
-    _cache = cards
-    return cards
+    """Enriched cards via kb (source of truth: knowledge/techniques/*.yaml)."""
+    return kb.load_techniques()
 
 
 def _haystack(findings):

@@ -210,7 +210,7 @@ def run_target(target, max_cycles=3, passive_only=False, run_log=None):
 
     # ---- INTAKE: passive tools ------------------------------------------------
     log(rl, "PHASE: INTAKE (passive tools)")
-    runstate.checkpoint("intake-start", {})
+    runstate.checkpoint(phase="intake-start")
     for tool in list_tools("passive"):
         if breaker.quarantined(tool.name):
             log(rl, f"  [quarantined] {tool.name}")
@@ -230,8 +230,8 @@ def run_target(target, max_cycles=3, passive_only=False, run_log=None):
             for f in findings[:6]:
                 session.observe(f"{f['tool']}: {f['title']} — "
                                 f"{f.get('evidence', '')[:160]}", kind="fact")
-    runstate.checkpoint("intake-done",
-                        {"findings": len(state["findings"])})
+    runstate.checkpoint(phase="intake-done",
+                        findings=len(state["findings"]))
 
     # ---- INTERNET: fresh techniques -------------------------------------------
     log(rl, "PHASE: INTERNET (fresh techniques)")
@@ -251,8 +251,8 @@ def run_target(target, max_cycles=3, passive_only=False, run_log=None):
         if os.path.isfile(os.path.join(STATE_DIR, "STOP")):
             state["stop_reason"] = "STOP file present"
             break
-        runstate.checkpoint(f"cycle-{cycle + 1}-start",
-                            {"findings": len(state["findings"])})
+        runstate.checkpoint(phase=f"cycle-{cycle + 1}-start",
+                            findings=len(state["findings"]))
         log(rl, f"===== CYCLE {cycle + 1}/{max_cycles} =====")
 
         # ---- FUNNEL ----
@@ -406,7 +406,7 @@ def run_target(target, max_cycles=3, passive_only=False, run_log=None):
             log(rl, "  active tools skipped (passive-only run or "
                     "active_allowed=false in profile)")
         else:
-            runstate.checkpoint("execute-start", {"cycle": cyc.get("n")})
+            runstate.checkpoint(phase="execute-start", cycle=cyc.get("n"))
             for tool in list_tools("active"):
                 if breaker.quarantined(tool.name):
                     log(rl, f"  [quarantined] {tool.name}")
@@ -434,7 +434,7 @@ def run_target(target, max_cycles=3, passive_only=False, run_log=None):
                             f"vuln candidate: {f['title'][:120]}")
                         log(rl, "*** HIGH-SEVERITY CANDIDATE — stopping for "
                                 "human validation ***")
-            runstate.checkpoint("execute-done", {"cycle": cyc.get("n")})
+            runstate.checkpoint(phase="execute-done", cycle=cyc.get("n"))
         for tool in list_tools("operator"):
             try:
                 findings = tool.run(ctx) or []
@@ -494,9 +494,9 @@ def run_target(target, max_cycles=3, passive_only=False, run_log=None):
                         pass
         state["cycles"].append(cyc)
         save_state(target, state)
-        runstate.checkpoint(f"cycle-{cycle + 1}-done",
-                            {"findings": len(state["findings"]),
-                             "cycles": len(state["cycles"])})
+        runstate.checkpoint(phase=f"cycle-{cycle + 1}-done",
+                            findings=len(state["findings"]),
+                            cycles=len(state["cycles"]))
         if state["stop_reason"]:
             break
 

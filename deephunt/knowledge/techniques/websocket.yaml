@@ -1,0 +1,88 @@
+# DEEPHUNT technique cards — websocket domain
+# Enriched: requires/signals/questions/evidence/followups per card.
+# Source of truth for kb.load_techniques(). 5 cards.
+
+- id: WS-01
+  name: WebSocket authorization gaps (missing origin/token checks)
+  klass: websocket
+  requires: [ws_endpoint, observed_messages]
+  signals: ["ws://", "wss://", "socket", "realtime"]
+  questions:
+    - "Does the WebSocket handshake carry and verify auth?"
+    - "Is the Origin header validated, or can any site open the socket?"
+  evidence:
+    positive: [unauthenticated_handshake, origin_not_checked, replay_accepted]
+    negative: [handshake_requires_auth, origin_validated, message_authenticity_checked]
+  followups: [cross_site_handshake, replay_message]
+  test: >
+    Connect with victim's channel params from attacker's session; check cross-user message receipt. Test CSWSH via Origin header.
+  impact_hint: High.
+
+- id: WS-02
+  name: WebSocket authorization and CSRF
+  klass: websocket
+  requires: [ws_endpoint, observed_messages]
+  signals: ["websocket", "ws://", "wss://", "socket.io"]
+  questions:
+    - "Is the handshake authenticated?"
+    - "Is Origin checked?"
+    - "Can messages be replayed or forged cross-site?"
+    - "Does the server validate message structure?"
+  evidence:
+    positive: [unauthenticated_handshake, origin_not_checked, replay_accepted]
+    negative: [handshake_requires_auth, origin_validated, message_authenticity_checked]
+  followups: [replay_message, cross_site_handshake, fuzz_message_schema]
+  test: >
+    Connect with a low-priv token, attempt privileged actions over the socket. Test cross-site handshake (Origin check) for WebSocket hijacking.
+  impact_hint: Medium-High.
+
+- id: WS-03
+  name: WebSocket handshake without authentication
+  klass: websocket
+  requires: [ws_endpoint, observed_messages]
+  signals: ["ws://", "wss://", "socket", "websocket", "upgrade"]
+  questions:
+    - "Does the WS handshake verify the session/token?"
+    - "Can an unauthenticated client subscribe to another user's channel?"
+    - "Are channel names guessable?"
+  evidence:
+    positive: [unauthenticated_handshake, cross_user_channel_access, guessable_channels]
+    negative: [handshake_requires_auth, channel_authz_checked, unguessable_tokens]
+  followups: [omit_auth_on_handshake, guess_channel, subscribe_as_anon]
+  test: >
+    Open the WS without cookies/token. Try subscribing to channels belonging to another owned account. Compare message visibility.
+  impact_hint: High — real-time data leak.
+
+- id: WS-04
+  name: WebSocket message replay / forgery
+  klass: websocket
+  requires: [ws_endpoint, observed_messages]
+  signals: ["ws://", "wss://", "socket", "message", "emit"]
+  questions:
+    - "Are messages authenticated per-message or only at handshake?"
+    - "Can a captured message be replayed to trigger the action again?"
+    - "Can message fields (sender, target) be forged?"
+  evidence:
+    positive: [replay_accepted, sender_spoofed, no_per_message_auth]
+    negative: [replay_rejected, sender_verified, nonces_enforced]
+  followups: [replay_message, forge_sender, tamper_target]
+  test: >
+    Capture a legitimate WS action message; replay it later and as the other owned account. Forge sender/target fields.
+  impact_hint: Medium-High — action forgery.
+
+- id: WS-05
+  name: Cross-site WebSocket hijacking (missing Origin check)
+  klass: websocket
+  requires: [ws_endpoint]
+  signals: ["ws://", "wss://", "origin", "socket"]
+  questions:
+    - "Is the Origin header validated on the WS handshake?"
+    - "Can an attacker's page open an authenticated socket using the victim's cookies?"
+    - "Does the socket rely on cookie auth?"
+  evidence:
+    positive: [origin_not_checked, cross_site_socket_opened, cookie_auth_reused]
+    negative: [origin_validated, token_not_cookie, csrf_style_blocked]
+  followups: [cross_site_handshake, test_origin_variants]
+  test: >
+    From a cross-origin page context, attempt the WS handshake with victim cookies (lab only, owned accounts). Try Origin spoofing variants.
+  impact_hint: High — CSWSH, equivalent to CSRF on real-time actions.

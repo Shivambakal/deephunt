@@ -1,0 +1,14 @@
+# GraphQL protocol knowledge.
+
+- fact: "Single endpoint (usually /graphql) serves queries, mutations, subscriptions; introspection reveals the full schema unless disabled."
+  security_relevance: "Introspection exposes hidden types/mutations; field suggestions leak names."
+- fact: "Authorization is the application's job per field — the spec defines none."
+  security_relevance: "Per-field authz gaps are the #1 GraphQL vuln class."
+- fact: "Queries support aliases and batching (multiple operations per request)."
+  security_relevance: "Batching bypasses per-request rate limits; aliases amplify brute force."
+- fact: "Depth, complexity, and cost analysis are opt-in (not default)."
+  security_relevance: "Deeply nested queries = DoS; test depth limits (but never DoS a live target)."
+- fact: "Persisted queries / query allowlisting restrict operations to pre-registered hashes."
+  security_relevance: "Bypass = arbitrary query execution; verify the allowlist actually holds."
+- fact: "Errors often include path, extensions, and debug stack traces."
+  security_relevance: "Error verbosity leaks schema and backend details."

@@ -1,0 +1,58 @@
+# Attack patterns — reusable compositions, not single payloads.
+# Each: id, name, shape, why_it_works, detection_clue, related_techniques.
+
+- id: AP-01
+  name: "Two-workflow composition"
+  shape: "Workflow A is safe. Workflow B is safe. A output fed into B breaks an invariant."
+  why_it_works: "Each workflow is reviewed alone; nobody reviews the composition."
+  detection_clue: "An object created in one flow becomes input to another flow with different authz."
+  related_techniques: ["BLO-01", "LOGIC-02", "IDOR-01"]
+
+- id: AP-02
+  name: "Parser differential"
+  shape: "Validator parses input one way; executor parses it another way."
+  why_it_works: "Allowlist/blocklist passes, but the fetcher resolves a different URL/host."
+  detection_clue: "Two components (WAF vs backend, validator vs fetcher) handle the same input."
+  related_techniques: ["SSRF-02", "SSRF-03", "WAF-01", "SMUG-01"]
+
+- id: AP-03
+  name: "Check-then-act race"
+  shape: "Authorization/balance check passes, then state changes before the action completes."
+  why_it_works: "The check and the act are not atomic."
+  detection_clue: "Finite resource (balance, stock, coupon uses) + non-atomic check."
+  related_techniques: ["RACE-01", "RACE-02", "BLO-02"]
+
+- id: AP-04
+  name: "Identity confusion across layers"
+  shape: "Layer 1 authenticates user X; layer 2 acts as user Y (param, header, or default)."
+  why_it_works: "Each layer assumes the other resolved the identity."
+  detection_clue: "user_id passed as a parameter alongside a session cookie."
+  related_techniques: ["IDOR-02", "AUTHZ-01", "JWT-01"]
+
+- id: AP-05
+  name: "Trust-boundary crossing via shared content"
+  shape: "Attacker content is stored, then rendered/executed in a higher-trust context."
+  why_it_works: "Storage is trusted; the consumer context is not re-checked."
+  detection_clue: "User content appearing in admin views, emails, exports, or AI context."
+  related_techniques: ["XSS-02", "AI-01", "EXPORT-01"]
+
+- id: AP-06
+  name: "State revival"
+  shape: "Object reaches a terminal state, then an old transition is replayed to resurrect it."
+  why_it_works: "Terminal states are rarely guarded on every entry point."
+  detection_clue: "cancelled/refunded/expired objects still addressable by ID."
+  related_techniques: ["BLO-01", "LOGIC-02"]
+
+- id: AP-07
+  name: "Amplification via batching/aliasing"
+  shape: "One request fans out into N operations, bypassing per-request limits."
+  why_it_works: "Rate limits count requests, not operations."
+  detection_clue: "Batch endpoints, GraphQL aliases, bulk APIs."
+  related_techniques: ["GQL-02", "RATE-01", "API-03"]
+
+- id: AP-08
+  name: "Downgrade to a weaker legacy path"
+  shape: "A legacy endpoint/version lacks the checks the modern one enforces."
+  why_it_works: "Security is added to v2; v1 stays reachable."
+  detection_clue: "/v1, /legacy, /old, .json suffixes, old mobile API versions."
+  related_techniques: ["API-01", "API-02", "AUTHZ-02"]

@@ -75,6 +75,12 @@ class WorldModel:
         self._derive_invariants()
         self.recalculate_beliefs()
         self.save()
+        # data-first: keep the structured target model in sync with the world model
+        try:
+            from target_model import Target
+            Target.build_from_world_model(self)
+        except Exception:
+            pass
 
     def _add_service_tech(self, title, tech):
         host = title.split(" ")[0][:120]
@@ -108,7 +114,11 @@ class WorldModel:
     # ---------- dynamic update (the active learning loop feeds this) ----------
     def update_from_observation(self, text, source="experiment"):
         """Fold one observation into entities, relations, permissions,
-        transitions, and invariant beliefs. Called after EVERY experiment."""
+        transitions, and invariant beliefs. Called after EVERY experiment.
+        Accepts free text OR a structured ExperimentObservation dict
+        (see observation.py)."""
+        if isinstance(text, dict):
+            return self._update_from_record(text, source)
         if not text:
             return {"entities": 0, "relations": 0}
         added_e, added_r = 0, 0
@@ -155,6 +165,33 @@ class WorldModel:
                                               "actor": source})
         self.recalculate_beliefs()
         return {"entities": added_e, "relations": added_r}
+
+    def _update_from_record(self, rec, source="experiment"):
+        """Fold a structured ExperimentObservation dict into the model."""
+        parts = [rec.get("hypothesis", ""), rec.get("interpretation", ""),
+                 rec.get("next_question", "")]
+        blob = " ".join(p for p in parts if p)
+        result = self.update_from_observation(blob, source=source)
+        # preconditions carry identity/object_owner semantics
+        pre = rec.get("preconditions") or {}
+        ident, owner = pre.get("identity"), pre.get("object_owner")
+        if ident and ident not in [i["name"] for i in self.model["identities"]]:
+            self.model["identities"].append({"name": ident, "kind": "test",
+                                             "seen_in": rec.get("experiment_id", "")})
+            result["entities"] = result.get("entities", 0) + 1
+        if ident and owner and ident != owner:
+            self._add_relation(ident, owner, "tested-against")
+            result["relations"] = result.get("relations", 0) + 1
+        # observation flags drive belief votes
+        obs = rec.get("observation") or {}
+        if obs.get("object_changed") and ident and owner and ident != owner:
+            self._belief_vote("Only the owner role may modify an owned object.", -1)
+        if obs.get("status_changed") and not obs.get("object_changed"):
+            self._belief_vote("Only the owner role may modify an owned object.", +1)
+        conf = rec.get("confidence")
+        self.recalculate_beliefs()
+        self.save()
+        return result
 
     def _add_relation(self, frm, to, kind):
         rel = {"frm": frm[:120], "to": to[:120], "kind": kind}

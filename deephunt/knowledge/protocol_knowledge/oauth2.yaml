@@ -1,0 +1,14 @@
+# OAuth 2.0 protocol knowledge.
+
+- fact: "Flows: authorization code (with PKCE for public clients), implicit (legacy, deprecated), client credentials, device flow."
+  security_relevance: "Implicit flow leaks tokens in URLs; code flow without PKCE is interceptable on mobile."
+- fact: "redirect_uri must be matched exactly against a pre-registered allowlist (no prefix/suffix/regex tricks)."
+  security_relevance: "Loose matching enables code/token theft via attacker subdomains or open redirectors."
+- fact: "The 'state' parameter binds the authorization request to the callback; it must be random and validated."
+  security_relevance: "Missing state = login CSRF (attacker links victim to attacker account)."
+- fact: "Authorization codes are single-use, short-lived, and bound to client_id + redirect_uri."
+  security_relevance: "Replayable or long-lived codes = account takeover."
+- fact: "Access tokens are bearer tokens: possession equals authority. Refresh tokens rotate."
+  security_relevance: "Token leakage (URL, logs, referrer) equals compromise; check storage and transport."
+- fact: "PKCE (code_challenge/code_verifier, S256) protects public clients from code interception."
+  security_relevance: "Missing PKCE on mobile/SPA = code interception attacks."

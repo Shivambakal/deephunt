@@ -4,7 +4,11 @@ what "think different" means in code: the predator, the architect, the
 accountant, the saboteur, the ghost, the scholar, and the oracle.
 
 Resources fed to the brain:
-  knowledge/techniques.yaml  (39 technique cards — scholar mode)
+  knowledge/techniques/*.yaml (89 enriched technique cards — scholar mode)
+  knowledge/negative_examples.yaml (false-positive gate — all modes)
+  knowledge/historical_cases/ (structured CASE cards — oracle mode)
+  knowledge/invariants/, attack_patterns/, vulnerability_patterns/
+  knowledge/protocol_knowledge/, technology_knowledge/
   knowledge/past_attacks.md  (bounty shapes that keep paying — oracle mode)
   intel/*.md                 (target-specific recon — all modes)
   data/brain/sessions/*.json (rejected hypotheses — never retried)
@@ -17,6 +21,7 @@ import json
 import os
 import re
 
+import kb     # noqa: E402
 import learn  # noqa: E402
 import train  # noqa: E402
 
@@ -163,8 +168,35 @@ def ghost(findings, profile, mem, intel_ctx):
 
 
 def scholar(findings, profile, mem, intel_ctx):
-    """The scholar: match evidence against the 39 technique cards."""
-    return train.recommend(findings, profile, mem, limit=10)
+    """The scholar: match evidence against enriched technique cards, then
+    reason with each card's questions and followups — not just its test."""
+    seeds = train.recommend(findings, profile, mem, limit=10)
+    out = list(seeds)
+    seen_ids = set()
+    for s in seeds:
+        src = s.get("source", "")
+        cid = src.split("train:", 1)[1] if "train:" in src else None
+        if not cid or cid in seen_ids:
+            continue
+        seen_ids.add(cid)
+        card = kb.get_card(cid)
+        if not card:
+            continue
+        for q in card.get("questions", [])[:2]:
+            stmt = f"[scholar:{cid}] Q: {q}"
+            ok, _ = learn.is_novel(stmt, mem)
+            if ok:
+                out.append(_mk(stmt, "logic", f"think:scholar:{cid}",
+                               f"reasoning question from {card.get('name')}"))
+        for fu in card.get("followups", [])[:2]:
+            stmt = f"[scholar:{cid}] next: {fu}"
+            ok, _ = learn.is_novel(stmt, mem)
+            if ok:
+                out.append(_mk(stmt, "logic", f"think:scholar:{cid}",
+                               f"followup experiment from {card.get('name')}"))
+        if len(out) >= 24:
+            break
+    return out[:24]
 
 
 def oracle(findings, profile, mem, intel_ctx):

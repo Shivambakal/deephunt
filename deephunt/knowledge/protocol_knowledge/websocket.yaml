@@ -1,0 +1,12 @@
+# WebSocket protocol knowledge.
+
+- fact: "Handshake is an HTTP Upgrade request; cookies and Authorization headers ride along."
+  security_relevance: "Cookie-based auth makes the socket CSRF-able (CSWSH) if Origin is unchecked."
+- fact: "The Origin header on the handshake is the CSRF defense; it must be validated against an allowlist."
+  security_relevance: "Missing Origin check = any website can open an authenticated socket as the victim."
+- fact: "After upgrade, messages are frames with no built-in authenticity; the app must authenticate each action."
+  security_relevance: "Handshake-only auth + guessable channel names = cross-user subscribe/replay."
+- fact: "Subprotocol negotiation (Sec-WebSocket-Protocol) can carry tokens."
+  security_relevance: "Tokens in subprotocols may be logged; verify handling."
+- fact: "There is no same-origin policy inside an established socket — the server decides."
+  security_relevance: "Server must not trust that only its own page sends frames."

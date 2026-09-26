@@ -1,0 +1,35 @@
+# Detection strategies — how to turn a hypothesis into a controlled experiment.
+# Each: id, for_hypothesis, procedure, oracle (what distinguishes vuln from noise).
+
+- id: DS-01
+  for_hypothesis: "object authorization depends on ownership"
+  procedure: "Two owned accounts A/B. A creates object. B requests it (GET, then PUT/DELETE). Also swap: B creates, A requests."
+  oracle: "200 with foreign data = broken. 403/404 for both = control working. Asymmetry (A→B differs from B→A) = investigate."
+- id: DS-02
+  for_hypothesis: "privilege check is client-side only"
+  procedure: "Replay the privileged API call directly with a low-priv token, dropping all UI gating."
+  oracle: "200 + effect = bypass. 403 = server enforces."
+- id: DS-03
+  for_hypothesis: "workflow transition lacks authorization"
+  procedure: "Map states; call the transition endpoint directly, skipping prior steps, as low-priv identity."
+  oracle: "Transition accepted out of order = flaw. Rejected = control working."
+- id: DS-04
+  for_hypothesis: "rate limit is missing or bypassable"
+  procedure: "Low-volume probes: baseline, then rotate the limited dimension (header IP, endpoint variant, account)."
+  oracle: "Limit never triggers OR rotation resets it = bypass. Never DoS; stay at trickle volume."
+- id: DS-05
+  for_hypothesis: "cache serves cross-user responses"
+  procedure: "Attacker poisons via unkeyed input; victim (second owned identity) fetches the same URL fresh."
+  oracle: "Victim receives attacker's content = poisoning. Different cache keys = safe."
+- id: DS-06
+  for_hypothesis: "SSRF reaches internal addresses"
+  procedure: "Point URL-fetch at a controlled collaborator first, then internal/metadata addresses. Watch DNS + timing."
+  oracle: "Internal fetch or metadata response = SSRF. Blocked/timeout = control."
+- id: DS-07
+  for_hypothesis: "WebSocket channel lacks authorization"
+  procedure: "Open socket without auth; subscribe to foreign channels; replay captured messages."
+  oracle: "Foreign data or accepted replay = flaw."
+- id: DS-08
+  for_hypothesis: "GraphQL field lacks authorization"
+  procedure: "As low-priv user, query sensitive fields individually; compare against high-priv response."
+  oracle: "Field returns data for low-priv = gap. Null/denied = control."

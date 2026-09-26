@@ -1,0 +1,33 @@
+# Technology knowledge — stack-specific security-relevant behaviors.
+# Each: stack, tells (how to recognize), security_notes.
+
+- stack: "Next.js"
+  tells: ["_next/static", "__NEXT_DATA__", "/api/ routes"]
+  security_notes: ["API routes under /api may lack middleware auth", "Draft mode / preview tokens", "Server components can leak via flight data"]
+- stack: "Laravel"
+  tells: ["XSRF-TOKEN cookie", "/sanctum/", "laravel_session"]
+  security_notes: ["Mass assignment via $fillable gaps", "Signed URLs (verify signature check)", "Telescope/debugbar left enabled"]
+- stack: "Django"
+  tells: ["csrftoken", "sessionid", "/admin/"]
+  security_notes: ["Admin at /admin often reachable", "CSRF trusted origins config", "DEBUG=True leaks"]
+- stack: "WordPress"
+  tells: ["wp-content", "wp-json", "wp-admin"]
+  security_notes: ["wp-json/wp/v2/users enumerates users", "Plugin/theme vulns dominate", "xmlrpc.php brute force"]
+- stack: "Shopify (platform)"
+  tells: [".myshopify.com", "shopify_app"]
+  security_notes: ["Merchant stores are OFF-LIMITS unless in scope", "App proxy auth, webhook HMAC verification", "No commercial scanners per program rules"]
+- stack: "GraphQL (generic)"
+  tells: ["/graphql", "__schema"]
+  security_notes: ["Introspection, field-level authz, batching, depth limits"]
+- stack: "Firebase / Supabase"
+  tells: ["firebaseio.com", "supabase.co", "apikey in JS"]
+  security_notes: ["Security rules misconfig = open DB", "anon key in JS is normal; rules are the control"]
+- stack: "AWS-backed"
+  tells: ["amazonaws.com", "cloudfront", "X-Amz-"]
+  security_notes: ["S3 bucket policies", "IMDS via SSRF", "CloudFront cache behaviors"]
+- stack: "Single-page app (React/Vue/Angular)"
+  tells: ["static/js/main.", "ng-version", "__VUE__"]
+  security_notes: ["API surface in JS bundles", "Client-side route guards are not authz", "Secrets in bundles"]
+- stack: "Mobile API backend"
+  tells: ["/api/v1/mobile", "X-App-Version", "device-id headers"]
+  security_notes: ["Old app versions keep old vulns", "Device attestation often absent", "Certificate pinning varies"]

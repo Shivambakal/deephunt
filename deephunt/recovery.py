@@ -58,6 +58,11 @@ class RunState:
         except OSError:
             pass
 
+    def complete(self):
+        """Mark the run finished and remove the checkpoint file."""
+        self.checkpoint(phase="done")
+        self.clear()
+
 
 def resilient(fn, *args, retries=3, base_delay=2, label="op", **kwargs):
     """Run fn with bounded retries on transient failures. Returns

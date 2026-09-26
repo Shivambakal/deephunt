@@ -1,0 +1,17 @@
+# HTTP protocol knowledge — facts the reasoning engine can query.
+# Each entry: fact + security_relevance.
+
+- fact: "GET, HEAD, OPTIONS, TRACE are defined as safe (no side effects); servers should not mutate on them."
+  security_relevance: "State-changing GETs are CSRF-able and log/cache-poisonable."
+- fact: "Status 200/201/204 = success; 301/302 = redirect (check Location for open redirect); 400 = client error; 401 = unauthenticated; 403 = authenticated but forbidden; 404 = not found."
+  security_relevance: "403 vs 404 vs 200 on object access is the core BOLA oracle. 403 alone is expected behavior."
+- fact: "Headers X-Forwarded-For / X-Forwarded-Host / X-Original-URL / X-Rewrite-URL are client-controlled unless the edge strips them."
+  security_relevance: "Rate-limit bypass, cache poisoning, password-reset poisoning, auth bypass via X-Original-URL."
+- fact: "Cookies: Secure (HTTPS only), HttpOnly (no JS), SameSite=Lax/Strict/None, Domain scope, __Host- prefix rules."
+  security_relevance: "Missing flags enable XSS theft, CSRF, and subdomain cookie tossing."
+- fact: "HTTP/1.1 request smuggling primitives: CL.TE, TE.CL, TE.TE with obfuscated Transfer-Encoding."
+  security_relevance: "Desync lets attackers prepend requests executed as the victim."
+- fact: "Methods PUT/DELETE/PATCH/TRACE are often enabled by default on misconfigured servers."
+  security_relevance: "Probe with OPTIONS; dangerous methods may bypass authz."
+- fact: "Cache keys typically include host+path+query; often exclude headers/cookies unless configured."
+  security_relevance: "Unkeyed inputs (headers, cookies, query) are the cache-poisoning surface."

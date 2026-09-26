@@ -1,0 +1,406 @@
+# DEEPHUNT technique cards — web domain
+# Enriched: requires/signals/questions/evidence/followups per card.
+# Source of truth for kb.load_techniques(). 23 cards.
+
+- id: JWT-01
+  name: JWT alg confusion / none / weak secret
+  klass: crypto
+  requires: [http_observation]
+  signals: ["jwt", "token", "eyJ", "authorization: bearer"]
+  questions:
+    - "Does the server verify the signature, or trust the alg header?"
+    - "What happens with alg=none, or a key-confusion (RS256→HS256)?"
+    - "Are claims like role/exp actually enforced?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [tamper_alg, confuse_key, edit_claims]
+  test: >
+    Decode the token (owned account). Try alg=none, RS256->HS256 confusion with the public key, and weak-secret cracking offline against the HMAC. Modify claims (sub, role) and replay.
+  impact_hint: High — auth bypass.
+
+- id: SSRF-01
+  name: SSRF via URL fetch / webhook / file-import parameters
+  klass: ssrf
+  requires: [http_observation]
+  signals: ["url=", "webhook", "import", "fetch", "avatar", "preview", "callback"]
+  questions:
+    - "Does the fetcher resolve DNS itself or trust the URL?"
+    - "Is 169.254.169.254 / metadata reachable? What about DNS rebinding?"
+    - "Which parser validates the URL — and which fetches it?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [test_metadata_paths, dns_rebinding, parser_differential]
+  test: >
+    Point the parameter at an owned collaborator/out-of-band host; confirm DNS/HTTP egress. Then test cloud-metadata (169.254.169.254) ONLY where the program explicitly permits it — many forbid it. Prefer proving with the collaborator + internal 403-vs-timeout oracle.
+  impact_hint: Critical.
+
+- id: SSRF-02
+  name: SSRF allowlist bypass via parser differentials
+  klass: ssrf
+  requires: [http_observation]
+  signals: ["url=", "domain", "whitelist"]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    Try 0x/decimal/octal IP encodings, @-userinfo tricks, #fragments, DNS rebinding shapes, and redirect chains off an allowed domain.
+  impact_hint: Critical.
+
+- id: XSS-01
+  name: Stored XSS via profile/content fields
+  klass: xss
+  requires: [http_observation]
+  signals: ["comment", "profile", "name", "bio", "ticket", "filename"]
+  questions:
+    - "Where does the input reflect — HTML, attribute, JS, URL context?"
+    - "Is encoding applied at output, and is it the right one for the context?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [identify_sink_context, test_encoding_bypass]
+  test: >
+    Inject inert canary markup (<b> or <img src=x onerror>) into owned-account fields; check where it reflects unescaped (other owned account's view). Prefer canary over alert(); prove with a unique string.
+  impact_hint: High.
+
+- id: XSS-02
+  name: Reflected/DOM XSS via query params and hash fragments
+  klass: xss
+  requires: [http_observation]
+  signals: ["?", "search", "q=", "redirect", "next="]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    Fuzz reflected params with a canary; check sinks with JS bundle review (innerHTML, document.write, location-based sinks). DOM clobbering where forms exist.
+  impact_hint: Medium.
+
+- id: SQLI-01
+  name: SQL injection in sort/filter/search parameters
+  klass: injection
+  requires: [http_observation]
+  signals: ["sort", "filter", "search", "order", "id=", "query"]
+  questions:
+    - "Is the input concatenated into a query?"
+    - "Do errors or timing reveal query structure?"
+    - "Are stacked queries or out-of-band exfil possible?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [test_error_oracle, test_time_oracle]
+  test: >
+    Time-based and boolean probes on owned data only. Prefer error-shape analysis first; confirm with sleep-differential, never destructive payloads.
+  impact_hint: Critical.
+
+- id: SSTI-01
+  name: Server-side template injection in names/templates/previews
+  klass: injection
+  requires: [http_observation]
+  signals: ["template", "preview", "render", "email", "pdf", "export"]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    Inject {{7*7}} / ${7*7} canaries into template-ish fields (owned account), watch rendered output for 49. Escalate only to harmless math proof.
+  impact_hint: Critical.
+
+- id: UPLOAD-01
+  name: Unrestricted file upload (type/extension/content bypass)
+  klass: upload
+  requires: [http_observation]
+  signals: ["upload", "avatar", "attachment", "import"]
+  questions:
+    - "Is the file type validated by content or only extension/MIME?"
+    - "Where is the file stored — and is it served from the app's origin?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [polyglot_upload, check_serving_origin]
+  test: >
+    Try double extensions, null bytes, SVG with script, polyglots (owned account, inert payloads). Check where the file is served from and its Content-Type/Disposition.
+  impact_hint: High.
+
+- id: CORS-01
+  name: CORS misconfiguration (null/reflective origin + credentials)
+  klass: cors
+  requires: [http_observation]
+  signals: ["api.", "Access-Control-Allow-Origin"]
+  questions:
+    - "Is the Origin reflected with credentials allowed?"
+    - "Is the allowlist a suffix/prefix match an attacker can satisfy?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [test_origin_reflection, try_trusted_subdomain]
+  test: >
+    Send Origin: null and Origin: https://evil.com with credentials; check ACAO reflection + ACAC:true. Prove readability impact, not just headers.
+  impact_hint: Medium.
+
+- id: CACHE-01
+  name: Web cache poisoning / deception
+  klass: cache
+  requires: [http_observation]
+  signals: ["cdn", "cache", "akamai", "cloudflare", "fastly"]
+  questions:
+    - "What is the cache key — and what security-relevant input is NOT in it?"
+    - "Can one user's poisoned response be served to another?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [identify_unkeyed_inputs, test_cross_user_poison]
+  test: >
+    Try cache-key tricks (utm params, .css suffix on dynamic URLs, header injection into cached responses) with owned sessions; verify poisoned response serves to a second clean session.
+  impact_hint: High.
+
+- id: SECRETS-01
+  name: Secrets/keys in JS bundles and public repos
+  klass: secrets
+  requires: [http_observation]
+  signals: [".js", "bundle", "api_key", "secret", "token"]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    Regex-scan all fetched bundles for high-entropy strings and key patterns (aws_, sk_live, xoxb-, ghp_). Validate by TYPE only — never use a found secret; report its existence and location.
+  impact_hint: High-Critical.
+
+- id: REDIR-01
+  name: Open redirect -> OAuth/token theft chain
+  klass: open-redirect
+  requires: [http_observation]
+  signals: ["redirect", "next=", "returnUrl", "continue="]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    Try //evil.com, /\\/evil.com, ?next=javascript:, parameter smuggling. Chain value comes from OAuth flows — test there.
+  impact_hint: Medium (High chained).
+
+- id: XXE-01
+  name: XXE in file import / document processing / SAML
+  klass: injection
+  requires: [http_observation]
+  signals: ["import", "xml", "svg", "docx", "saml", "metadata"]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    Upload XML with inert external-entity canary pointing at owned collaborator (owned account). Prove with DNS/HTTP callback, never /etc/passwd exfil.
+  impact_hint: High.
+
+- id: MASS-01
+  name: HTTP request smuggling (CL.TE / TE.CL)
+  klass: smuggling
+  requires: [http_observation]
+  signals: ["cdn", "proxy", "transfer-encoding"]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    Only where the program permits active testing. Use differential timing, never poison other users' requests. High care required.
+  impact_hint: Critical.
+
+- id: PROTO-01
+  name: Prototype pollution in JS-heavy apps
+  klass: xss
+  requires: [http_observation]
+  signals: [".js", "__proto__", "merge", "extend", "config"]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    Inject __proto__[canary]=polluted via query/body params; check client-side behavior change in owned session. Server-side variants via lodash-style merges.
+  impact_hint: Medium-High.
+
+- id: PATH-01
+  name: Path traversal in download/export/file-read
+  klass: injection
+  requires: [http_observation]
+  signals: ["download", "file", "path", "template", "export"]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    Try ../ sequences and encoded variants on file parameters (owned account). Prove with harmless canary file read, never sensitive paths beyond proof.
+  impact_hint: High.
+
+- id: HOST-01
+  name: Host header injection -> password reset / cache poisoning
+  klass: injection
+  requires: [http_observation]
+  signals: ["reset", "Host:"]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    X-Forwarded-Host / Host override on reset and link-generation flows; check where the attacker host lands (owned mailbox).
+  impact_hint: Medium-High.
+
+- id: SEM-01
+  name: Semantic data-flow gap (CodeQL-style reasoning)
+  klass: injection
+  requires: [http_observation]
+  signals: ["param", "query", "input", "search", "filter", "api/"]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    Trace one user-controlled parameter from HTTP entry through code/JS to sink (query, eval, innerHTML, redirect). If no sanitizer/validator node sits on the path, the flow is a candidate. Prove with a benign marker reaching the sink.
+  impact_hint: High — finds injection classes scanners miss.
+
+- id: SSRF-03
+  name: SSRF via parser differentials
+  klass: ssrf
+  requires: [http_observation]
+  signals: ["webhook", "url=", "import", "fetch", "preview", "avatar"]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    Submit URLs that parse differently across validators: 0x7f.0.0.1, [::ffff:127.0.0.1], DNS rebinding via owned domain, redirect chains. Detect via timing/DNS canary.
+  impact_hint: High.
+
+- id: CACHE-02
+  name: Web cache poisoning via unkeyed inputs
+  klass: cache
+  requires: [http_observation]
+  signals: ["cdn", "cloudflare", "akamai", "cache", "x-cache"]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    Inject unkeyed header/query markers; check if the poisoned response is served to a second clean session. Never poison real users — use cache-buster keys.
+  impact_hint: High.
+
+- id: CORS-02
+  name: CORS credential reflection on API subdomains
+  klass: cors
+  requires: [http_observation]
+  signals: ["api.", "cors", "access-control-allow-origin"]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    Send Origin: https://evil.example with credentials on API hosts. Reflected origin + allow-credentials = token theft primitive.
+  impact_hint: Medium.
+
+- id: TO-02
+  name: Dangling DNS on acquired/legacy subdomains
+  klass: takeover
+  requires: [http_observation]
+  signals: ["cname", "azure", "s3", "heroku", "github.io", "zendesk"]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    For CNAMEs to claimable services, verify NXDOMAIN/claimability without claiming. Report per program rules; never seize assets.
+  impact_hint: Medium-High.
+
+- id: WAF-01
+  name: WAF/filter bypass via encoding differentials
+  klass: injection
+  requires: [http_observation]
+  signals: ["waf", "blocked", "forbidden", "modsecurity", "cloudflare"]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    When a payload is blocked, try encoding layers (double URL, unicode, HTML entities) and HTTP method/content-type swaps. A bypass proves filter-only defense.
+  impact_hint: Medium.

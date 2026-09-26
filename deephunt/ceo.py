@@ -71,12 +71,12 @@ class CEO:
         self.log(f"[ceo] hunt opens on {self.target}")
         plan = self.strategy.choose(self.wm, self.mem, self.profile, self.pool)
         self.log(f"[ceo] strategy: {plan['rationale']}")
-        self.state.checkpoint("strategy", plan["focus"])
+        self.state.checkpoint(phase="strategy", focus=plan["focus"])
 
         all_findings, judged = [], []
         for cycle in range(1, self.max_cycles + 1):
             self.log(f"[ceo] cycle {cycle}/{self.max_cycles}")
-            self.state.checkpoint(f"cycle-{cycle}-start", {"n": cycle})
+            self.state.checkpoint(phase=f"cycle-{cycle}-start", n=cycle)
 
             # 1. HYPOTHESIS ENGINE — council + chains over live model state
             seeds = self._hypothesize(all_findings)
@@ -85,8 +85,8 @@ class CEO:
             all_findings.extend(findings)
             # 3. LEARNING — every observation folds into model + memory
             self._learn(findings)
-            self.state.checkpoint(f"cycle-{cycle}-done",
-                                  {"findings": len(findings)})
+            self.state.checkpoint(phase=f"cycle-{cycle}-done",
+                                  findings=len(findings))
             if self._dry(all_findings):
                 self.log("[ceo] dry cycle — no novel hypotheses; standing down")
                 break

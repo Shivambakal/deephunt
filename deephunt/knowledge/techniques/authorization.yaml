@@ -1,0 +1,108 @@
+# DEEPHUNT technique cards — authorization domain
+# Enriched: requires/signals/questions/evidence/followups per card.
+# Source of truth for kb.load_techniques(). 6 cards.
+
+- id: IDOR-01
+  name: BOLA on numeric/UUID object IDs
+  klass: authorization
+  requires: [authenticated_identity, object_identifier]
+  signals: ["/{id}", "asset", "document", "user/", "invoice", "order", "api/v"]
+  questions:
+    - "Does the object ID in the URL decide authorization, or does the server check ownership?"
+    - "What happens with another owned account's ID — 200 with their data, 403, or 404?"
+    - "Is the ID predictable (sequential) or random — and does randomness substitute for a check?"
+  evidence:
+    positive: [unauthorized_object_access, cross_identity_data_leak, privilege_differs_by_identity]
+    negative: [explicit_denial, identical_behavior_across_identities, ownership_checked_server_side]
+  followups: [compare_identities, predict_adjacent_ids, try_method_override]
+  test: >
+    Two owned accounts A/B. A creates object, captures its ID. B requests the same ID directly (GET/PUT/DELETE). Compare: 200 with A's data = broken object-level authorization. Also try IDOR via POST body id, X-HTTP-Method override, and .json suffix.
+  impact_hint: High — cross-account data disclosure, the most paid bounty class.
+
+- id: IDOR-02
+  name: IDOR via parameter pollution / duplicate params
+  klass: authorization
+  requires: [authenticated_identity, object_identifier]
+  signals: ["?", "id=", "user_id", "account"]
+  questions:
+    - "Who owns this object?"
+    - "Who should access it?"
+    - "Does authorization depend on object ownership or only on login?"
+    - "What changes when a second owned identity requests the same object?"
+  evidence:
+    positive: [unauthorized_object_access, cross_identity_data_leak, privilege_differs_by_identity]
+    negative: [explicit_denial, identical_behavior_across_identities, ownership_checked_server_side]
+  followups: [compare_identities, compare_objects, inspect_state_transition]
+  test: >
+    Send ?user_id=VICTIM&user_id=ATTACKER and reversed. Backends that take the first vs last param inconsistently may authorize as attacker but act on victim.
+  impact_hint: Medium-High.
+
+- id: AUTHZ-01
+  name: Role/plan restriction enforced client-side only
+  klass: authorization
+  requires: [authenticated_identity, object_identifier]
+  signals: ["admin", "premium", "plan", "role", "upgrade", "settings"]
+  questions:
+    - "Is the privilege check in the UI only, or repeated on the API?"
+    - "What does the API return when a low-privilege token calls the privileged action directly?"
+  evidence:
+    positive: [unauthorized_object_access, cross_identity_data_leak, privilege_differs_by_identity]
+    negative: [explicit_denial, identical_behavior_across_identities, ownership_checked_server_side]
+  followups: [replay_as_low_priv, tamper_role_param]
+  test: >
+    Replay a privileged action as a low-privilege owned account by calling the API directly (drop the UI gate). Watch for 200 vs 403. Try role param tampering (role=user -> role=admin) on profile-update endpoints.
+  impact_hint: High — privilege escalation.
+
+- id: AUTHZ-02
+  name: Forced browsing to unlinked admin/debug endpoints
+  klass: authorization
+  requires: [authenticated_identity, object_identifier]
+  signals: ["admin", "debug", "internal", "console", "actuator", "metrics"]
+  questions:
+    - "Who owns this object?"
+    - "Who should access it?"
+    - "Does authorization depend on object ownership or only on login?"
+    - "What changes when a second owned identity requests the same object?"
+  evidence:
+    positive: [unauthorized_object_access, cross_identity_data_leak, privilege_differs_by_identity]
+    negative: [explicit_denial, identical_behavior_across_identities, ownership_checked_server_side]
+  followups: [compare_identities, compare_objects, inspect_state_transition]
+  test: >
+    Request admin/debug paths directly as low-priv user. Many apps hide but don't protect /admin, /internal, /debug, /actuator, /.env, /server-status.
+  impact_hint: Medium-High.
+
+- id: INVITE-01
+  name: Invite/token reuse and privilege confusion in teams/orgs
+  klass: authorization
+  requires: [authenticated_identity, object_identifier]
+  signals: ["invite", "team", "org", "workspace", "member"]
+  questions:
+    - "Who owns this object?"
+    - "Who should access it?"
+    - "Does authorization depend on object ownership or only on login?"
+    - "What changes when a second owned identity requests the same object?"
+  evidence:
+    positive: [unauthorized_object_access, cross_identity_data_leak, privilege_differs_by_identity]
+    negative: [explicit_denial, identical_behavior_across_identities, ownership_checked_server_side]
+  followups: [compare_identities, compare_objects, inspect_state_transition]
+  test: >
+    Reuse expired invites, tamper role in invite accept, self-invite to privileged teams. Two owned accounts, one org.
+  impact_hint: High.
+
+- id: EXPORT-01
+  name: Data export / bulk download authorization gaps
+  klass: authorization
+  requires: [authenticated_identity, object_identifier]
+  signals: ["export", "download", "report", "backup", "csv"]
+  questions:
+    - "Who owns this object?"
+    - "Who should access it?"
+    - "Does authorization depend on object ownership or only on login?"
+    - "What changes when a second owned identity requests the same object?"
+  evidence:
+    positive: [unauthorized_object_access, cross_identity_data_leak, privilege_differs_by_identity]
+    negative: [explicit_denial, identical_behavior_across_identities, ownership_checked_server_side]
+  followups: [compare_identities, compare_objects, inspect_state_transition]
+  test: >
+    Trigger exports as low-priv owned user; check whether the job includes other users'/tenants' data or is enumerable by job ID.
+  impact_hint: High.

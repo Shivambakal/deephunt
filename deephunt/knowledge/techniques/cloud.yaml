@@ -1,0 +1,105 @@
+# DEEPHUNT technique cards — cloud domain
+# Enriched: requires/signals/questions/evidence/followups per card.
+# Source of truth for kb.load_techniques(). 6 cards.
+
+- id: SUBTO-01
+  name: Subdomain takeover via dangling CNAME
+  klass: cloud
+  requires: [cloud_asset_inventory]
+  signals: ["cname", "herokuapp", "s3", "azureedge", "github.io", "cloudfront"]
+  questions:
+    - "Does the DNS record point at an unclaimed external service?"
+    - "Can the service still be claimed under the program's rules?"
+  evidence:
+    positive: [metadata_service_reachable, public_resource_exposed, overprivileged_role]
+    negative: [imds_restricted, resource_private, least_privilege_role]
+  followups: [verify_dangling, check_claimability]
+  test: >
+    Passive: resolve CNAMEs of all subdomains, match against known dead-service fingerprints. Claim ONLY with explicit program permission — otherwise report the dangling record as-is.
+  impact_hint: High.
+
+- id: SUPPLY-01
+  name: Dependency confusion / known-vuln components
+  klass: supply-chain
+  requires: [http_observation]
+  signals: ["package.json", ".js", "vendor", "node_modules", "version"]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    Fingerprint JS library versions from passive sources; match against OSV/GitHub advisories. Report only with a demonstrable exploit path in scope.
+  impact_hint: Medium.
+
+- id: CLD-02
+  name: SSRF to cloud instance metadata (IMDS)
+  klass: cloud
+  requires: [cloud_asset_inventory]
+  signals: ["169.254.169.254", "metadata", "imds", "url=", "fetch"]
+  questions:
+    - "Can a URL-fetch feature reach 169.254.169.254?"
+    - "Is IMDSv2 (token-required) enforced?"
+    - "What credentials does the metadata expose?"
+  evidence:
+    positive: [metadata_reachable, imds_v1, credentials_exposed]
+    negative: [metadata_blocked, imds_v2_enforced, no_url_fetch]
+  followups: [test_metadata_paths, try_imdsv2_bypass, enumerate_roles]
+  test: >
+    Via any URL-fetch feature, request http://169.254.169.254/latest/meta-data/. Try IMDSv2 token flow. Never exfiltrate real creds — lab/owned infra only.
+  impact_hint: Critical — cloud credential theft.
+
+- id: CLD-03
+  name: Public cloud storage bucket exposure
+  klass: cloud
+  requires: [cloud_asset_inventory]
+  signals: ["s3", "bucket", "storage.googleapis", "blob.core", ".amazonaws"]
+  questions:
+    - "Are storage buckets listable or readable anonymously?"
+    - "Do bucket names leak via JS, errors, or certs?"
+    - "Is sensitive data (backups, logs, PII) in the bucket?"
+  evidence:
+    positive: [anonymous_list, anonymous_read, sensitive_data_exposed]
+    negative: [bucket_private, access_denied_anonymous]
+  followups: [enumerate_buckets, test_anonymous_read, check_for_pii]
+  test: >
+    Enumerate bucket names from JS/certs/errors; test anonymous LIST/GET. Report exposure class, never download PII.
+  impact_hint: High — data exposure.
+
+- id: CLD-04
+  name: Overly permissive IAM role / privilege escalation path
+  klass: cloud
+  requires: [cloud_asset_inventory]
+  signals: ["iam", "role", "policy", "arn", "permissions"]
+  questions:
+    - "What can the app's runtime role do?"
+    - "Is there a path from the app role to admin (role chaining, policy gaps)?"
+    - "Are wildcard actions/resources granted?"
+  evidence:
+    positive: [wildcard_grants, privilege_escalation_path, app_role_overprivileged]
+    negative: [least_privilege, no_escalation_path]
+  followups: [enumerate_iam, map_escalation_paths]
+  test: >
+    On owned cloud accounts: enumerate the runtime role's policies; map privilege-escalation paths (iam:PassRole, etc.). Read-only enumeration.
+  impact_hint: High — cloud takeover.
+
+- id: CLD-05
+  name: Serverless environment variable / secret exposure
+  klass: cloud
+  requires: [cloud_asset_inventory]
+  signals: ["lambda", "serverless", "env", "function", "process.env"]
+  questions:
+    - "Do error messages or debug endpoints leak env vars?"
+    - "Are secrets in env instead of a secret manager?"
+    - "Can a code-execution primitive read the environment?"
+  evidence:
+    positive: [env_leaked_in_error, secrets_in_env, env_readable]
+    negative: [env_redacted, secret_manager_used]
+  followups: [trigger_verbose_errors, check_debug_endpoints]
+  test: >
+    Trigger verbose errors on serverless endpoints; check for env/secret leakage. Inspect deployment configs for plaintext secrets.
+  impact_hint: High — secret disclosure.

@@ -1,0 +1,124 @@
+# DEEPHUNT technique cards — authentication domain
+# Enriched: requires/signals/questions/evidence/followups per card.
+# Source of truth for kb.load_techniques(). 7 cards.
+
+- id: AUTHN-01
+  name: OTP/rate-limit bypass via response manipulation
+  klass: authentication
+  requires: [owned_test_account]
+  signals: ["otp", "verify", "2fa", "mfa", "code", "login"]
+  questions:
+    - "Is the OTP attempt counter server-side and per-account?"
+    - "Does the verification response leak validity (timing, message, status)?"
+  evidence:
+    positive: [credential_check_bypassed, unlimited_attempts, stale_credential_accepted]
+    negative: [server_side_verification, attempts_limited_and_logged, single_use_enforced]
+  followups: [probe_rate_limit, inspect_error_oracle]
+  test: >
+    Try: no rate limit (20 rapid codes), code reuse, leading-zero truncation, response-tampering ({"success":true}), and null/empty code. Never brute-force real accounts — owned test accounts only, low volume.
+  impact_hint: High — account takeover.
+
+- id: AUTHN-02
+  name: Password reset token leakage / host header poisoning
+  klass: authentication
+  requires: [owned_test_account]
+  signals: ["reset", "forgot", "password"]
+  questions:
+    - "What proves this identity is who it claims?"
+    - "Where is the credential checked — client or server?"
+    - "Can the check be skipped, replayed, or desynchronized?"
+    - "What happens on the Nth attempt?"
+  evidence:
+    positive: [credential_check_bypassed, unlimited_attempts, stale_credential_accepted]
+    negative: [server_side_verification, attempts_limited_and_logged, single_use_enforced]
+  followups: [replay_request, desync_state, inspect_error_oracle]
+  test: >
+    Request reset with X-Forwarded-Host: attacker.com — check if the reset link in the (owned) mailbox points at the attacker host. Also test token predictability and whether the token is bound to the requester.
+  impact_hint: High — account takeover.
+
+- id: OAUTH-01
+  name: OAuth redirect_uri / state validation gaps
+  klass: authentication
+  requires: [owned_test_account]
+  signals: ["oauth", "authorize", "callback", "redirect_uri", "sso"]
+  questions:
+    - "Is redirect_uri validated against an exact allowlist?"
+    - "Can the authorization code be replayed or stolen via an open redirector?"
+  evidence:
+    positive: [credential_check_bypassed, unlimited_attempts, stale_credential_accepted]
+    negative: [server_side_verification, attempts_limited_and_logged, single_use_enforced]
+  followups: [test_redirect_uri_variants, steal_code_via_redirector]
+  test: >
+    Try open-redirect-ish redirect_uris (subdomain, path traversal, @-tricks), missing state, code leakage via referer, and PKCE downgrade. Owned apps only.
+  impact_hint: High — token theft.
+
+- id: SESS-01
+  name: Session fixation / concurrent-session / logout flaws
+  klass: session
+  requires: [http_observation]
+  signals: ["session", "login", "logout", "cookie"]
+  questions:
+    - "Is the session ID rotated at login?"
+    - "Does logout invalidate server-side?"
+    - "Can two sessions for one account disagree about privilege?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [fixate_session, test_logout_invalidation]
+  test: >
+    Fixation: set pre-login session cookie, complete login as owned victim account, check if the cookie stays valid. Also test logout invalidation and password-change session handling.
+  impact_hint: Medium-High.
+
+- id: 2FA-01
+  name: 2FA enrollment bypass / recovery-code flaws
+  klass: authentication
+  requires: [owned_test_account]
+  signals: ["2fa", "totp", "recovery", "backup-code"]
+  questions:
+    - "What proves this identity is who it claims?"
+    - "Where is the credential checked — client or server?"
+    - "Can the check be skipped, replayed, or desynchronized?"
+    - "What happens on the Nth attempt?"
+  evidence:
+    positive: [credential_check_bypassed, unlimited_attempts, stale_credential_accepted]
+    negative: [server_side_verification, attempts_limited_and_logged, single_use_enforced]
+  followups: [replay_request, desync_state, inspect_error_oracle]
+  test: >
+    Enroll 2FA on owned account; test recovery-code entropy/reuse, disabling 2FA without re-auth, and backup-code brute-force protections (low volume).
+  impact_hint: High.
+
+- id: OAUTH-02
+  name: OAuth redirect_uri / state confusion
+  klass: authentication
+  requires: [owned_test_account]
+  signals: ["oauth", "authorize", "redirect_uri", "callback", "sso"]
+  questions:
+    - "What proves this identity is who it claims?"
+    - "Where is the credential checked — client or server?"
+    - "Can the check be skipped, replayed, or desynchronized?"
+    - "What happens on the Nth attempt?"
+  evidence:
+    positive: [credential_check_bypassed, unlimited_attempts, stale_credential_accepted]
+    negative: [server_side_verification, attempts_limited_and_logged, single_use_enforced]
+  followups: [replay_request, desync_state, inspect_error_oracle]
+  test: >
+    Mutate redirect_uri (subdomain, path traversal, query smuggling), drop/replay state, mix code across clients. Capture with an owned receiver only.
+  impact_hint: High — account takeover adjacent.
+
+- id: SESS-02
+  name: Session/token confusion across subdomains
+  klass: session
+  requires: [http_observation]
+  signals: ["session", "cookie", "domain=", "sso", ".example.com"]
+  questions:
+    - "Where does untrusted input flow?"
+    - "Is the dangerous sink reachable?"
+    - "Is the defense enforced at the trust boundary?"
+    - "What does the error reveal?"
+  evidence:
+    positive: [payload_executed, input_reaches_sink, defense_bypassed]
+    negative: [output_encoded, input_neutralized, defense_at_boundary]
+  followups: [trace_data_flow, test_parser_differentials, check_defense_location]
+  test: >
+    Check cookie Domain scope: a session cookie scoped to the apex is sent to all subdomains, including less-trusted ones. Test fixation and cross-subdomain replay.
+  impact_hint: Medium-High.
