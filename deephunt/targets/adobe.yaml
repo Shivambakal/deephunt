@@ -1,0 +1,71 @@
+# DEEPHUNT target profile: adobe
+name: adobe
+program: Intigriti adobepublic (verified live 2026-09-01)
+scope_hosts:
+  - acrobat.adobe.com
+ct_zones:
+  - adobe.com
+github_orgs:
+  - adobe
+seed_urls:
+  - https://www.adobe.com/acrobat.html
+tech_terms:
+  - Acrobat AI Assistant
+  - PDF Spaces
+  - Generative AI Service
+  - Content Filter
+vuln_classes:
+  - indirect prompt injection
+  - IDOR
+  - broken access control
+  - SSRF
+  - stored XSS
+vuln_classes_text: AI/LLM prompt injection, authorization, state transitions
+active_allowed: false
+auth_basis: |
+  Intigriti adobepublic; Tier 1 AI Bonus Tier covers prompt injection
+  with data-disclosure impact; self-owned accounts + synthetic canary data only.
+  WARNING - product test-plan attachment (Adobe_Bug_Bounty_Test_Plans.docx,
+  login-gated on Intigriti) takes precedence; flip active_allowed to true only
+  after the test plan is read and confirms active testing is permitted.
+repo_keywords:
+  - sdk
+  - api
+  - sample
+  - docs
+  - acrobat
+hypothesis_seeds:
+  - A poisoned document in a shared Acrobat PDF Space may steer the victim's AI
+    Assistant to disclose content from the victim's unshared documents (canary test).
+  - AI conversation/session-store IDs may be guessable or cross-user accessible (IDOR).
+  - Shared Space link/permission transitions (private->shared->unshared) may leave
+    stale access or cached AI context reachable.
+  - "SH1: minted download tickets (make_ticket) may outlive Space revoke — revoke
+    flips the Space ACL but issued bearer tickets still redeem (dc-api evidence only)."
+  - "SH2: make_direct_storage_uri may mint unauthenticated bearer URLs with long
+    TTL or over-broad scope (dc-api evidence only)."
+  - "SH3: asset_id-keyed rendition endpoint on the edge host may skip per-request
+    entitlement checks — cross-account doc disclosure via page images (dc-api evidence only)."
+  - "SH4: dynamic asset_uri sub-resources may authorize inconsistently — possession
+    of the URI treated as capability on some operations (metadata PUT/DELETE)."
+  - "SH5 (STRONGEST): owner custom-assistant instructions execute in the victim's
+    PRIVATE chat — a designed cross-trust-boundary instruction channel, no prompt
+    injection needed. Malicious instructions run with victim context; test with
+    canary in victim's unshared doc, control = benign instructions."
+  - "SH6: URL-to-PDF conversion strips source document permissions; restricted
+    source content may land in a shared Space readable by recipients/AI."
+  - "SH7: 12h GenAI cache keyed (User ID, Doc ID) with share-extended lifetime may
+    answer queries about removed/unshared docs, or leak across Space copies."
+  - "SH8: WOPI token/document binding on *.wopi.acrobat.adobe.com (in-scope hosts)
+    may be loose — token minted for one doc fetching another. Needs route discovery first."
+nuclei_severity: critical,high,medium
+operator_brief: |
+  SETUP ONLY (no testing yet):
+  1. Sign into Intigriti as researcher shiva92 (attacksurface.alerts@gmail.com).
+  2. Open the Adobe program page, download/read Adobe_Bug_Bounty_Test_Plans.docx
+     (updated 2026-08-28). Extract: AI/prompt-injection rules, allowed assets,
+     mandatory headers, AI exclusions, free-tier vs trial requirements.
+  3. Create two Adobe IDs: attacksurface.alerts@gmail.com and
+     attacksurface.alerts+victim@gmail.com (stop if plus-addressing rejected).
+  4. Check whether Acrobat AI Assistant / PDF Spaces works on free tier.
+  Do NOT create Spaces, upload documents, query the AI, pay, or start trials.

@@ -1,0 +1,46 @@
+# DEEPHUNT target profile: shopify
+name: shopify
+program: HackerOne shopify (public; scope verified via published policy 2026-09-27)
+scope_hosts:
+  - shopify.com
+  - admin.shopify.com
+  - accounts.shopify.com
+  - partners.shopify.com
+ct_zones:
+  - shopify.com
+github_orgs:
+  - Shopify
+seed_urls:
+  - https://www.shopify.com/
+  - https://admin.shopify.com/
+tech_terms:
+  - Shopify Admin API
+  - Storefront API
+  - GraphQL Admin
+  - OAuth app install flow
+vuln_classes:
+  - IDOR
+  - broken access control
+  - OAuth flow abuse
+  - GraphQL abuse
+  - stored XSS
+  - SSRF
+  - rate limit bypass
+vuln_classes_text: authorization, OAuth/app-ecosystem, GraphQL, injection, SSRF
+active_allowed: true
+auth_basis: |
+  HackerOne public program. Published rules: automated testing permitted at
+  reasonable request rates; COMMERCIAL scanners (e.g. Nessus) PROHIBITED —
+  use open-source tools only (nuclei/ffuf/katana are open source).
+  CRITICAL BOUNDARY: only test shops the researcher created; NEVER touch
+  merchant storefronts or other users' stores. nuclei runs at -rate-limit 20
+  with high/critical templates only. Owned test data only, no real-user data.
+repo_keywords:
+  - shopify
+  - storefront
+  - admin-api
+  - hydrogen
+hypothesis_seeds:
+  - A partner/test app's OAuth install flow may leak tokens across shops via confused redirect_uri validation.
+  - GraphQL Admin API fields may expose other-shop data under a single-shop token (IDOR at the connection layer).
+  - App proxy endpoints may be abusable for SSRF against internal Shopify services.

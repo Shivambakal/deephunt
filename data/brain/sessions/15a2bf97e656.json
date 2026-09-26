@@ -1,0 +1,96 @@
+{
+ "objective": "dbg",
+ "created": "2026-09-26T17:48:33Z",
+ "updated": "2026-09-26T17:48:33Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [],
+  "trust_boundaries": [],
+  "state_machines": {}
+ },
+ "observations": [],
+ "assumptions": [
+  {
+   "id": "A1",
+   "believes": "b",
+   "enforcement": "e",
+   "violated_if": "v",
+   "confidence": 0.8
+  }
+ ],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "statement": "X",
+   "violated_assumption": "A1",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-26T17:48:33Z"
+  }
+ ],
+ "tests": [
+  {
+   "id": "T1",
+   "hypothesis_id": "H1",
+   "spec": {
+    "expected_observation": "o",
+    "reason": "r",
+    "scope_hosts": [
+     "h.example"
+    ],
+    "auth_basis": "own",
+    "success_criteria": "s",
+    "failure_criteria": "f",
+    "single_variable": false,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [
+     "not the smallest safe experiment: declare exactly one variable changed between control and variant"
+    ],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "no benign explanation recorded",
+     "smallest_safe_experiment": "NOT single-variable: control and variant differ in more than one declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "rejected",
+   "authorization": null,
+   "ts": "2026-09-26T17:48:33Z"
+  }
+ ],
+ "results": [],
+ "rejected_hypotheses": [],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [],
+ "facts": [],
+ "lessons": [],
+ "next_actions": [],
+ "id": "15a2bf97e656"
+}

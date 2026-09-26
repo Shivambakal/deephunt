@@ -1,0 +1,137 @@
+[
+ {
+  "target": "coindcx.com",
+  "host": "coindcx.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://coindcx.com/admin",
+  "url": "https://coindcx.com/admin"
+ },
+ {
+  "target": "coindcx.com",
+  "host": "coindcx.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://coindcx.com/api",
+  "url": "https://coindcx.com/api"
+ },
+ {
+  "target": "coindcx.com",
+  "host": "coindcx.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://coindcx.com/api-dashboard",
+  "url": "https://coindcx.com/api-dashboard"
+ },
+ {
+  "target": "coindcx.com",
+  "host": "coindcx.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://coindcx.com/api/?utm_source=coindcxwebsite&utm_medium=api&utm_campaign=CoinDCX_HP",
+  "url": "https://coindcx.com/api/?utm_source=coindcxwebsite&utm_medium=api&utm_campaign=CoinDCX_HP"
+ },
+ {
+  "target": "coindcx.com",
+  "host": "coindcx.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://coindcx.com/api/help/",
+  "url": "https://coindcx.com/api/help/"
+ },
+ {
+  "target": "coindcx.com",
+  "host": "coindcx.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://coindcx.com/api/help/API%20Dashboard/",
+  "url": "https://coindcx.com/api/help/API%20Dashboard/"
+ },
+ {
+  "target": "coindcx.com",
+  "host": "coindcx.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://coindcx.com/api/help/API%20Dashboard/Managing%20the%20API%20Keys",
+  "url": "https://coindcx.com/api/help/API%20Dashboard/Managing%20the%20API%20Keys"
+ },
+ {
+  "target": "coindcx.com",
+  "host": "coindcx.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://coindcx.com/api/help/Error%20Codes%20and%20Resolution/",
+  "url": "https://coindcx.com/api/help/Error%20Codes%20and%20Resolution/"
+ },
+ {
+  "target": "coindcx.com",
+  "host": "coindcx.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://coindcx.com/api/help/High%20Frequency%20Trading/",
+  "url": "https://coindcx.com/api/help/High%20Frequency%20Trading/"
+ },
+ {
+  "target": "coindcx.com",
+  "host": "coindcx.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://coindcx.com/api/help/Market%20Data%20on%20CoinDCX%20API/Ticker",
+  "url": "https://coindcx.com/api/help/Market%20Data%20on%20CoinDCX%20API/Ticker"
+ },
+ {
+  "target": "coindcx.com",
+  "host": "coindcx.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://coindcx.com/api/help/Placing%20Orders%20using%20CoinDCX%20API/Spot%20Order",
+  "url": "https://coindcx.com/api/help/Placing%20Orders%20using%20CoinDCX%20API/Spot%20Order"
+ },
+ {
+  "target": "coindcx.com",
+  "host": "coindcx.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://coindcx.com/api/help/User%20Data%20on%20CoinDCX%20API/",
+  "url": "https://coindcx.com/api/help/User%20Data%20on%20CoinDCX%20API/"
+ },
+ {
+  "target": "coindcx.com",
+  "host": "coindcx.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://coindcx.com/api/help/assets/css/styles.28313312.css",
+  "url": "https://coindcx.com/api/help/assets/css/styles.28313312.css"
+ },
+ {
+  "target": "coindcx.com",
+  "host": "coindcx.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://coindcx.com/api/help/assets/css/styles.50a35881.css",
+  "url": "https://coindcx.com/api/help/assets/css/styles.50a35881.css"
+ },
+ {
+  "target": "coindcx.com",
+  "host": "coindcx.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://coindcx.com/api/help/assets/js/main.e302fe81.js",
+  "url": "https://coindcx.com/api/help/assets/js/main.e302fe81.js"
+ }
+]

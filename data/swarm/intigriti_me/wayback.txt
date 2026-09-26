@@ -1,0 +1,4 @@
+http://intigriti.me/
+http://intigriti.me/robots.txt
+https://intigriti.me/favicon.ico
+https://intigriti.me/sitemap.xml

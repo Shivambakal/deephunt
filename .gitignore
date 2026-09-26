@@ -1,0 +1,21 @@
+# third-party tool binaries (reinstall via setup; not our code)
+bin/
+ops/bin/
+# upstream mirrors / vendored projects
+src/gitlab/
+# python artifacts
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+proxy/venv/
+# runtime state: logs, pid files, per-run postmortems regenerate
+deephunt/logs/
+deephunt/state/
+proxy/logs/
+*.log
+*.pid
+# OS / editor
+.DS_Store
+*.swp

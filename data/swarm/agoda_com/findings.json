@@ -1,0 +1,146 @@
+[
+ {
+  "target": "agoda.com",
+  "host": "agoda.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://www.agoda.com/%22//wp-content//uploads//2018//06//Destinations_12-months-12-reasons_Scenic-Hotel-Te-Pania_Napier_New-Zealand.jpg/%22",
+  "url": "https://www.agoda.com/%22//wp-content//uploads//2018//06//Destinations_12-months-12-reasons_Scenic-Hotel-Te-Pania_Napier_New-Zealand.jpg/%22"
+ },
+ {
+  "target": "agoda.com",
+  "host": "agoda.com",
+  "direction": "headers",
+  "check": "missing security headers",
+  "severity": "LOW",
+  "evidence": "missing: content-security-policy",
+  "url": "https://agoda.com/"
+ },
+ {
+  "target": "agoda.com",
+  "host": "developer.agoda.com",
+  "direction": "headers",
+  "check": "missing security headers",
+  "severity": "LOW",
+  "evidence": "missing: content-security-policy",
+  "url": "https://developer.agoda.com/"
+ },
+ {
+  "target": "agoda.com",
+  "host": "developer.agoda.com",
+  "direction": "headers",
+  "check": "version disclosure",
+  "severity": "INFO",
+  "evidence": "{\"Server\": \"cloudflare\"}",
+  "url": "https://developer.agoda.com/"
+ },
+ {
+  "target": "agoda.com",
+  "host": "developer.pps.agoda.com",
+  "direction": "headers",
+  "check": "missing security headers",
+  "severity": "LOW",
+  "evidence": "missing: content-security-policy",
+  "url": "https://developer.pps.agoda.com/"
+ },
+ {
+  "target": "agoda.com",
+  "host": "developer.pps.agoda.com",
+  "direction": "headers",
+  "check": "version disclosure",
+  "severity": "INFO",
+  "evidence": "{\"Server\": \"cloudflare\"}",
+  "url": "https://developer.pps.agoda.com/"
+ },
+ {
+  "target": "agoda.com",
+  "host": "internaljobs.agoda.com",
+  "direction": "headers",
+  "check": "version disclosure",
+  "severity": "INFO",
+  "evidence": "{\"Server\": \"nginx\"}",
+  "url": "https://internaljobs.agoda.com/"
+ },
+ {
+  "target": "agoda.com",
+  "host": "internalmail.agoda.com",
+  "direction": "headers",
+  "check": "missing security headers",
+  "severity": "LOW",
+  "evidence": "missing: content-security-policy",
+  "url": "https://internalmail.agoda.com/"
+ },
+ {
+  "target": "agoda.com",
+  "host": "agoda.com",
+  "direction": "redirect",
+  "check": "open redirect via url",
+  "severity": "MEDIUM",
+  "evidence": "301 -> Location: https://www.agoda.com/redirect?url=https://evil-swarm.example",
+  "url": "https://agoda.com/redirect?url=https://evil-swarm.example"
+ },
+ {
+  "target": "agoda.com",
+  "host": "agoda.com",
+  "direction": "redirect",
+  "check": "open redirect via next",
+  "severity": "MEDIUM",
+  "evidence": "301 -> Location: https://www.agoda.com/login?next=https://evil-swarm.example",
+  "url": "https://agoda.com/login?next=https://evil-swarm.example"
+ },
+ {
+  "target": "agoda.com",
+  "host": "agoda.com",
+  "direction": "redirect",
+  "check": "open redirect via next",
+  "severity": "MEDIUM",
+  "evidence": "301 -> Location: https://www.agoda.com/?next=https://evil-swarm.example",
+  "url": "https://agoda.com/?next=https://evil-swarm.example"
+ },
+ {
+  "target": "agoda.com",
+  "host": "agoda.com",
+  "direction": "redirect",
+  "check": "open redirect via returnTo",
+  "severity": "MEDIUM",
+  "evidence": "301 -> Location: https://www.agoda.com/logout?returnTo=https://evil-swarm.example",
+  "url": "https://agoda.com/logout?returnTo=https://evil-swarm.example"
+ },
+ {
+  "target": "agoda.com",
+  "host": "agoda.com",
+  "direction": "redirect",
+  "check": "open redirect via url",
+  "severity": "MEDIUM",
+  "evidence": "301 -> Location: https://www.agoda.com/r?url=https://evil-swarm.example",
+  "url": "https://agoda.com/r?url=https://evil-swarm.example"
+ },
+ {
+  "target": "agoda.com",
+  "host": "agoda.com",
+  "direction": "fingerprint",
+  "check": "Google API key in page",
+  "severity": "MEDIUM",
+  "evidence": "200 / :: Key pattern in HTML/JS \u2014 check what APIs it enables. Do NOT validate keys that could incur charges.",
+  "url": "https://agoda.com/"
+ },
+ {
+  "target": "agoda.com",
+  "host": "agoda.com",
+  "direction": "exposed",
+  "check": "exposed file /.well-known/security.txt",
+  "severity": "LOW",
+  "evidence": "/.well-known/security.txt returned 200 (326 bytes)",
+  "url": "https://agoda.com/.well-known/security.txt"
+ },
+ {
+  "target": "agoda.com",
+  "host": "agoda.com",
+  "direction": "errors",
+  "check": "verbose error leakage at /",
+  "severity": "LOW",
+  "evidence": "200 leaks: exception",
+  "url": "https://agoda.com/"
+ }
+]

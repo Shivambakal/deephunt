@@ -1,0 +1,19 @@
+# DEEPHUNT target profile template — copy to targets/<name>.yaml
+name: example
+program: platform + program handle (verified live date)
+scope_hosts:
+  - scope.example.com
+ct_zones:
+  - example.com
+github_orgs: []
+seed_urls: []
+tech_terms: []
+vuln_classes:
+  - IDOR
+  - broken access control
+vuln_classes_text: short text for family filtering
+active_allowed: false
+auth_basis: program authorization basis; owned accounts/data only
+hypothesis_seeds: []
+operator_brief: |
+  Precise browser/agent steps for app-layer probing.

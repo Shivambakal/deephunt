@@ -1,0 +1,25 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.unibet.mariacasino",
+      "sha256_cert_fingerprints": [
+        "ED:37:CA:B8:83:57:95:1D:9D:58:8F:A9:4C:E1:08:80:DF:41:62:6F:25:9B:D4:8E:7B:E8:43:91:D1:3C:DF:C3",
+        "B5:75:8E:A1:59:B0:28:C6:F1:6C:93:DC:59:DE:B6:AD:52:64:EF:A4:E2:70:47:BE:EA:64:0F:7A:5A:08:79:DE"
+      ]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.mariacasino.casino",
+      "sha256_cert_fingerprints": [
+        "3E:D3:D1:AF:60:4A:D6:B0:C5:B9:FD:9B:06:F6:DF:0C:DE:CA:93:B9:63:9F:9D:65:31:BC:D3:9D:AB:B8:F2:CE",
+        "B5:75:8E:A1:59:B0:28:C6:F1:6C:93:DC:59:DE:B6:AD:52:64:EF:A4:E2:70:47:BE:EA:64:0F:7A:5A:08:79:DE",
+        "8D:A8:29:F7:F8:8F:D0:CC:97:CF:D5:9E:CA:56:6D:2B:66:6E:56:B6:F7:A9:48:FD:17:A7:95:D0:E2:1D:0A:7B"
+      ]
+    }
+  }
+]

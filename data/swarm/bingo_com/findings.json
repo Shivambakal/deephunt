@@ -1,0 +1,137 @@
+[
+ {
+  "target": "bingo.com",
+  "host": "bingo.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "http://bingo.com:80/admin",
+  "url": "http://bingo.com:80/admin"
+ },
+ {
+  "target": "bingo.com",
+  "host": "bingo.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "http://www.bingo.com:80/admin/base",
+  "url": "http://www.bingo.com:80/admin/base"
+ },
+ {
+  "target": "bingo.com",
+  "host": "bingo.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "http://www.bingo.com:80/admin/base/setting",
+  "url": "http://www.bingo.com:80/admin/base/setting"
+ },
+ {
+  "target": "bingo.com",
+  "host": "bingo.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "http://www.bingo.com:80/admin/base/tools",
+  "url": "http://www.bingo.com:80/admin/base/tools"
+ },
+ {
+  "target": "bingo.com",
+  "host": "bingo.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "http://www.bingo.com:80/admin/dumbtool/",
+  "url": "http://www.bingo.com:80/admin/dumbtool/"
+ },
+ {
+  "target": "bingo.com",
+  "host": "bingo.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "http://www.bingo.com:80/admin/dumbtool/addpoints.php",
+  "url": "http://www.bingo.com:80/admin/dumbtool/addpoints.php"
+ },
+ {
+  "target": "bingo.com",
+  "host": "bingo.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "http://www.bingo.com:80/admin/dumbtool/results.php",
+  "url": "http://www.bingo.com:80/admin/dumbtool/results.php"
+ },
+ {
+  "target": "bingo.com",
+  "host": "bingo.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "http://www.bingo.com:80/admin/dumbtool/searchpage.php",
+  "url": "http://www.bingo.com:80/admin/dumbtool/searchpage.php"
+ },
+ {
+  "target": "bingo.com",
+  "host": "bingo.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "http://www.bingo.com:80/admin/frame",
+  "url": "http://www.bingo.com:80/admin/frame"
+ },
+ {
+  "target": "bingo.com",
+  "host": "bingo.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "http://www.bingo.com:80/admin/frame/add/?",
+  "url": "http://www.bingo.com:80/admin/frame/add/?"
+ },
+ {
+  "target": "bingo.com",
+  "host": "bingo.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "http://www.bingo.com:80/admin/frame/edit/?",
+  "url": "http://www.bingo.com:80/admin/frame/edit/?"
+ },
+ {
+  "target": "bingo.com",
+  "host": "bingo.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "http://www.bingo.com:80/admin/login",
+  "url": "http://www.bingo.com:80/admin/login"
+ },
+ {
+  "target": "bingo.com",
+  "host": "bingo.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "http://www.bingo.com:80/admin/menu",
+  "url": "http://www.bingo.com:80/admin/menu"
+ },
+ {
+  "target": "bingo.com",
+  "host": "bingo.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "http://www.bingo.com:80/admin/menu/add/?",
+  "url": "http://www.bingo.com:80/admin/menu/add/?"
+ },
+ {
+  "target": "bingo.com",
+  "host": "bingo.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "http://www.bingo.com:80/admin/menu/edit/?",
+  "url": "http://www.bingo.com:80/admin/menu/edit/?"
+ }
+]

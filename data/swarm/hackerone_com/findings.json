@@ -1,0 +1,74 @@
+[
+ {
+  "target": "hackerone.com",
+  "host": "hackerone.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://hackerone.com/.git/config",
+  "url": "https://hackerone.com/.git/config"
+ },
+ {
+  "target": "hackerone.com",
+  "host": "hackerone.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://hackerone.com/.well-known/ai-plugin.json",
+  "url": "https://hackerone.com/.well-known/ai-plugin.json"
+ },
+ {
+  "target": "hackerone.com",
+  "host": "hackerone.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://hackerone.com/.well-known/assetlinks.json",
+  "url": "https://hackerone.com/.well-known/assetlinks.json"
+ },
+ {
+  "target": "hackerone.com",
+  "host": "hackerone.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://hackerone.com/.well-known/gpc.json",
+  "url": "https://hackerone.com/.well-known/gpc.json"
+ },
+ {
+  "target": "hackerone.com",
+  "host": "hackerone.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://hackerone.com/.well-known/openid-configuration",
+  "url": "https://hackerone.com/.well-known/openid-configuration"
+ },
+ {
+  "target": "hackerone.com",
+  "host": "hackerone.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://hackerone.com/0el_capitan001",
+  "url": "https://hackerone.com/0el_capitan001"
+ },
+ {
+  "target": "hackerone.com",
+  "host": "hackerone.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://hackerone.com/0t3badmin",
+  "url": "https://hackerone.com/0t3badmin"
+ },
+ {
+  "target": "hackerone.com",
+  "host": "hackerone.com",
+  "direction": "headers",
+  "check": "version disclosure",
+  "severity": "INFO",
+  "evidence": "{\"Server\": \"cloudflare\"}",
+  "url": "https://hackerone.com/"
+ }
+]

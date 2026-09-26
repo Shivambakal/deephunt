@@ -1,0 +1,83 @@
+[
+ {
+  "target": "dropbox.com",
+  "host": "api-content-au.dropbox.com",
+  "direction": "headers",
+  "check": "missing security headers",
+  "severity": "LOW",
+  "evidence": "missing: content-security-policy, x-frame-options, x-content-type-options",
+  "url": "https://api-content-au.dropbox.com/"
+ },
+ {
+  "target": "dropbox.com",
+  "host": "api-content-au.dropbox.com",
+  "direction": "headers",
+  "check": "version disclosure",
+  "severity": "INFO",
+  "evidence": "{\"Server\": \"envoy\"}",
+  "url": "https://api-content-au.dropbox.com/"
+ },
+ {
+  "target": "dropbox.com",
+  "host": "dropbox.com",
+  "direction": "redirect",
+  "check": "open redirect via url",
+  "severity": "MEDIUM",
+  "evidence": "301 -> Location: https://www.dropbox.com/redirect?url=https://evil-swarm.example",
+  "url": "https://dropbox.com/redirect?url=https://evil-swarm.example"
+ },
+ {
+  "target": "dropbox.com",
+  "host": "dropbox.com",
+  "direction": "redirect",
+  "check": "open redirect via next",
+  "severity": "MEDIUM",
+  "evidence": "301 -> Location: https://www.dropbox.com/login?next=https://evil-swarm.example",
+  "url": "https://dropbox.com/login?next=https://evil-swarm.example"
+ },
+ {
+  "target": "dropbox.com",
+  "host": "dropbox.com",
+  "direction": "redirect",
+  "check": "open redirect via next",
+  "severity": "MEDIUM",
+  "evidence": "301 -> Location: https://www.dropbox.com/?next=https://evil-swarm.example",
+  "url": "https://dropbox.com/?next=https://evil-swarm.example"
+ },
+ {
+  "target": "dropbox.com",
+  "host": "dropbox.com",
+  "direction": "redirect",
+  "check": "open redirect via returnTo",
+  "severity": "MEDIUM",
+  "evidence": "301 -> Location: https://www.dropbox.com/logout?returnTo=https://evil-swarm.example",
+  "url": "https://dropbox.com/logout?returnTo=https://evil-swarm.example"
+ },
+ {
+  "target": "dropbox.com",
+  "host": "dropbox.com",
+  "direction": "redirect",
+  "check": "open redirect via url",
+  "severity": "MEDIUM",
+  "evidence": "301 -> Location: https://www.dropbox.com/r?url=https://evil-swarm.example",
+  "url": "https://dropbox.com/r?url=https://evil-swarm.example"
+ },
+ {
+  "target": "dropbox.com",
+  "host": "dropbox.com",
+  "direction": "exposed",
+  "check": "exposed file /.well-known/security.txt",
+  "severity": "LOW",
+  "evidence": "/.well-known/security.txt returned 200 (524 bytes)",
+  "url": "https://dropbox.com/.well-known/security.txt"
+ },
+ {
+  "target": "dropbox.com",
+  "host": "dropbox.com",
+  "direction": "errors",
+  "check": "verbose error leakage at /",
+  "severity": "LOW",
+  "evidence": "200 leaks: exception",
+  "url": "https://dropbox.com/"
+ }
+]

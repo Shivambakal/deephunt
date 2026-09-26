@@ -1,0 +1,173 @@
+[
+ {
+  "target": "shopify.com",
+  "host": "shopify.com",
+  "direction": "headers",
+  "check": "missing security headers",
+  "severity": "LOW",
+  "evidence": "missing: content-security-policy, x-frame-options",
+  "url": "https://shopify.com/"
+ },
+ {
+  "target": "shopify.com",
+  "host": "shopify.com",
+  "direction": "headers",
+  "check": "version disclosure",
+  "severity": "INFO",
+  "evidence": "{\"Server\": \"cloudflare\"}",
+  "url": "https://shopify.com/"
+ },
+ {
+  "target": "shopify.com",
+  "host": "api.shopify.com",
+  "direction": "headers",
+  "check": "missing security headers",
+  "severity": "LOW",
+  "evidence": "missing: strict-transport-security",
+  "url": "https://api.shopify.com/"
+ },
+ {
+  "target": "shopify.com",
+  "host": "api.shopify.com",
+  "direction": "headers",
+  "check": "version disclosure",
+  "severity": "INFO",
+  "evidence": "{\"server\": \"cloudflare\"}",
+  "url": "https://api.shopify.com/"
+ },
+ {
+  "target": "shopify.com",
+  "host": "beta.help.shopify.com",
+  "direction": "headers",
+  "check": "missing security headers",
+  "severity": "LOW",
+  "evidence": "missing: content-security-policy, x-frame-options, x-content-type-options",
+  "url": "https://beta.help.shopify.com/"
+ },
+ {
+  "target": "shopify.com",
+  "host": "beta.help.shopify.com",
+  "direction": "headers",
+  "check": "version disclosure",
+  "severity": "INFO",
+  "evidence": "{\"server\": \"envoy\"}",
+  "url": "https://beta.help.shopify.com/"
+ },
+ {
+  "target": "shopify.com",
+  "host": "beta.help.shopify.com",
+  "direction": "cors",
+  "check": "arbitrary Origin reflected",
+  "severity": "LOW",
+  "evidence": "Access-Control-Allow-Origin: https://evil-swarm.example",
+  "url": "https://beta.help.shopify.com/"
+ },
+ {
+  "target": "shopify.com",
+  "host": "dev.shopify.com",
+  "direction": "headers",
+  "check": "missing security headers",
+  "severity": "LOW",
+  "evidence": "missing: content-security-policy, x-frame-options, x-content-type-options",
+  "url": "https://dev.shopify.com/"
+ },
+ {
+  "target": "shopify.com",
+  "host": "dev.shopify.com",
+  "direction": "headers",
+  "check": "version disclosure",
+  "severity": "INFO",
+  "evidence": "{\"server\": \"envoy\"}",
+  "url": "https://dev.shopify.com/"
+ },
+ {
+  "target": "shopify.com",
+  "host": "developer.shopify.com",
+  "direction": "headers",
+  "check": "missing security headers",
+  "severity": "LOW",
+  "evidence": "missing: content-security-policy, x-frame-options, x-content-type-options",
+  "url": "https://developer.shopify.com/"
+ },
+ {
+  "target": "shopify.com",
+  "host": "developer.shopify.com",
+  "direction": "headers",
+  "check": "version disclosure",
+  "severity": "INFO",
+  "evidence": "{\"server\": \"envoy\"}",
+  "url": "https://developer.shopify.com/"
+ },
+ {
+  "target": "shopify.com",
+  "host": "developers.shopify.com",
+  "direction": "headers",
+  "check": "missing security headers",
+  "severity": "LOW",
+  "evidence": "missing: content-security-policy, x-frame-options, x-content-type-options",
+  "url": "https://developers.shopify.com/"
+ },
+ {
+  "target": "shopify.com",
+  "host": "developers.shopify.com",
+  "direction": "headers",
+  "check": "version disclosure",
+  "severity": "INFO",
+  "evidence": "{\"server\": \"envoy\"}",
+  "url": "https://developers.shopify.com/"
+ },
+ {
+  "target": "shopify.com",
+  "host": "shopify.com",
+  "direction": "redirect",
+  "check": "open redirect via url",
+  "severity": "MEDIUM",
+  "evidence": "301 -> Location: https://www.shopify.com/redirect?url=https://evil-swarm.example",
+  "url": "https://shopify.com/redirect?url=https://evil-swarm.example"
+ },
+ {
+  "target": "shopify.com",
+  "host": "shopify.com",
+  "direction": "redirect",
+  "check": "open redirect via next",
+  "severity": "MEDIUM",
+  "evidence": "301 -> Location: https://www.shopify.com/login?next=https://evil-swarm.example",
+  "url": "https://shopify.com/login?next=https://evil-swarm.example"
+ },
+ {
+  "target": "shopify.com",
+  "host": "shopify.com",
+  "direction": "redirect",
+  "check": "open redirect via next",
+  "severity": "MEDIUM",
+  "evidence": "301 -> Location: https://www.shopify.com/?next=https://evil-swarm.example",
+  "url": "https://shopify.com/?next=https://evil-swarm.example"
+ },
+ {
+  "target": "shopify.com",
+  "host": "shopify.com",
+  "direction": "redirect",
+  "check": "open redirect via returnTo",
+  "severity": "MEDIUM",
+  "evidence": "301 -> Location: https://www.shopify.com/logout?returnTo=https://evil-swarm.example",
+  "url": "https://shopify.com/logout?returnTo=https://evil-swarm.example"
+ },
+ {
+  "target": "shopify.com",
+  "host": "shopify.com",
+  "direction": "redirect",
+  "check": "open redirect via url",
+  "severity": "MEDIUM",
+  "evidence": "301 -> Location: https://www.shopify.com/r?url=https://evil-swarm.example",
+  "url": "https://shopify.com/r?url=https://evil-swarm.example"
+ },
+ {
+  "target": "shopify.com",
+  "host": "shopify.com",
+  "direction": "exposed",
+  "check": "exposed file /.well-known/security.txt",
+  "severity": "LOW",
+  "evidence": "/.well-known/security.txt returned 200 (277 bytes)",
+  "url": "https://shopify.com/.well-known/security.txt"
+ }
+]

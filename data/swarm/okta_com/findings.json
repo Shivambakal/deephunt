@@ -1,0 +1,92 @@
+[
+ {
+  "target": "okta.com",
+  "host": "okta.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "http://www.okta.com/_media/icon_administration.png",
+  "url": "http://www.okta.com/_media/icon_administration.png"
+ },
+ {
+  "target": "okta.com",
+  "host": "okta.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "http://www.okta.com/_media/logos/sequoia_capital.png",
+  "url": "http://www.okta.com/_media/logos/sequoia_capital.png"
+ },
+ {
+  "target": "okta.com",
+  "host": "okta.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://www.okta.com/%C2.with%C2.an%C2.admin%C2.account",
+  "url": "https://www.okta.com/%C2.with%C2.an%C2.admin%C2.account"
+ },
+ {
+  "target": "okta.com",
+  "host": "okta.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://www.okta.com/%C2.with%C2.an%C2.admin%C2.account.%C2.2.%C2",
+  "url": "https://www.okta.com/%C2.with%C2.an%C2.admin%C2.account.%C2.2.%C2"
+ },
+ {
+  "target": "okta.com",
+  "host": "okta.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://www.okta.com/.well-known/ai-plugin.json",
+  "url": "https://www.okta.com/.well-known/ai-plugin.json"
+ },
+ {
+  "target": "okta.com",
+  "host": "okta.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://www.okta.com/.well-known/assetlinks.json",
+  "url": "https://www.okta.com/.well-known/assetlinks.json"
+ },
+ {
+  "target": "okta.com",
+  "host": "okta.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://www.okta.com/.well-known/gpc.json",
+  "url": "https://www.okta.com/.well-known/gpc.json"
+ },
+ {
+  "target": "okta.com",
+  "host": "okta.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://www.okta.com/.well-known/openid-configuration",
+  "url": "https://www.okta.com/.well-known/openid-configuration"
+ },
+ {
+  "target": "okta.com",
+  "host": "okta.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://www.okta.com/?utm_source=google&utm_campaign=amer_mult_usa_all_wf-all_dg-ao_a-wf_search_google_text_kw_workforce-OktaBrand-exact_utm2&utm_medium=cpc&utm_id=aNK4z0000004DlbGAE&utm_term=okta&utm_page=%7Burl%7D&utm_content=325223548748&gclid=Cj0KCQjwmuiTBhDoARIsAPiv6L8pv4KvTCI0urpctM_LXHp8Uamw7AKCmYZtVw20BL2GvCE9S0sFB6YaAjbMEALw_wcB",
+  "url": "https://www.okta.com/?utm_source=google&utm_campaign=amer_mult_usa_all_wf-all_dg-ao_a-wf_search_google_text_kw_workforce-OktaBrand-exact_utm2&utm_medium=cpc&utm_id=aNK4z0000004DlbGAE&utm_term=okta&utm_page=%7Burl%7D&utm_content=325223548748&gclid=Cj0KCQjwmuiTBhDoARIsAPiv6L8pv4KvTCI0urpctM_LXHp8Uamw7AKCmYZtVw20BL2GvCE9S0sFB6YaAjbMEALw_wcB"
+ },
+ {
+  "target": "okta.com",
+  "host": "okta.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://www.okta.com/?utm_source=simpleaws&utm_medium=referral&utm_campaign=monitoring-and-securing-serverless-endpoints-with-api-gateway",
+  "url": "https://www.okta.com/?utm_source=simpleaws&utm_medium=referral&utm_campaign=monitoring-and-securing-serverless-endpoints-with-api-gateway"
+ }
+]

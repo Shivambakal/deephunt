@@ -1,0 +1,41 @@
+# DEEPHUNT target profile: yahoo
+name: yahoo
+program: HackerOne yahoo (public; scope per published program summary 2026-09-27)
+scope_hosts:
+  - yahoo.com
+  - aol.com
+  - techcrunch.com
+ct_zones:
+  - yahoo.com
+  - aol.com
+github_orgs:
+  - yahoo
+seed_urls:
+  - https://www.yahoo.com/
+  - https://mail.yahoo.com/
+tech_terms:
+  - Yahoo OAuth
+  - Yahoo Mail
+  - AOL services
+vuln_classes:
+  - XSS
+  - open redirect
+  - OAuth flow abuse
+  - CORS
+  - subdomain takeover
+  - IDOR
+vuln_classes_text: xss, open-redirect, OAuth, CORS, takeover, authorization
+active_allowed: true
+auth_basis: |
+  HackerOne public program (*.yahoo.com, *.aol.com, *.techcrunch.com).
+  Standard HackerOne research rules: automated tools permitted at reasonable
+  rates against in-scope assets only; no DoS; no real-user data access.
+  nuclei at -rate-limit 20, high/critical templates only. Owned accounts/data only.
+repo_keywords:
+  - yahoo
+  - mail
+  - oauth
+hypothesis_seeds:
+  - Legacy Yahoo/AOL subdomains may point at decommissioned infrastructure (takeover candidates).
+  - Yahoo OAuth login flows may have open-redirect or state-parameter weaknesses on lesser-used properties.
+  - CORS on API subdomains may reflect arbitrary origins with credentials.

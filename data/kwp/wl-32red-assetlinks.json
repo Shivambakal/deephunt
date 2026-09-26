@@ -1,0 +1,14 @@
+[
+    {
+        "relation": ["delegate_permission/common.handle_all_urls"],
+        "target": {
+        "namespace": "android_app",
+        "package_name": "com.kindred.casino32red",
+        "sha256_cert_fingerprints":
+          [
+            "3E:D3:D1:AF:60:4A:D6:B0:C5:B9:FD:9B:06:F6:DF:0C:DE:CA:93:B9:63:9F:9D:65:31:BC:D3:9D:AB:B8:F2:CE",
+            "B5:75:8E:A1:59:B0:28:C6:F1:6C:93:DC:59:DE:B6:AD:52:64:EF:A4:E2:70:47:BE:EA:64:0F:7A:5A:08:79:DE"
+        ]
+        }
+    }
+]

@@ -1,0 +1,38 @@
+[
+ {
+  "target": "unibet.com",
+  "host": "unibet.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://www.unibet.com/.well-known/ai-plugin.json",
+  "url": "https://www.unibet.com/.well-known/ai-plugin.json"
+ },
+ {
+  "target": "unibet.com",
+  "host": "unibet.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://www.unibet.com/.well-known/assetlinks.json",
+  "url": "https://www.unibet.com/.well-known/assetlinks.json"
+ },
+ {
+  "target": "unibet.com",
+  "host": "unibet.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://www.unibet.com/.well-known/gpc.json",
+  "url": "https://www.unibet.com/.well-known/gpc.json"
+ },
+ {
+  "target": "unibet.com",
+  "host": "unibet.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://www.unibet.com/.well-known/openid-configuration",
+  "url": "https://www.unibet.com/.well-known/openid-configuration"
+ }
+]

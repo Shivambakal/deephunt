@@ -1,0 +1,35 @@
+# scope.yaml — default-DENY target allowlist for the proxy harness.
+# The intruder REFUSES to run against any host not listed here.
+# The modify engine may also consult this file in future.
+#
+# Manual-only / scanner-restricted programs are NEVER valid intruder targets,
+# even if a host appears below. They are encoded in intruder.py's BLOCKLIST.
+
+allowlist:
+  - host: "pinterest.com"
+    program: "Pinterest"
+    notes: "Authenticated research on own synthetic account only. Cookie auth; no scanners."
+  - host: "www.pinterest.com"
+    program: "Pinterest"
+    notes: "Same as pinterest.com."
+  - host: "api.pinterest.com"
+    program: "Pinterest"
+    notes: "v3 legacy API accepts web session cookie; v5 Bearer-only."
+  - host: "aiven.io"
+    program: "Aiven"
+    notes: "Own trial account (attacksurface-d344). No services/DBs/payment/KYC."
+  - host: "console.aiven.io"
+    program: "Aiven"
+    notes: "Same as aiven.io."
+  - host: "api.aiven.io"
+    program: "Aiven"
+    notes: "Same as aiven.io."
+  - host: "gitlab.com"
+    program: "GitLab"
+    notes: "Own namespaces/projects only. Import seam is the high-value target."
+  - host: "example.com"
+    program: "TEST"
+    notes: "Validation target only — safe public test host."
+
+# Subdomain matching: a request to sub.X matches allowlist entry X.
+match_subdomains: true

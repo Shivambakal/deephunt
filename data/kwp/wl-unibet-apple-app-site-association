@@ -1,0 +1,343 @@
+{
+   "applinks":{
+      "apps":[],
+      "details":[
+         {
+            "appID":"3ZBSXK57Q2.com.unibet.unibetmobile.enterprise",
+            "paths":[
+               "/sportsapp/dk-identification-completed",
+               "/unibetpro/itsme-verification-completed",
+               "/unibetpro/itsme-registration-completed",
+               "/unibetpro/myaccount/mymoney/cashier",
+               "/unibetpro/registration",
+               "/promotions/*",
+               "/betting/sports/event/live/*",
+               "/betting/sports/filter/*",
+               "/betting/sports/racing/*",
+               "/betting/racing*",
+               "/racing#/next/all*",
+               "/racing*"
+            ],
+            "components": [
+               {
+                  "/": "/sportsapp/dk-identification-completed",
+                  "comment": "Matches any URL whose path corresponds with the path expected for MitID identification"
+               },
+               {
+                  "/": "/unibetpro/itsme-verification-completed",
+                  "comment": "Matches any URL whose path corresponds with the path expected for Its-me verifications"
+               },
+               {
+                  "/": "/unibetpro/itsme-registration-completed",
+                  "comment": "Matches any URL whose path corresponds with the path expected for Its-me registrations"
+               },
+               {
+                  "/": "/unibetpro/myaccount/mymoney/cashier",
+                  "comment": "Matches any URL whose path corresponds with path expected for cashier"
+               },
+               {
+                  "/": "/unibetpro/registration",
+                  "comment": "Matches any URL whose path corresponds with path expected for registration"
+               },
+               {
+                  "/": "/promotions/*",
+                  "comment": "Matches any URL whose path starts with /promotions/"
+               },
+               {
+                  "/": "/betting/sports/event/live/*",
+                  "comment": "Matches any URL whose path starts with /betting/sports/event/live/"
+               },
+               {
+                  "/": "/betting/sports/filter/*",
+                  "comment": "Matches any URL whose path starts with /betting/sports/filter/"
+               },
+               {
+                  "/": "/betting/sports/racing/*",
+                  "comment": "Matches any URL whose path starts with /betting/sports/racing/"
+               },
+               {
+                  "/": "/betting/racing*",
+                  "comment": "Matches any URL whose path starts with /betting/racing"
+               },
+               {
+                  "/": "/racing#/next/all*",
+                  "comment": "Matches any URL whose path starts with /racing#/next/all"
+               },
+               {
+                  "/": "/racing*",
+                  "comment": "Matches any URL whose path starts with /racing"
+               }
+            ]
+         },
+         {
+            "appID":"3ZBSXK57Q2.com.unibet.flashgordon.enterprise",
+            "paths":[
+               "/casinoapp/dk-identification-completed",
+               "/casinoapp/itsme-verification-completed",
+               "/casinoapp/itsme-registration-completed",
+               "/casinoapp/myaccount/mymoney/cashier",
+               "/casinoapp/registration",
+               "/promotions/*"
+            ],
+            "components": [
+               {
+                  "/": "/casinoapp/dk-identification-completed",
+                  "comment": "Matches any URL whose path corresponds with the path expected for MitID identification"
+               },
+               {
+                  "/": "/casinoapp/itsme-verification-completed",
+                  "comment": "Matches any URL whose path corresponds with the path expected for Its-me verifications"
+               },
+               {
+                  "/": "/casinoapp/itsme-registration-completed",
+                  "comment": "Matches any URL whose path corresponds with the path expected for Its-me registrations"
+               },
+               {
+                  "/": "/casinoapp/myaccount/mymoney/cashier",
+                  "comment": "Matches any URL whose path corresponds with path expected for cashier"
+               },
+               {
+                  "/": "/casinoapp/registration",
+                  "comment": "Matches any URL whose path corresponds with path expected for registration"
+               },
+               {
+                  "/": "/promotions/*",
+                  "comment": "Matches any URL whose path starts with /promotions/"
+               }
+            ]
+         },
+         {
+            "appID":"3ZBSXK57Q2.com.unibet.casino-us.enterprise",
+            "paths":[
+               "/casinoappus/itsme-verification-completed",
+               "/casinoappus/itsme-registration-completed",
+               "/casinoappus/myaccount/mymoney/cashier",
+               "/casinoappus/registration",
+               "/promotions/*"
+            ],
+            "components": [
+               {
+                  "/": "/casinoappus/itsme-verification-completed",
+                  "comment": "Matches any URL whose path corresponds with the path expected for Its-me verifications"
+               },
+               {
+                  "/": "/casinoappus/itsme-registration-completed",
+                  "comment": "Matches any URL whose path corresponds with the path expected for Its-me registrations"
+               },
+               {
+                  "/": "/casinoappus/myaccount/mymoney/cashier",
+                  "comment": "Matches any URL whose path corresponds with path expected for cashier"
+               },
+               {
+                  "/": "/casinoappus/registration",
+                  "comment": "Matches any URL whose path corresponds with path expected for registration"
+               },
+               {
+                  "/": "/promotions/*",
+                  "comment": "Matches any URL whose path starts with /promotions/"
+               }
+            ]
+         },
+         {
+            "appID":"826XD4LA79.com.unibet.unibetmobile",
+            "paths":[
+               "/sportsapp/dk-identification-completed",
+               "/unibetpro/itsme-verification-completed",
+               "/unibetpro/itsme-registration-completed",
+               "/unibetpro/myaccount/mymoney/cashier",
+               "/unibetpro/registration",
+               "/promotions/*",
+               "/betting/sports/event/live/*",
+               "/betting/sports/filter/*",
+               "/betting/sports/racing/*",
+               "/betting/racing*",
+               "/racing#/next/all*",
+               "/racing*"
+            ],
+            "components": [
+               {
+                  "/": "/sportsapp/dk-identification-completed",
+                  "comment": "Matches any URL whose path corresponds with the path expected for MitID identification"
+               },
+               {
+                  "/": "/unibetpro/itsme-verification-completed",
+                  "comment": "Matches any URL whose path corresponds with the path expected for Its-me verifications"
+               },
+               {
+                  "/": "/unibetpro/itsme-registration-completed",
+                  "comment": "Matches any URL whose path corresponds with the path expected for Its-me registrations"
+               },
+               {
+                  "/": "/unibetpro/myaccount/mymoney/cashier",
+                  "comment": "Matches any URL whose path corresponds with path expected for cashier"
+               },
+               {
+                  "/": "/unibetpro/registration",
+                  "comment": "Matches any URL whose path corresponds with path expected for registration"
+               },
+               {
+                  "/": "/promotions/*",
+                  "comment": "Matches any URL whose path starts with /promotions/"
+               },
+               {
+                  "/": "/betting/sports/event/live/*",
+                  "comment": "Matches any URL whose path starts with /betting/sports/event/live/"
+               },
+               {
+                  "/": "/betting/sports/filter/*",
+                  "comment": "Matches any URL whose path starts with /betting/sports/filter/"
+               },
+               {
+                  "/": "/betting/sports/racing/*",
+                  "comment": "Matches any URL whose path starts with /betting/sports/racing/"
+               },
+               {
+                  "/": "/betting/racing*",
+                  "comment": "Matches any URL whose path starts with /betting/racing"
+               },
+               {
+                  "/": "/racing#/next/all*",
+                  "comment": "Matches any URL whose path starts with /racing#/next/all"
+               },
+               {
+                  "/": "/racing*",
+                  "comment": "Matches any URL whose path starts with /racing"
+               }
+            ]
+         },
+         {
+            "appID":"826XD4LA79.com.unibet.flashgordon",
+            "paths":[
+               "/casinoapp/dk-identification-completed",
+               "/casinoapp/itsme-verification-completed",
+               "/casinoapp/itsme-registration-completed",
+               "/casinoapp/myaccount/mymoney/cashier",
+               "/casinoapp/registration",
+               "/promotions/*"
+            ],
+            "components": [
+               {
+                  "/": "/casinoapp/dk-identification-completed",
+                  "comment": "Matches any URL whose path corresponds with the path expected for MitID identification"
+               },
+               {
+                  "/": "/casinoapp/itsme-verification-completed",
+                  "comment": "Matches any URL whose path corresponds with the path expected for Its-me verifications"
+               },
+               {
+                  "/": "/casinoapp/itsme-registration-completed",
+                  "comment": "Matches any URL whose path corresponds with the path expected for Its-me registrations"
+               },
+               {
+                  "/": "/casinoapp/myaccount/mymoney/cashier",
+                  "comment": "Matches any URL whose path corresponds with path expected for cashier"
+               },
+               {
+                  "/": "/casinoapp/registration",
+                  "comment": "Matches any URL whose path corresponds with path expected for registration"
+               },
+               {
+                  "/": "/promotions/*",
+                  "comment": "Matches any URL whose path starts with /promotions/"
+               }
+            ]
+         },
+         {
+            "appID":"826XD4LA79.com.unibet.casino-us",
+            "paths":[
+               "/casinoappus/itsme-verification-completed",
+               "/casinoappus/itsme-registration-completed",
+               "/casinoappus/myaccount/mymoney/cashier",
+               "/casinoappus/registration",
+               "/promotions/*"
+            ],
+            "components": [
+               {
+                  "/": "/casinoappus/itsme-verification-completed",
+                  "comment": "Matches any URL whose path corresponds with the path expected for Its-me verifications"
+               },
+               {
+                  "/": "/casinoappus/itsme-registration-completed",
+                  "comment": "Matches any URL whose path corresponds with the path expected for Its-me registrations"
+               },
+               {
+                  "/": "/casinoappus/myaccount/mymoney/cashier",
+                  "comment": "Matches any URL whose path corresponds with path expected for cashier"
+               },
+               {
+                  "/": "/casinoappus/registration",
+                  "comment": "Matches any URL whose path corresponds with path expected for registration"
+               },
+               {
+                  "/": "/promotions/*",
+                  "comment": "Matches any URL whose path starts with /promotions/"
+               }
+            ]
+         },
+         {
+            "appID":"3ZBSXK57Q2.com.unibet.sports-us.enterprise",
+            "paths":[
+               "/unibetprous/myaccount/mymoney/cashier",
+               "/unibetprous/registration",
+               "/promotions/*",
+               "/betting/sports/event/live/*",
+               "/betting/sports/filter/*"
+            ],
+            "components": [
+               {
+                  "/": "/unibetprous/myaccount/mymoney/cashier",
+                  "comment": "Matches any URL whose path corresponds with path expected for cashier"
+               },
+               {
+                  "/": "/unibetprous/registration",
+                  "comment": "Matches any URL whose path corresponds with path expected for registration"
+               },
+               {
+                  "/": "/promotions/*",
+                  "comment": "Matches any URL whose path starts with /promotions/"
+               },
+               {
+                  "/": "/betting/sports/event/live/*",
+                  "comment": "Matches any URL whose path starts with /betting/sports/event/live/"
+               },
+               {
+                  "/": "/betting/sports/filter/*",
+                  "comment": "Matches any URL whose path starts with /betting/sports/filter/"
+               }
+            ]
+         },
+         {
+            "appID":"826XD4LA79.com.unibet.sports-us",
+            "paths":[
+               "/unibetprous/myaccount/mymoney/cashier",
+               "/unibetprous/registration",
+               "/promotions/*",
+               "/betting/sports/event/live/*",
+               "/betting/sports/filter/*"
+            ],
+            "components": [
+               {
+                  "/": "/unibetprous/myaccount/mymoney/cashier",
+                  "comment": "Matches any URL whose path corresponds with path expected for cashier"
+               },
+               {
+                  "/": "/unibetprous/registration",
+                  "comment": "Matches any URL whose path corresponds with path expected for registration"
+               },
+               {
+                  "/": "/promotions/*",
+                  "comment": "Matches any URL whose path starts with /promotions/"
+               },
+               {
+                  "/": "/betting/sports/event/live/*",
+                  "comment": "Matches any URL whose path starts with /betting/sports/event/live/"
+               },
+               {
+                  "/": "/betting/sports/filter/*",
+                  "comment": "Matches any URL whose path starts with /betting/sports/filter/"
+               }
+            ]
+         }
+      ]
+   }
+}

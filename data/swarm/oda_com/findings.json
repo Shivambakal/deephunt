@@ -1,0 +1,38 @@
+[
+ {
+  "target": "oda.com",
+  "host": "oda.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://oda.com/.well-known/ai-plugin.json",
+  "url": "https://oda.com/.well-known/ai-plugin.json"
+ },
+ {
+  "target": "oda.com",
+  "host": "oda.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://oda.com/.well-known/assetlinks.json",
+  "url": "https://oda.com/.well-known/assetlinks.json"
+ },
+ {
+  "target": "oda.com",
+  "host": "oda.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://oda.com/.well-known/gpc.json",
+  "url": "https://oda.com/.well-known/gpc.json"
+ },
+ {
+  "target": "oda.com",
+  "host": "oda.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://oda.com/.well-known/openid-configuration",
+  "url": "https://oda.com/.well-known/openid-configuration"
+ }
+]

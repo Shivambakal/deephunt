@@ -1,0 +1,25 @@
+# rules.yaml — match-and-replace rules for addons/modify.py
+# Human-paced, research-only. Rules fire only when ALL match fields match.
+rules:
+  - name: tag-research-traffic
+    match:
+      host: ".*"
+      direction: request
+    actions:
+      - add_header: ["X-Research-Session", "hacker-agent-differential"]
+
+  - name: pinterest-v3-debug
+    match:
+      host: "api\\.pinterest\\.com"
+      path: "^/v3/"
+      method: "GET"
+      direction: request
+    actions:
+      - set_param: ["research_probe", "1"]
+
+  - name: stamp-responses
+    match:
+      host: "example\\.com"
+      direction: response
+    actions:
+      - add_header: ["X-Proxy-Modified", "modify-engine-ok"]

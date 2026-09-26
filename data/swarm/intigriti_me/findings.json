@@ -1,0 +1,92 @@
+[
+ {
+  "target": "intigriti.me",
+  "host": "intigriti.me",
+  "direction": "headers",
+  "check": "version disclosure",
+  "severity": "INFO",
+  "evidence": "{\"Server\": \"Vercel\"}",
+  "url": "https://intigriti.me/"
+ },
+ {
+  "target": "intigriti.me",
+  "host": "intigriti.me",
+  "direction": "cors",
+  "check": "wildcard ACAO",
+  "severity": "INFO",
+  "evidence": "Access-Control-Allow-Origin: *",
+  "url": "https://intigriti.me/"
+ },
+ {
+  "target": "intigriti.me",
+  "host": "intigriti.me",
+  "direction": "fingerprint",
+  "check": "Spring logfile readable",
+  "severity": "HIGH",
+  "evidence": "200 /actuator/logfile :: Read it \u2014 harvest usernames, then check auth endpoints for identifier-only login (Tyrion404 pattern).",
+  "url": "https://intigriti.me/actuator/logfile"
+ },
+ {
+  "target": "intigriti.me",
+  "host": "intigriti.me",
+  "direction": "fingerprint",
+  "check": "WordPress detected",
+  "severity": "INFO",
+  "evidence": "200 /wp-json/ :: Fingerprint version; check theme-preview / customizer endpoints (Click2Shell class).",
+  "url": "https://intigriti.me/wp-json/"
+ },
+ {
+  "target": "intigriti.me",
+  "host": "intigriti.me",
+  "direction": "fingerprint",
+  "check": "SharePoint detected",
+  "severity": "INFO",
+  "evidence": "200 /_layouts/15/ :: SharePoint present \u2014 check patch level vs CVE-2026-65660 class (SafeControls bypass). Manual only.",
+  "url": "https://intigriti.me/_layouts/15/"
+ },
+ {
+  "target": "intigriti.me",
+  "host": "intigriti.me",
+  "direction": "exposed",
+  "check": "exposed file /.git/HEAD",
+  "severity": "LOW",
+  "evidence": "/.git/HEAD returned 200 (149992 bytes)",
+  "url": "https://intigriti.me/.git/HEAD"
+ },
+ {
+  "target": "intigriti.me",
+  "host": "intigriti.me",
+  "direction": "exposed",
+  "check": "exposed file /.env",
+  "severity": "HIGH",
+  "evidence": ".env exposed (149992 bytes)",
+  "url": "https://intigriti.me/.env"
+ },
+ {
+  "target": "intigriti.me",
+  "host": "intigriti.me",
+  "direction": "exposed",
+  "check": "exposed file /.well-known/security.txt",
+  "severity": "LOW",
+  "evidence": "/.well-known/security.txt returned 200 (149992 bytes)",
+  "url": "https://intigriti.me/.well-known/security.txt"
+ },
+ {
+  "target": "intigriti.me",
+  "host": "intigriti.me",
+  "direction": "exposed",
+  "check": "exposed file /server-status",
+  "severity": "LOW",
+  "evidence": "/server-status returned 200 (149992 bytes)",
+  "url": "https://intigriti.me/server-status"
+ },
+ {
+  "target": "intigriti.me",
+  "host": "intigriti.me",
+  "direction": "exposed",
+  "check": "exposed file /backup.sql",
+  "severity": "LOW",
+  "evidence": "/backup.sql returned 200 (149992 bytes)",
+  "url": "https://intigriti.me/backup.sql"
+ }
+]

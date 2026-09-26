@@ -1,0 +1,154 @@
+{
+ "objective": "dbg2",
+ "created": "2026-09-26T17:48:33Z",
+ "updated": "2026-09-26T17:48:33Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [],
+  "trust_boundaries": [],
+  "state_machines": {}
+ },
+ "observations": [],
+ "assumptions": [
+  {
+   "id": "A1",
+   "believes": "b",
+   "enforcement": "e",
+   "violated_if": "v",
+   "confidence": 0.8
+  }
+ ],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "statement": "X",
+   "violated_assumption": "A1",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "rejected",
+   "source": "manual",
+   "ts": "2026-09-26T17:48:33Z"
+  },
+  {
+   "id": "H2",
+   "statement": "The rejection may be channel-specific; the same assumption may fail on a sibling endpoint.",
+   "violated_assumption": "A1",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "Map sibling endpoints sharing the object and test the cheapest one.",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-26T17:48:33Z"
+  }
+ ],
+ "tests": [
+  {
+   "id": "T1",
+   "hypothesis_id": "H1",
+   "spec": {
+    "expected_observation": "obs",
+    "reason": "reason",
+    "scope_hosts": [
+     "h.example"
+    ],
+    "auth_basis": "own",
+    "success_criteria": "s",
+    "failure_criteria": "f",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "no benign explanation recorded",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "executed",
+   "authorization": {
+    "test_id": "T1",
+    "hypothesis_id": "H1",
+    "session_id": "4aac9ff658bf",
+    "scope_hosts": [
+     "h.example"
+    ],
+    "issued_at": 1790444913.1786346,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-26T17:48:33Z",
+   "executed_at": "2026-09-26T17:48:33Z"
+  }
+ ],
+ "results": [
+  {
+   "id": "R1",
+   "test_id": "T1",
+   "hypothesis_id": "H1",
+   "outcome": "rejected",
+   "observed": "no",
+   "why_failed": "w",
+   "learned": "l",
+   "ts": "2026-09-26T17:48:33Z"
+  }
+ ],
+ "rejected_hypotheses": [
+  {
+   "id": "H1",
+   "statement": "X",
+   "believed": "X",
+   "tested": "reason",
+   "observed_result": "no",
+   "why_failed": "w",
+   "learned": "l",
+   "changes_future": [
+    "The rejection may be channel-specific; the same assumption may fail on a sibling endpoint."
+   ]
+  }
+ ],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [],
+ "facts": [],
+ "lessons": [
+  {
+   "ts": "2026-09-26T17:48:33Z",
+   "text": "H1 rejected: w -> learned: l"
+  }
+ ],
+ "next_actions": [
+  "design test for H2: The rejection may be channel-specific; the same assumption may fail on..."
+ ],
+ "id": "4aac9ff658bf"
+}

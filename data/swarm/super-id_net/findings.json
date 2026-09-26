@@ -1,0 +1,29 @@
+[
+ {
+  "target": "super-id.net",
+  "host": "super-id.net",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://ecosystem-experience.super-id.net/api/log",
+  "url": "https://ecosystem-experience.super-id.net/api/log"
+ },
+ {
+  "target": "super-id.net",
+  "host": "super-id.net",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://ecosystem-experience.super-id.net/api/server-log",
+  "url": "https://ecosystem-experience.super-id.net/api/server-log"
+ },
+ {
+  "target": "super-id.net",
+  "host": "super-id.net",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://zanroo-webchat.stg.super-id.net/api/webchat/init",
+  "url": "https://zanroo-webchat.stg.super-id.net/api/webchat/init"
+ }
+]

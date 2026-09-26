@@ -1,0 +1,83 @@
+[
+ {
+  "target": "airbnb.com",
+  "host": "airbnb.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://www.airbnb.com/%22/s/Capital-Region-of-Denmark--Denmark/%22",
+  "url": "https://www.airbnb.com/%22/s/Capital-Region-of-Denmark--Denmark/%22"
+ },
+ {
+  "target": "airbnb.com",
+  "host": "airbnb.com",
+  "direction": "headers",
+  "check": "version disclosure",
+  "severity": "INFO",
+  "evidence": "{\"Server\": \"nginx\"}",
+  "url": "https://airbnb.com/"
+ },
+ {
+  "target": "airbnb.com",
+  "host": "airbnb.com",
+  "direction": "redirect",
+  "check": "open redirect via url",
+  "severity": "MEDIUM",
+  "evidence": "301 -> Location: https://www.airbnb.com/redirect?url=https://evil-swarm.example",
+  "url": "https://airbnb.com/redirect?url=https://evil-swarm.example"
+ },
+ {
+  "target": "airbnb.com",
+  "host": "airbnb.com",
+  "direction": "redirect",
+  "check": "open redirect via next",
+  "severity": "MEDIUM",
+  "evidence": "301 -> Location: https://www.airbnb.com/login?next=https://evil-swarm.example",
+  "url": "https://airbnb.com/login?next=https://evil-swarm.example"
+ },
+ {
+  "target": "airbnb.com",
+  "host": "airbnb.com",
+  "direction": "redirect",
+  "check": "open redirect via next",
+  "severity": "MEDIUM",
+  "evidence": "301 -> Location: https://www.airbnb.com/?next=https://evil-swarm.example",
+  "url": "https://airbnb.com/?next=https://evil-swarm.example"
+ },
+ {
+  "target": "airbnb.com",
+  "host": "airbnb.com",
+  "direction": "redirect",
+  "check": "open redirect via returnTo",
+  "severity": "MEDIUM",
+  "evidence": "301 -> Location: https://www.airbnb.com/logout?returnTo=https://evil-swarm.example",
+  "url": "https://airbnb.com/logout?returnTo=https://evil-swarm.example"
+ },
+ {
+  "target": "airbnb.com",
+  "host": "airbnb.com",
+  "direction": "redirect",
+  "check": "open redirect via url",
+  "severity": "MEDIUM",
+  "evidence": "301 -> Location: https://www.airbnb.com/r?url=https://evil-swarm.example",
+  "url": "https://airbnb.com/r?url=https://evil-swarm.example"
+ },
+ {
+  "target": "airbnb.com",
+  "host": "airbnb.com",
+  "direction": "exposed",
+  "check": "exposed file /.well-known/security.txt",
+  "severity": "LOW",
+  "evidence": "/.well-known/security.txt returned 200 (271 bytes)",
+  "url": "https://airbnb.com/.well-known/security.txt"
+ },
+ {
+  "target": "airbnb.com",
+  "host": "airbnb.com",
+  "direction": "errors",
+  "check": "verbose error leakage at /",
+  "severity": "LOW",
+  "evidence": "200 leaks: exception",
+  "url": "https://airbnb.com/"
+ }
+]

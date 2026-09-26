@@ -1,0 +1,137 @@
+[
+ {
+  "target": "auth0.com",
+  "host": "auth0.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://auth0.com/*.json",
+  "url": "https://auth0.com/*.json"
+ },
+ {
+  "target": "auth0.com",
+  "host": "auth0.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://auth0.com/.../building-a-collaborative-todo-app-with-realtime-graphql-using-hasura",
+  "url": "https://auth0.com/.../building-a-collaborative-todo-app-with-realtime-graphql-using-hasura"
+ },
+ {
+  "target": "auth0.com",
+  "host": "auth0.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://auth0.com/.../call-your-api-using-the-client-credentials-flow",
+  "url": "https://auth0.com/.../call-your-api-using-the-client-credentials-flow"
+ },
+ {
+  "target": "auth0.com",
+  "host": "auth0.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://auth0.com/.well-known/ai-plugin.json",
+  "url": "https://auth0.com/.well-known/ai-plugin.json"
+ },
+ {
+  "target": "auth0.com",
+  "host": "auth0.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://auth0.com/.well-known/assetlinks.json",
+  "url": "https://auth0.com/.well-known/assetlinks.json"
+ },
+ {
+  "target": "auth0.com",
+  "host": "auth0.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://auth0.com/.well-known/gpc.json",
+  "url": "https://auth0.com/.well-known/gpc.json"
+ },
+ {
+  "target": "auth0.com",
+  "host": "auth0.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://auth0.com/.well-known/jwks.json",
+  "url": "https://auth0.com/.well-known/jwks.json"
+ },
+ {
+  "target": "auth0.com",
+  "host": "auth0.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://auth0.com/.well-known/openid-configuration",
+  "url": "https://auth0.com/.well-known/openid-configuration"
+ },
+ {
+  "target": "auth0.com",
+  "host": "auth0.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://auth0.com/?amp;utm_medium=social&amp;utm_campaign=sysadmin",
+  "url": "https://auth0.com/?amp;utm_medium=social&amp;utm_campaign=sysadmin"
+ },
+ {
+  "target": "auth0.com",
+  "host": "auth0.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://auth0.com/?ref=public_apis&utm_medium=website",
+  "url": "https://auth0.com/?ref=public_apis&utm_medium=website"
+ },
+ {
+  "target": "auth0.com",
+  "host": "auth0.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://auth0.com/?utm_campaign=Blog%20post%20-%20Building%20REST%20APIs%20with%20Platformatic%20DB&utm_medium=blog&utm_source=Platformatic%20Blog",
+  "url": "https://auth0.com/?utm_campaign=Blog%20post%20-%20Building%20REST%20APIs%20with%20Platformatic%20DB&utm_medium=blog&utm_source=Platformatic%20Blog"
+ },
+ {
+  "target": "auth0.com",
+  "host": "auth0.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://auth0.com/?utm_medium=social&utm_campaign=sysadmin",
+  "url": "https://auth0.com/?utm_medium=social&utm_campaign=sysadmin"
+ },
+ {
+  "target": "auth0.com",
+  "host": "auth0.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://auth0.com/?utm_source=redditads&amp;utm_medium=social&amp;utm_campaign=sysadmin",
+  "url": "https://auth0.com/?utm_source=redditads&amp;utm_medium=social&amp;utm_campaign=sysadmin"
+ },
+ {
+  "target": "auth0.com",
+  "host": "auth0.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://auth0.com/?utm_source=redditads&utm_medium=social&utm_campaign=sysadmin",
+  "url": "https://auth0.com/?utm_source=redditads&utm_medium=social&utm_campaign=sysadmin"
+ },
+ {
+  "target": "auth0.com",
+  "host": "auth0.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://auth0.com/?utm_source=scotch.io&utm_medium=sp&utm_campaign=api_authorization",
+  "url": "https://auth0.com/?utm_source=scotch.io&utm_medium=sp&utm_campaign=api_authorization"
+ }
+]

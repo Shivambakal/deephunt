@@ -1,0 +1,173 @@
+{
+ "objective": "GitLab job-token allowlist vs package-registry endpoints",
+ "created": "2026-09-26T17:48:39Z",
+ "updated": "2026-09-26T17:48:39Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [
+   "Package",
+   "Project",
+   "JobToken",
+   "Allowlist"
+  ],
+  "trust_boundaries": [
+   "runner->API",
+   "API->database"
+  ],
+  "state_machines": {
+   "JobToken": [
+    "issued",
+    "scoped",
+    "used"
+   ]
+  }
+ },
+ "observations": [
+  {
+   "ts": "2026-09-26T17:48:39Z",
+   "kind": "observation",
+   "text": "code: lib/api/pypi_packages.rb, composer_packages.rb, npm_namespace_endpoints.rb accept job tokens without allowlist check; container registry routes carry job_token_scope: :project; GraphQL rejects job tokens outright"
+  }
+ ],
+ "assumptions": [
+  {
+   "id": "A1",
+   "believes": "a job token can only reach its allowlisted projects",
+   "enforcement": "authorize_job_token_policies! in lib/api/helpers.rb",
+   "violated_if": "PyPI/Composer/npm routes serve packages outside the allowlist",
+   "confidence": 0.8
+  },
+  {
+   "id": "A2",
+   "believes": "skip_job_token_policies is only an auth convenience flag",
+   "enforcement": "route-level flag on package endpoints",
+   "violated_if": "the flag silently drops scope enforcement too",
+   "confidence": 0.8
+  }
+ ],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "statement": "Same object (Package, Project, JobToken) is reachable through a different verb, endpoint, or content-type that skips the enforcement at 'authorize_job_token_policies! in lib/api/helpers.rb'.",
+   "violated_assumption": "A1",
+   "attacker_view": "Violate the assumption by leaving the guarded channel and entering an unguarded one.",
+   "defender_view": "The alternate channel may enforce the same rule at a different layer, or the object may not exist there.",
+   "devil_view": "The 'alternate channel' might require stronger auth, making this a downgrade that never reaches the check.",
+   "investigator_test": "Fire the same logical action through GET vs POST vs PUT vs PATCH vs a versioned path; compare outcomes.",
+   "killed_by": "All channels enforce the check identically.",
+   "impact": 4,
+   "novelty": 4,
+   "testability": 5,
+   "score": 80,
+   "status": "live",
+   "source": "generated:code: lib/api/pypi_packages.rb, composer_packages.rb, npm_na",
+   "ts": "2026-09-26T17:48:39Z"
+  },
+  {
+   "id": "H2",
+   "statement": "A value written in one feature is consumed/rendered in another without re-running the validation done at 'authorize_job_token_policies! in lib/api/helpers.rb'.",
+   "violated_assumption": "A1",
+   "attacker_view": "Write where validation is weak, execute where trust is high (stored XSS, formula injection, template render).",
+   "defender_view": "The consuming feature may sanitize on render; writing is not exploiting.",
+   "devil_view": "The two features may share the same validation pipeline, so nothing is skipped.",
+   "investigator_test": "Write a probe payload in the weakest input, then observe every surface that renders it (list, export, notification, API).",
+   "killed_by": "Every renderer neutralizes the payload.",
+   "impact": 4,
+   "novelty": 5,
+   "testability": 4,
+   "score": 80,
+   "status": "live",
+   "source": "generated:code: lib/api/pypi_packages.rb, composer_packages.rb, npm_na",
+   "ts": "2026-09-26T17:48:39Z"
+  },
+  {
+   "id": "H4",
+   "statement": "Upstream validates at 'authorize_job_token_policies! in lib/api/helpers.rb', but a downstream component across a trust boundary (runner->API, API->database) trusts the value under different rules.",
+   "violated_assumption": "A1",
+   "attacker_view": "Find where validation and consumption disagree (client-side vs server-side, API vs webhook, SSO claim vs local session).",
+   "defender_view": "Defense in depth may re-validate downstream; one layer's trust is not the system's trust.",
+   "devil_view": "The boundary may carry a signed/verified token, so downstream trust is justified.",
+   "investigator_test": "Tamper the value at the boundary (proxy match/replace) and watch whether downstream re-validates.",
+   "killed_by": "Downstream rejects the tampered value.",
+   "impact": 4,
+   "novelty": 4,
+   "testability": 4,
+   "score": 64,
+   "status": "live",
+   "source": "generated:code: lib/api/pypi_packages.rb, composer_packages.rb, npm_na",
+   "ts": "2026-09-26T17:48:39Z"
+  },
+  {
+   "id": "H5",
+   "statement": "An identifier is normalized differently by the layer that checks 'authorize_job_token_policies! in lib/api/helpers.rb' and the layer that uses it (case, encoding, numeric-vs-string, trailing slash, unicode).",
+   "violated_assumption": "A1",
+   "attacker_view": "Supply two spellings of the same identity: one that passes the check, one that resolves to the target.",
+   "defender_view": "Canonicalization may happen before the check, collapsing both spellings to the same value.",
+   "devil_view": "The identifier may be an opaque UUID where normalization is a no-op.",
+   "investigator_test": "Send case/encoding/whitespace variants of a known-good and a known-bad identifier; compare accept/reject matrices.",
+   "killed_by": "All variants behave identically.",
+   "impact": 3,
+   "novelty": 4,
+   "testability": 5,
+   "score": 60,
+   "status": "live",
+   "source": "generated:code: lib/api/pypi_packages.rb, composer_packages.rb, npm_na",
+   "ts": "2026-09-26T17:48:39Z"
+  },
+  {
+   "id": "H3",
+   "statement": "A state transition (JobToken: issued -> scoped -> used) leaves stale state: the system believes the old state, another layer believes the new one.",
+   "violated_assumption": "A1",
+   "attacker_view": "Act on the object in the window where two layers disagree (scheduled publish to a deleted board, cached public copy of a re-secreted object).",
+   "defender_view": "Caches and schedules are eventually consistent; a brief stale window is not a vulnerability.",
+   "devil_view": "The transition may be atomic across layers, so no window exists.",
+   "investigator_test": "Force the transition, then immediately probe every layer (API, unauthenticated cache, export, search index).",
+   "killed_by": "All layers agree within the probe window.",
+   "impact": 3,
+   "novelty": 5,
+   "testability": 4,
+   "score": 60,
+   "status": "live",
+   "source": "generated:code: lib/api/pypi_packages.rb, composer_packages.rb, npm_na",
+   "ts": "2026-09-26T17:48:39Z"
+  },
+  {
+   "id": "H8",
+   "statement": "Client-visible arithmetic (credits, quotas, counts) can be desynced from the server's bookkeeping that 'authorize_job_token_policies! in lib/api/helpers.rb' relies on.",
+   "violated_assumption": "A1",
+   "attacker_view": "Drive the counter through lifecycle events (create/delete empty objects, retries, back-button resubmits) and watch for drift.",
+   "defender_view": "Counters are server-computed; the client display is cosmetic.",
+   "devil_view": "Idempotency may prevent double-counting.",
+   "investigator_test": "Cycle the lifecycle event repeatedly and compare the counter before/after against the expected delta.",
+   "killed_by": "The counter always matches the expected arithmetic.",
+   "impact": 3,
+   "novelty": 4,
+   "testability": 4,
+   "score": 48,
+   "status": "live",
+   "source": "generated:code: lib/api/pypi_packages.rb, composer_packages.rb, npm_na",
+   "ts": "2026-09-26T17:48:39Z"
+  }
+ ],
+ "tests": [],
+ "results": [],
+ "rejected_hypotheses": [],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [],
+ "facts": [],
+ "lessons": [],
+ "next_actions": [
+  "design test for H1: Same object (Package, Project, JobToken) is reachable through a differ...",
+  "design test for H2: A value written in one feature is consumed/rendered in another without...",
+  "design test for H4: Upstream validates at 'authorize_job_token_policies! in lib/api/helper...",
+  "design test for H5: An identifier is normalized differently by the layer that checks 'auth...",
+  "design test for H3: A state transition (JobToken: issued -> scoped -> used) leaves stale s...",
+  "design test for H8: Client-visible arithmetic (credits, quotas, counts) can be desynced fr..."
+ ],
+ "id": "b73b0af59bd7"
+}

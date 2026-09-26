@@ -1,0 +1,4 @@
+https://doctolib.com/
+http://doctolib.com/
+https://doctolib.com/robots.txt
+http://doctolib.com/robots.txt

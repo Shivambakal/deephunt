@@ -1,0 +1,54 @@
+{
+ "objective": "DEEPHUNT autonomous hunt: adobe (Intigriti adobepublic (verified live 2026-09-01))",
+ "created": "2026-09-26T18:34:04Z",
+ "updated": "2026-09-26T18:34:24Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [],
+  "trust_boundaries": [],
+  "state_machines": {}
+ },
+ "observations": [
+  {
+   "ts": "2026-09-26T18:34:06Z",
+   "kind": "fact",
+   "text": "cors_probe: cors_probe: no misconfig found \u2014 "
+  },
+  {
+   "ts": "2026-09-26T18:34:22Z",
+   "kind": "fact",
+   "text": "crtsh: crt.sh: 2535 subdomains under adobe.com \u2014 2535 unique names"
+  },
+  {
+   "ts": "2026-09-26T18:34:22Z",
+   "kind": "fact",
+   "text": "gau: gau: 0 urls for acrobat.adobe.com \u2014 0 param/api urls"
+  },
+  {
+   "ts": "2026-09-26T18:34:23Z",
+   "kind": "fact",
+   "text": "github_recon: github adobe: 100 repos \u2014 9 keyword hits"
+  },
+  {
+   "ts": "2026-09-26T18:34:24Z",
+   "kind": "fact",
+   "text": "headers: headers: acrobat.adobe.com \u2014 missing: none"
+  }
+ ],
+ "assumptions": [],
+ "hypotheses": [],
+ "tests": [],
+ "results": [],
+ "rejected_hypotheses": [],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [],
+ "facts": [],
+ "lessons": [],
+ "next_actions": [],
+ "id": "e6780cf7cc2f"
+}

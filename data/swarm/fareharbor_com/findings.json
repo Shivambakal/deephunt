@@ -1,0 +1,110 @@
+[
+ {
+  "target": "fareharbor.com",
+  "host": "fareharbor.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://fareharbor.com/%20embeds/api/v1/",
+  "url": "https://fareharbor.com/%20embeds/api/v1/"
+ },
+ {
+  "target": "fareharbor.com",
+  "host": "fareharbor.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://fareharbor.com/%20embeds/api/v1/--_fh_blue",
+  "url": "https://fareharbor.com/%20embeds/api/v1/--_fh_blue"
+ },
+ {
+  "target": "fareharbor.com",
+  "host": "fareharbor.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://fareharbor.com/%20embeds/api/v1/360deg",
+  "url": "https://fareharbor.com/%20embeds/api/v1/360deg"
+ },
+ {
+  "target": "fareharbor.com",
+  "host": "fareharbor.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://fareharbor.com/%20embeds/api/v1/?autolightframe=%20yes",
+  "url": "https://fareharbor.com/%20embeds/api/v1/?autolightframe=%20yes"
+ },
+ {
+  "target": "fareharbor.com",
+  "host": "fareharbor.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://fareharbor.com/%20embeds/api/v1/?autolightframe=+yes",
+  "url": "https://fareharbor.com/%20embeds/api/v1/?autolightframe=+yes"
+ },
+ {
+  "target": "fareharbor.com",
+  "host": "fareharbor.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://fareharbor.com/.well-known/ai-plugin.json",
+  "url": "https://fareharbor.com/.well-known/ai-plugin.json"
+ },
+ {
+  "target": "fareharbor.com",
+  "host": "fareharbor.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://fareharbor.com/.well-known/assetlinks.json",
+  "url": "https://fareharbor.com/.well-known/assetlinks.json"
+ },
+ {
+  "target": "fareharbor.com",
+  "host": "fareharbor.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://fareharbor.com/.well-known/gpc.json",
+  "url": "https://fareharbor.com/.well-known/gpc.json"
+ },
+ {
+  "target": "fareharbor.com",
+  "host": "fareharbor.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://fareharbor.com/.well-known/openid-configuration",
+  "url": "https://fareharbor.com/.well-known/openid-configuration"
+ },
+ {
+  "target": "fareharbor.com",
+  "host": "fareharbor.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://fareharbor.com/20200802194327if_/https://undefined/api/v1/companies/captmike/",
+  "url": "https://fareharbor.com/20200802194327if_/https://undefined/api/v1/companies/captmike/"
+ },
+ {
+  "target": "fareharbor.com",
+  "host": "fareharbor.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://fareharbor.com/20200802194330if_/https://undefined/api/v1/persistence/686e1fa1-d2f5-4c1e-be02-e0a550c698ac/",
+  "url": "https://fareharbor.com/20200802194330if_/https://undefined/api/v1/persistence/686e1fa1-d2f5-4c1e-be02-e0a550c698ac/"
+ },
+ {
+  "target": "fareharbor.com",
+  "host": "fareharbor.com",
+  "direction": "wayback",
+  "check": "interesting archived URL",
+  "severity": "INFO",
+  "evidence": "https://fareharbor.com/[[%20embedGeneratorCtrl.lightframeApiSrc()%20]]",
+  "url": "https://fareharbor.com/[[%20embedGeneratorCtrl.lightframeApiSrc()%20]]"
+ }
+]

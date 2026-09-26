@@ -1,0 +1,189 @@
+{
+ "objective": "DEEPHUNT autonomous hunt: shopify (HackerOne shopify (public; scope verified via published policy 2026-09-27))",
+ "created": "2026-09-26T19:10:25Z",
+ "updated": "2026-09-26T19:13:16Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [],
+  "trust_boundaries": [],
+  "state_machines": {}
+ },
+ "observations": [
+  {
+   "ts": "2026-09-26T19:10:29Z",
+   "kind": "fact",
+   "text": "cors_probe: cors_probe: no misconfig found \u2014 "
+  },
+  {
+   "ts": "2026-09-26T19:10:45Z",
+   "kind": "fact",
+   "text": "crtsh: crt.sh: 328 subdomains under shopify.com \u2014 328 unique names"
+  },
+  {
+   "ts": "2026-09-26T19:10:46Z",
+   "kind": "fact",
+   "text": "gau: gau: 0 urls for shopify.com \u2014 0 param/api urls"
+  },
+  {
+   "ts": "2026-09-26T19:10:46Z",
+   "kind": "fact",
+   "text": "gau: gau: 0 urls for admin.shopify.com \u2014 0 param/api urls"
+  },
+  {
+   "ts": "2026-09-26T19:10:46Z",
+   "kind": "fact",
+   "text": "gau: gau: 0 urls for accounts.shopify.com \u2014 0 param/api urls"
+  },
+  {
+   "ts": "2026-09-26T19:10:46Z",
+   "kind": "fact",
+   "text": "gau: gau: 0 urls for partners.shopify.com \u2014 0 param/api urls"
+  },
+  {
+   "ts": "2026-09-26T19:10:47Z",
+   "kind": "fact",
+   "text": "github_recon: github Shopify: 100 repos \u2014 100 keyword hits"
+  },
+  {
+   "ts": "2026-09-26T19:10:50Z",
+   "kind": "fact",
+   "text": "headers: headers: shopify.com \u2014 missing: strict-transport-security, content-security-policy, x-frame-options"
+  },
+  {
+   "ts": "2026-09-26T19:10:50Z",
+   "kind": "fact",
+   "text": "headers: headers: admin.shopify.com \u2014 missing: none"
+  },
+  {
+   "ts": "2026-09-26T19:10:50Z",
+   "kind": "fact",
+   "text": "headers: headers: accounts.shopify.com \u2014 missing: content-security-policy"
+  },
+  {
+   "ts": "2026-09-26T19:10:50Z",
+   "kind": "fact",
+   "text": "headers: headers: partners.shopify.com \u2014 missing: x-frame-options"
+  },
+  {
+   "ts": "2026-09-26T19:10:52Z",
+   "kind": "fact",
+   "text": "httpx: httpx: 4 live of 4 probed \u2014 4 live"
+  },
+  {
+   "ts": "2026-09-26T19:10:57Z",
+   "kind": "fact",
+   "text": "js_extract: JS mining: 0 bundles, 0 api paths, 0 params, 0 urls \u2014 0 bundles fetched"
+  },
+  {
+   "ts": "2026-09-26T19:11:00Z",
+   "kind": "fact",
+   "text": "js_secrets: js_secrets: 0 bundles, no key patterns \u2014 "
+  },
+  {
+   "ts": "2026-09-26T19:11:00Z",
+   "kind": "fact",
+   "text": "param_miner: param_miner: 0 params, 0 paths \u2014 "
+  },
+  {
+   "ts": "2026-09-26T19:11:00Z",
+   "kind": "fact",
+   "text": "proxy_route: intercept proxy already on :8080 \u2014 "
+  },
+  {
+   "ts": "2026-09-26T19:11:05Z",
+   "kind": "fact",
+   "text": "robots_sitemap: shopify.com/robots.txt exposed \u2014 2 entries"
+  },
+  {
+   "ts": "2026-09-26T19:11:05Z",
+   "kind": "fact",
+   "text": "robots_sitemap: shopify.com/sitemap.xml exposed \u2014 50 entries"
+  },
+  {
+   "ts": "2026-09-26T19:11:05Z",
+   "kind": "fact",
+   "text": "robots_sitemap: admin.shopify.com/robots.txt exposed \u2014 1 entries"
+  },
+  {
+   "ts": "2026-09-26T19:11:05Z",
+   "kind": "fact",
+   "text": "robots_sitemap: admin.shopify.com/sitemap.xml exposed \u2014 0 entries"
+  },
+  {
+   "ts": "2026-09-26T19:11:05Z",
+   "kind": "fact",
+   "text": "robots_sitemap: partners.shopify.com/robots.txt exposed \u2014 2 entries"
+  },
+  {
+   "ts": "2026-09-26T19:11:06Z",
+   "kind": "fact",
+   "text": "subfinder: subfinder: 0 subs for shopify.com \u2014 rc=0"
+  },
+  {
+   "ts": "2026-09-26T19:11:07Z",
+   "kind": "fact",
+   "text": "takeover: takeover: no dangling CNAMEs found \u2014 "
+  },
+  {
+   "ts": "2026-09-26T19:11:11Z",
+   "kind": "fact",
+   "text": "tech_detect: stack: shopify.com \u2014 1 signals"
+  },
+  {
+   "ts": "2026-09-26T19:11:11Z",
+   "kind": "fact",
+   "text": "tech_detect: stack: admin.shopify.com \u2014 0 signals"
+  },
+  {
+   "ts": "2026-09-26T19:11:11Z",
+   "kind": "fact",
+   "text": "tech_detect: stack: partners.shopify.com \u2014 1 signals"
+  },
+  {
+   "ts": "2026-09-26T19:11:21Z",
+   "kind": "fact",
+   "text": "urlscan: urlscan: 50 scans for shopify.com \u2014 10000 total"
+  },
+  {
+   "ts": "2026-09-26T19:11:21Z",
+   "kind": "fact",
+   "text": "urlscan: urlscan: 50 scans for admin.shopify.com \u2014 10000 total"
+  },
+  {
+   "ts": "2026-09-26T19:11:21Z",
+   "kind": "fact",
+   "text": "urlscan: urlscan: 50 scans for accounts.shopify.com \u2014 4393 total"
+  },
+  {
+   "ts": "2026-09-26T19:13:16Z",
+   "kind": "fact",
+   "text": "wayback: wayback: 4000 historic urls for shopify.com \u2014 120 api-shaped"
+  },
+  {
+   "ts": "2026-09-26T19:13:16Z",
+   "kind": "fact",
+   "text": "wayback: wayback: 0 historic urls for admin.shopify.com \u2014 0 api-shaped"
+  },
+  {
+   "ts": "2026-09-26T19:13:16Z",
+   "kind": "fact",
+   "text": "wayback: wayback: 4000 historic urls for partners.shopify.com \u2014 120 api-shaped"
+  }
+ ],
+ "assumptions": [],
+ "hypotheses": [],
+ "tests": [],
+ "results": [],
+ "rejected_hypotheses": [],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [],
+ "facts": [],
+ "lessons": [],
+ "next_actions": [],
+ "id": "f4728edc4a7b"
+}

@@ -1,0 +1,101 @@
+[
+ {
+  "target": "github.com",
+  "host": "github.com",
+  "direction": "headers",
+  "check": "version disclosure",
+  "severity": "INFO",
+  "evidence": "{\"Server\": \"github.com\"}",
+  "url": "https://github.com/"
+ },
+ {
+  "target": "github.com",
+  "host": "api.mcp.github.com",
+  "direction": "headers",
+  "check": "missing security headers",
+  "severity": "LOW",
+  "evidence": "missing: content-security-policy, strict-transport-security, x-frame-options, x-content-type-options",
+  "url": "https://api.mcp.github.com/"
+ },
+ {
+  "target": "github.com",
+  "host": "api.mcp.github.com",
+  "direction": "headers",
+  "check": "version disclosure",
+  "severity": "INFO",
+  "evidence": "{\"Server\": \"github.com\"}",
+  "url": "https://api.mcp.github.com/"
+ },
+ {
+  "target": "github.com",
+  "host": "api.mcp.github.com",
+  "direction": "cors",
+  "check": "wildcard ACAO",
+  "severity": "INFO",
+  "evidence": "Access-Control-Allow-Origin: *",
+  "url": "https://api.mcp.github.com/"
+ },
+ {
+  "target": "github.com",
+  "host": "api.security.github.com",
+  "direction": "headers",
+  "check": "missing security headers",
+  "severity": "LOW",
+  "evidence": "missing: content-security-policy, strict-transport-security, x-frame-options, x-content-type-options",
+  "url": "https://api.security.github.com/"
+ },
+ {
+  "target": "github.com",
+  "host": "dev-days.github.com",
+  "direction": "headers",
+  "check": "missing security headers",
+  "severity": "LOW",
+  "evidence": "missing: content-security-policy, strict-transport-security, x-frame-options, x-content-type-options",
+  "url": "https://dev-days.github.com/"
+ },
+ {
+  "target": "github.com",
+  "host": "dev-days.github.com",
+  "direction": "headers",
+  "check": "version disclosure",
+  "severity": "INFO",
+  "evidence": "{\"Server\": \"GitHub.com\"}",
+  "url": "https://dev-days.github.com/"
+ },
+ {
+  "target": "github.com",
+  "host": "dev-days.github.com",
+  "direction": "cors",
+  "check": "wildcard ACAO",
+  "severity": "INFO",
+  "evidence": "Access-Control-Allow-Origin: *",
+  "url": "https://dev-days.github.com/"
+ },
+ {
+  "target": "github.com",
+  "host": "github.com",
+  "direction": "fingerprint",
+  "check": "Swagger UI exposed",
+  "severity": "MEDIUM",
+  "evidence": "200 /swagger-ui.html :: Same as above \u2014 map the API surface.",
+  "url": "https://github.com/swagger-ui.html"
+ },
+ {
+  "target": "github.com",
+  "host": "github.com",
+  "direction": "exposed",
+  "check": "exposed file /.well-known/security.txt",
+  "severity": "LOW",
+  "evidence": "/.well-known/security.txt returned 200 (269 bytes)",
+  "url": "https://github.com/.well-known/security.txt"
+ },
+ {
+  "target": "github.com",
+  "host": "github.com",
+  "direction": "exposed",
+  "check": "exposed file /server-status",
+  "severity": "LOW",
+  "evidence": "/server-status returned 200 (149999 bytes)",
+  "url": "https://github.com/server-status"
+ }
+]

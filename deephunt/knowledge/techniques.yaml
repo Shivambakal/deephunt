@@ -1,0 +1,675 @@
+# DEEPHUNT technique knowledge base — training distilled from disclosed bounty
+# history, OWASP testing guides, and real hunter writeups. train.py matches
+# funnel signals against these cards to generate targeted hypotheses.
+# Each card: id, name, klass, signals (funnel keywords that trigger it),
+# test (minimum controlled procedure), impact_hint.
+
+- id: IDOR-01
+  name: BOLA on numeric/UUID object IDs
+  klass: authorization
+  signals: ["/{id}", "asset", "document", "user/", "invoice", "order", "api/v"]
+  test: >
+    Two owned accounts A/B. A creates object, captures its ID. B requests the
+    same ID directly (GET/PUT/DELETE). Compare: 200 with A's data = broken
+    object-level authorization. Also try IDOR via POST body id, X-HTTP-Method
+    override, and .json suffix.
+  impact_hint: High — cross-account data disclosure, the most paid bounty class.
+
+- id: IDOR-02
+  name: IDOR via parameter pollution / duplicate params
+  klass: authorization
+  signals: ["?", "id=", "user_id", "account"]
+  test: >
+    Send ?user_id=VICTIM&user_id=ATTACKER and reversed. Backends that take the
+    first vs last param inconsistently may authorize as attacker but act on victim.
+  impact_hint: Medium-High.
+
+- id: AUTHZ-01
+  name: Role/plan restriction enforced client-side only
+  klass: authorization
+  signals: ["admin", "premium", "plan", "role", "upgrade", "settings"]
+  test: >
+    Replay a privileged action as a low-privilege owned account by calling the
+    API directly (drop the UI gate). Watch for 200 vs 403. Try role param
+    tampering (role=user -> role=admin) on profile-update endpoints.
+  impact_hint: High — privilege escalation.
+
+- id: AUTHZ-02
+  name: Forced browsing to unlinked admin/debug endpoints
+  klass: authorization
+  signals: ["admin", "debug", "internal", "console", "actuator", "metrics"]
+  test: >
+    Request admin/debug paths directly as low-priv user. Many apps hide but don't
+    protect /admin, /internal, /debug, /actuator, /.env, /server-status.
+  impact_hint: Medium-High.
+
+- id: AUTHN-01
+  name: OTP/rate-limit bypass via response manipulation
+  klass: authentication
+  signals: ["otp", "verify", "2fa", "mfa", "code", "login"]
+  test: >
+    Try: no rate limit (20 rapid codes), code reuse, leading-zero truncation,
+    response-tampering ({"success":true}), and null/empty code. Never brute-force
+    real accounts — owned test accounts only, low volume.
+  impact_hint: High — account takeover.
+
+- id: AUTHN-02
+  name: Password reset token leakage / host header poisoning
+  klass: authentication
+  signals: ["reset", "forgot", "password"]
+  test: >
+    Request reset with X-Forwarded-Host: attacker.com — check if the reset link
+    in the (owned) mailbox points at the attacker host. Also test token
+    predictability and whether the token is bound to the requester.
+  impact_hint: High — account takeover.
+
+- id: JWT-01
+  name: JWT alg confusion / none / weak secret
+  klass: crypto
+  signals: ["jwt", "token", "eyJ", "authorization: bearer"]
+  test: >
+    Decode the token (owned account). Try alg=none, RS256->HS256 confusion with
+    the public key, and weak-secret cracking offline against the HMAC. Modify
+    claims (sub, role) and replay.
+  impact_hint: High — auth bypass.
+
+- id: OAUTH-01
+  name: OAuth redirect_uri / state validation gaps
+  klass: authentication
+  signals: ["oauth", "authorize", "callback", "redirect_uri", "sso"]
+  test: >
+    Try open-redirect-ish redirect_uris (subdomain, path traversal, @-tricks),
+    missing state, code leakage via referer, and PKCE downgrade. Owned apps only.
+  impact_hint: High — token theft.
+
+- id: SSRF-01
+  name: SSRF via URL fetch / webhook / file-import parameters
+  klass: ssrf
+  signals: ["url=", "webhook", "import", "fetch", "avatar", "preview", "callback"]
+  test: >
+    Point the parameter at an owned collaborator/out-of-band host; confirm
+    DNS/HTTP egress. Then test cloud-metadata (169.254.169.254) ONLY where the
+    program explicitly permits it — many forbid it. Prefer proving with the
+    collaborator + internal 403-vs-timeout oracle.
+  impact_hint: Critical.
+
+- id: SSRF-02
+  name: SSRF allowlist bypass via parser differentials
+  klass: ssrf
+  signals: ["url=", "domain", "whitelist"]
+  test: >
+    Try 0x/decimal/octal IP encodings, @-userinfo tricks, #fragments, DNS
+    rebinding shapes, and redirect chains off an allowed domain.
+  impact_hint: Critical.
+
+- id: XSS-01
+  name: Stored XSS via profile/content fields
+  klass: xss
+  signals: ["comment", "profile", "name", "bio", "ticket", "filename"]
+  test: >
+    Inject inert canary markup (<b> or <img src=x onerror>) into owned-account
+    fields; check where it reflects unescaped (other owned account's view).
+    Prefer canary over alert(); prove with a unique string.
+  impact_hint: High.
+
+- id: XSS-02
+  name: Reflected/DOM XSS via query params and hash fragments
+  klass: xss
+  signals: ["?", "search", "q=", "redirect", "next="]
+  test: >
+    Fuzz reflected params with a canary; check sinks with JS bundle review
+    (innerHTML, document.write, location-based sinks). DOM clobbering where forms exist.
+  impact_hint: Medium.
+
+- id: SQLI-01
+  name: SQL injection in sort/filter/search parameters
+  klass: injection
+  signals: ["sort", "filter", "search", "order", "id=", "query"]
+  test: >
+    Time-based and boolean probes on owned data only. Prefer error-shape
+    analysis first; confirm with sleep-differential, never destructive payloads.
+  impact_hint: Critical.
+
+- id: SSTI-01
+  name: Server-side template injection in names/templates/previews
+  klass: injection
+  signals: ["template", "preview", "render", "email", "pdf", "export"]
+  test: >
+    Inject {{7*7}} / ${7*7} canaries into template-ish fields (owned account),
+    watch rendered output for 49. Escalate only to harmless math proof.
+  impact_hint: Critical.
+
+- id: RACE-01
+  name: Race on coupon/credit/refund/balance operations
+  klass: race
+  signals: ["coupon", "credit", "balance", "refund", "redeem", "wallet"]
+  test: >
+    Fire 5-10 parallel requests for a redeem/spend action on owned accounts
+    (single short burst, not a flood). Compare final balance vs expected.
+    Predict -> probe -> prove with ledger math.
+  impact_hint: High — financial.
+
+- id: RACE-02
+  name: TOCTOU on email change / invite / share revocation
+  klass: race
+  signals: ["invite", "share", "revoke", "email", "verify"]
+  test: >
+    Overlap the revoke with in-flight requests: mint ticket/link, revoke, then
+    immediately redeem. Also overlap email-change with verification send.
+  impact_hint: High.
+
+- id: LOGIC-01
+  name: Price/quantity tampering in cart/checkout flows
+  klass: business-logic
+  signals: ["cart", "checkout", "price", "amount", "quantity", "order"]
+  test: >
+    Tamper price/quantity client-side and in the API body (owned account,
+    do NOT complete real payment). Prove server trusts client math.
+  impact_hint: High — financial. (No real charges, ever.)
+
+- id: LOGIC-02
+  name: Workflow step-skipping (checkout, onboarding, KYC)
+  klass: business-logic
+  signals: ["step", "wizard", "onboarding", "checkout", "verify"]
+  test: >
+    Call later-step APIs without completing earlier steps (owned account).
+    Many flows gate in UI only.
+  impact_hint: Medium-High.
+
+- id: API-01
+  name: Excessive data exposure / mass assignment
+  klass: api
+  signals: ["api/", "user", "profile", "settings"]
+  test: >
+    Diff the API response against what the UI shows (owned account) — look for
+    emails, hashes, tokens, internal flags. Try mass-assignment: add
+    {"role":"admin","is_verified":true} to update calls.
+  impact_hint: Medium-High.
+
+- id: API-02
+  name: Unauthenticated / unthrottled enumeration endpoints
+  klass: api
+  signals: ["search", "users", "check", "exists", "lookup", "suggest"]
+  test: >
+    Test username/email existence oracles without auth, at human pace.
+    Prove with two owned accounts (exists vs not).
+  impact_hint: Medium.
+
+- id: GQL-01
+  name: GraphQL introspection + field suggestion abuse
+  klass: graphql
+  signals: ["graphql", "/gql"]
+  test: >
+    Introspection query; if disabled, try field-suggestion error messages to
+    map the schema. Then test authz per sensitive field with two accounts.
+  impact_hint: High.
+
+- id: AI-01
+  name: Indirect prompt injection across a share/collaboration boundary
+  klass: ai-llm
+  signals: ["assistant", "ai", "copilot", "chat", "share", "space", "prompt"]
+  test: >
+    Attacker plants instructions in shared content; victim queries the AI in
+    their own context (owned accounts, canary in victim's private data).
+    Success = canary disclosure or unauthorized action. Control = benign content.
+  impact_hint: High — Tier-1 in AI bounty tiers.
+
+- id: AI-02
+  name: System-prompt / instruction leakage via prompt engineering
+  klass: ai-llm
+  signals: ["assistant", "ai", "system", "instructions"]
+  test: >
+    Ask the assistant to reveal its instructions (owned session). Many programs
+    explicitly exclude this — check the test plan FIRST; often out of scope.
+  impact_hint: Low (usually excluded).
+
+- id: AI-03
+  name: AI action/tool abuse (unauthorized tool calls from injected context)
+  klass: ai-llm
+  signals: ["assistant", "tool", "action", "plugin", "function"]
+  test: >
+    Inject instructions that trigger the assistant's tools (email send, file
+    share, calendar) in the victim's session. Prove the unauthorized action
+    with owned accounts only.
+  impact_hint: Critical.
+
+- id: UPLOAD-01
+  name: Unrestricted file upload (type/extension/content bypass)
+  klass: upload
+  signals: ["upload", "avatar", "attachment", "import"]
+  test: >
+    Try double extensions, null bytes, SVG with script, polyglots (owned
+    account, inert payloads). Check where the file is served from and its
+    Content-Type/Disposition.
+  impact_hint: High.
+
+- id: CORS-01
+  name: CORS misconfiguration (null/reflective origin + credentials)
+  klass: cors
+  signals: ["api.", "Access-Control-Allow-Origin"]
+  test: >
+    Send Origin: null and Origin: https://evil.com with credentials; check
+    ACAO reflection + ACAC:true. Prove readability impact, not just headers.
+  impact_hint: Medium.
+
+- id: CACHE-01
+  name: Web cache poisoning / deception
+  klass: cache
+  signals: ["cdn", "cache", "akamai", "cloudflare", "fastly"]
+  test: >
+    Try cache-key tricks (utm params, .css suffix on dynamic URLs, header
+    injection into cached responses) with owned sessions; verify poisoned
+    response serves to a second clean session.
+  impact_hint: High.
+
+- id: SUBTO-01
+  name: Subdomain takeover via dangling CNAME
+  klass: cloud
+  signals: ["cname", "herokuapp", "s3", "azureedge", "github.io", "cloudfront"]
+  test: >
+    Passive: resolve CNAMEs of all subdomains, match against known dead-service
+    fingerprints. Claim ONLY with explicit program permission — otherwise
+    report the dangling record as-is.
+  impact_hint: High.
+
+- id: SECRETS-01
+  name: Secrets/keys in JS bundles and public repos
+  klass: secrets
+  signals: [".js", "bundle", "api_key", "secret", "token"]
+  test: >
+    Regex-scan all fetched bundles for high-entropy strings and key patterns
+    (aws_, sk_live, xoxb-, ghp_). Validate by TYPE only — never use a found
+    secret; report its existence and location.
+  impact_hint: High-Critical.
+
+- id: WS-01
+  name: WebSocket authorization gaps (missing origin/token checks)
+  klass: websocket
+  signals: ["ws://", "wss://", "socket", "realtime"]
+  test: >
+    Connect with victim's channel params from attacker's session; check
+    cross-user message receipt. Test CSWSH via Origin header.
+  impact_hint: High.
+
+- id: REDIR-01
+  name: Open redirect -> OAuth/token theft chain
+  klass: open-redirect
+  signals: ["redirect", "next=", "returnUrl", "continue="]
+  test: >
+    Try //evil.com, /\\/evil.com, ?next=javascript:, parameter smuggling.
+    Chain value comes from OAuth flows — test there.
+  impact_hint: Medium (High chained).
+
+- id: XXE-01
+  name: XXE in file import / document processing / SAML
+  klass: injection
+  signals: ["import", "xml", "svg", "docx", "saml", "metadata"]
+  test: >
+    Upload XML with inert external-entity canary pointing at owned collaborator
+    (owned account). Prove with DNS/HTTP callback, never /etc/passwd exfil.
+  impact_hint: High.
+
+- id: MASS-01
+  name: HTTP request smuggling (CL.TE / TE.CL)
+  klass: smuggling
+  signals: ["cdn", "proxy", "transfer-encoding"]
+  test: >
+    Only where the program permits active testing. Use differential timing,
+    never poison other users' requests. High care required.
+  impact_hint: Critical.
+
+- id: SESS-01
+  name: Session fixation / concurrent-session / logout flaws
+  klass: session
+  signals: ["session", "login", "logout", "cookie"]
+  test: >
+    Fixation: set pre-login session cookie, complete login as owned victim
+    account, check if the cookie stays valid. Also test logout invalidation
+    and password-change session handling.
+  impact_hint: Medium-High.
+
+- id: 2FA-01
+  name: 2FA enrollment bypass / recovery-code flaws
+  klass: authentication
+  signals: ["2fa", "totp", "recovery", "backup-code"]
+  test: >
+    Enroll 2FA on owned account; test recovery-code entropy/reuse, disabling
+    2FA without re-auth, and backup-code brute-force protections (low volume).
+  impact_hint: High.
+
+- id: INVITE-01
+  name: Invite/token reuse and privilege confusion in teams/orgs
+  klass: authorization
+  signals: ["invite", "team", "org", "workspace", "member"]
+  test: >
+    Reuse expired invites, tamper role in invite accept, self-invite to
+    privileged teams. Two owned accounts, one org.
+  impact_hint: High.
+
+- id: EXPORT-01
+  name: Data export / bulk download authorization gaps
+  klass: authorization
+  signals: ["export", "download", "report", "backup", "csv"]
+  test: >
+    Trigger exports as low-priv owned user; check whether the job includes
+    other users'/tenants' data or is enumerable by job ID.
+  impact_hint: High.
+
+- id: RATE-01
+  name: Missing rate limits enabling enumeration or cost abuse
+  klass: rate-limit
+  signals: ["sms", "email", "send", "invite", "search"]
+  test: >
+    Human-paced checks for absent throttles on SMS/email/send endpoints
+    (owned account, tiny volumes). Report cost-abuse potential, don't realize it.
+  impact_hint: Medium.
+
+- id: PROTO-01
+  name: Prototype pollution in JS-heavy apps
+  klass: xss
+  signals: [".js", "__proto__", "merge", "extend", "config"]
+  test: >
+    Inject __proto__[canary]=polluted via query/body params; check client-side
+    behavior change in owned session. Server-side variants via lodash-style merges.
+  impact_hint: Medium-High.
+
+- id: PATH-01
+  name: Path traversal in download/export/file-read
+  klass: injection
+  signals: ["download", "file", "path", "template", "export"]
+  test: >
+    Try ../ sequences and encoded variants on file parameters (owned account).
+    Prove with harmless canary file read, never sensitive paths beyond proof.
+  impact_hint: High.
+
+- id: HOST-01
+  name: Host header injection -> password reset / cache poisoning
+  klass: injection
+  signals: ["reset", "Host:"]
+  test: >
+    X-Forwarded-Host / Host override on reset and link-generation flows;
+    check where the attacker host lands (owned mailbox).
+  impact_hint: Medium-High.
+
+# --- DEEPHUNT-100 expansion (2026-09-27): semantic, invariant, AI, fuzzing ---
+- id: SEM-01
+  name: Semantic data-flow gap (CodeQL-style reasoning)
+  klass: injection
+  signals: ["param", "query", "input", "search", "filter", "api/"]
+  test: >
+    Trace one user-controlled parameter from HTTP entry through code/JS to sink
+    (query, eval, innerHTML, redirect). If no sanitizer/validator node sits on the
+    path, the flow is a candidate. Prove with a benign marker reaching the sink.
+  impact_hint: High — finds injection classes scanners miss.
+
+- id: INV-01
+  name: Security invariant violation (formal-methods lens)
+  klass: logic
+  signals: ["balance", "role", "owner", "state", "transition", "approve", "transfer"]
+  test: >
+    State the invariant ("only X may do Y to Z"). Design the cheapest observation
+    that would violate it using owned identities. A violation is a logic flaw by
+    construction, not a payload guess.
+  impact_hint: High — business-logic flaws pay well and resist scanners.
+
+- id: BLO-01
+  name: Business-logic abuse (OWASP BL cheat sheet)
+  klass: business-logic
+  signals: ["checkout", "coupon", "quantity", "price", "refund", "vote", "limit", "quota"]
+  test: >
+    Map the intended state machine (cart->pay->fulfill). Attempt illegal transitions:
+    negative quantities, coupon stacking, race on limited inventory, refund>charge.
+    Compare against the documented flow; deviations are candidates.
+  impact_hint: High — logic abuse is the least-scanned, best-paid class.
+
+- id: AI-01
+  name: Indirect prompt injection via shared content
+  klass: ai-llm
+  signals: ["ai", "assistant", "prompt", "summar", "copilot", "chat", "generate"]
+  test: >
+    Plant a benign instruction in content the victim's AI will ingest (shared doc,
+    page, file). Observe whether the AI's output to the victim reflects the planted
+    instruction. Use canary tokens; never exfiltrate real data.
+  impact_hint: High — AI trust-boundary breaks are the current frontier.
+
+- id: AI-02
+  name: LLM output handling flaws (XSS/tool-output injection)
+  klass: ai-llm
+  signals: ["ai", "assistant", "markdown", "render", "chat"]
+  test: >
+    Get the AI to emit markdown/HTML/URLs. Check whether the frontend renders it
+    unsanitized (stored XSS via model output) or follows tool calls the model
+    was tricked into making.
+  impact_hint: Medium-High.
+
+- id: GQL-01
+  name: GraphQL field-level authorization gaps
+  klass: authorization
+  signals: ["graphql", "/graphql", "query {", "__schema"]
+  test: >
+    Introspect (if enabled), then replay each sensitive field/query as a low-priv
+    owned user. Field-level authz is frequently weaker than object-level.
+  impact_hint: High.
+
+- id: OAUTH-01
+  name: OAuth redirect_uri / state confusion
+  klass: authentication
+  signals: ["oauth", "authorize", "redirect_uri", "callback", "sso"]
+  test: >
+    Mutate redirect_uri (subdomain, path traversal, query smuggling), drop/replay
+    state, mix code across clients. Capture with an owned receiver only.
+  impact_hint: High — account takeover adjacent.
+
+- id: SSRF-02
+  name: SSRF via parser differentials
+  klass: ssrf
+  signals: ["webhook", "url=", "import", "fetch", "preview", "avatar"]
+  test: >
+    Submit URLs that parse differently across validators: 0x7f.0.0.1, [::ffff:127.0.0.1],
+    DNS rebinding via owned domain, redirect chains. Detect via timing/DNS canary.
+  impact_hint: High.
+
+- id: CACHE-01
+  name: Web cache poisoning via unkeyed inputs
+  klass: cache
+  signals: ["cdn", "cloudflare", "akamai", "cache", "x-cache"]
+  test: >
+    Inject unkeyed header/query markers; check if the poisoned response is served
+    to a second clean session. Never poison real users — use cache-buster keys.
+  impact_hint: High.
+
+- id: FUZZ-01
+  name: LLM-guided fuzz target selection (OSS-Fuzz-Gen pattern)
+  klass: fuzzing
+  signals: ["upload", "parse", "import", "convert", "file", "image", "pdf"]
+  test: >
+    For parser endpoints in authorized scope: generate structured malformed inputs
+    (truncated, oversized, type-confused) at low rate. Watch for 500s, hangs, or
+    differential behavior indicating unhandled paths.
+  impact_hint: Medium — crashes hint at memory-safety issues.
+
+- id: RATE-02
+  name: Rate-limit bypass via identity rotation
+  klass: rate-limit
+  signals: ["rate", "limit", "429", "throttle", "otp", "login"]
+  test: >
+    After hitting 429, rotate IP header (X-Forwarded-For), session, and endpoint
+    casing. If the counter resets, the limit is cosmetic.
+  impact_hint: Medium — enables credential stuffing/brute force.
+
+- id: CORS-02
+  name: CORS credential reflection on API subdomains
+  klass: cors
+  signals: ["api.", "cors", "access-control-allow-origin"]
+  test: >
+    Send Origin: https://evil.example with credentials on API hosts. Reflected
+    origin + allow-credentials = token theft primitive.
+  impact_hint: Medium.
+
+- id: TO-02
+  name: Dangling DNS on acquired/legacy subdomains
+  klass: takeover
+  signals: ["cname", "azure", "s3", "heroku", "github.io", "zendesk"]
+  test: >
+    For CNAMEs to claimable services, verify NXDOMAIN/claimability without
+    claiming. Report per program rules; never seize assets.
+  impact_hint: Medium-High.
+
+- id: API-03
+  name: API version replay (v1 bugs in v2/v3)
+  klass: api
+  signals: ["api/v2", "api/v3", "/v1/", "version"]
+  test: >
+    Replay every v1 authz test against newer API versions. Vendors fix instances,
+    not classes — new versions repeat old bugs.
+  impact_hint: High.
+
+- id: SESS-02
+  name: Session/token confusion across subdomains
+  klass: session
+  signals: ["session", "cookie", "domain=", "sso", ".example.com"]
+  test: >
+    Check cookie Domain scope: a session cookie scoped to the apex is sent to all
+    subdomains, including less-trusted ones. Test fixation and cross-subdomain replay.
+  impact_hint: Medium-High.
+
+- id: WAF-01
+  name: WAF/filter bypass via encoding differentials
+  klass: injection
+  signals: ["waf", "blocked", "forbidden", "modsecurity", "cloudflare"]
+  test: >
+    When a payload is blocked, try encoding layers (double URL, unicode, HTML
+    entities) and HTTP method/content-type swaps. A bypass proves filter-only defense.
+  impact_hint: Medium.
+
+- id: WS-01
+  name: WebSocket authorization and CSRF
+  klass: websocket
+  signals: ["websocket", "ws://", "wss://", "socket.io"]
+  test: >
+    Connect with a low-priv token, attempt privileged actions over the socket.
+    Test cross-site handshake (Origin check) for WebSocket hijacking.
+  impact_hint: Medium-High.
+
+- id: SUPPLY-01
+  name: Dependency confusion / known-vuln components
+  klass: supply-chain
+  signals: ["package.json", ".js", "vendor", "node_modules", "version"]
+  test: >
+    Fingerprint JS library versions from passive sources; match against OSV/GitHub
+    advisories. Report only with a demonstrable exploit path in scope.
+  impact_hint: Medium.
+
+# --- hardware attack surface (2026-09-27). Physical-execution cards are
+# AUTHORIZED-LAB-ONLY. Firmware/BMC/debug-interface cards apply to in-scope
+# devices, cloud instances, and network gear per program rules.
+- id: HW-01
+  name: Speculative-execution info leak (Spectre-class)
+  klass: hardware
+  signals: ["shared hosting", "multi-tenant", "sandbox", "wasm", "browser"]
+  test: >
+    LAB-ONLY: in an owned isolated lab, test cross-boundary speculative reads
+    (bounds-check bypass, BTB poisoning). On bounty targets: only report if a
+    tenant-isolation boundary demonstrably leaks (e.g. cloud metadata, shared
+    CI runners) — never run speculative probes against production.
+  impact_hint: Critical in lab; bounty-scope only with demonstrated tenant leak.
+
+- id: HW-02
+  name: Rowhammer-style memory disturbance
+  klass: hardware
+  signals: ["dedup", "shared memory", "kvm", "memory"]
+  test: >
+    LAB-ONLY: owned hardware only. Flip bits in adjacent rows to escape
+    sandboxes or corrupt page tables. Never against shared/production infra.
+  impact_hint: Critical (lab-only).
+
+- id: HW-03
+  name: Firmware update without signature verification
+  klass: hardware
+  signals: ["firmware", "update", ".bin", "ota", "bios", "uefi"]
+  test: >
+    For in-scope devices/services: check whether firmware/OTA updates verify
+    signatures (downgrade, unsigned image, rollback). Report per program rules.
+  impact_hint: High — persistent compromise.
+
+- id: HW-04
+  name: Debug interfaces left enabled (JTAG/UART)
+  klass: hardware
+  signals: ["uart", "jtag", "serial", "console", "debug"]
+  test: >
+    For in-scope hardware/IoT: probe for open debug consoles and default
+    credentials. LAB-ONLY for physical probing; report-only for bounty scope.
+  impact_hint: High — full device control.
+
+- id: HW-05
+  name: BMC/IPMI with default or weak credentials
+  klass: hardware
+  signals: ["bmc", "ipmi", "ilo", "idrac", "management"]
+  test: >
+    For in-scope infrastructure: test management interfaces for default creds
+    and unauthenticated RCE (e.g. historic IPMI flaws). One attempt per vector;
+    never brute-force.
+  impact_hint: Critical — out-of-band control.
+
+- id: HW-06
+  name: DMA via exposed high-speed ports
+  klass: hardware
+  signals: ["thunderbolt", "pcie", "dma", "firewire"]
+  test: >
+    LAB-ONLY: owned devices with exposed PCIe/Thunderbolt — test IOMMU
+    configuration and DMA protections. Concept feeds cloud/VDI threat models.
+  impact_hint: High (lab-only).
+
+- id: HW-07
+  name: TPM / Secure Boot misconfiguration
+  klass: hardware
+  signals: ["tpm", "secure boot", "bitlocker", "measured boot"]
+  test: >
+    For in-scope device fleets/MDM: check attestation gaps, unsealed secrets,
+    boot-policy bypasses. LAB-ONLY for physical TPM attacks.
+  impact_hint: High.
+
+- id: HW-08
+  name: Power/timing side channels on crypto
+  klass: hardware
+  signals: ["crypto", "token", "hmac", "compare", "login"]
+  test: >
+    Test string comparisons for timing oracles (login, token, HMAC) over the
+    network at low rate. Physical power analysis is LAB-ONLY.
+  impact_hint: Medium-High.
+
+- id: HW-09
+  name: Fault injection (voltage/clock glitching)
+  klass: hardware
+  signals: ["secure element", "bootloader", "auth"]
+  test: >
+    LAB-ONLY, owned silicon: glitch boot/auth checks. Feeds the mental model
+    for TOCTOU and check-then-act races in software.
+  impact_hint: Critical (lab-only).
+
+- id: HW-10
+  name: Supply-chain implant indicators
+  klass: hardware
+  signals: ["firmware", "vendor", "update", "third-party", "plugin"]
+  test: >
+    For in-scope software supply chain: verify signatures, reproducible builds,
+    unexpected network egress from components. Maps to SUPPLY-01.
+  impact_hint: High.
+
+- id: HW-11
+  name: Coprocessor attack surface (ME/PSP-class)
+  klass: hardware
+  signals: ["management engine", "coprocessor", "firmware", "ring -3"]
+  test: >
+    Study-only for bounty scope: map which in-scope devices expose coprocessor
+    interfaces (AMT/ME, PSP). Exploitation is LAB-ONLY.
+  impact_hint: Critical (lab-only).
+
+- id: HW-12
+  name: Sensor/input spoofing (mobile/IoT)
+  klass: hardware
+  signals: ["gps", "camera", "nfc", "biometric", "sensor"]
+  test: >
+    For in-scope mobile/IoT apps: spoof GPS, mock sensors, replay biometric
+    enrollment flows with owned devices. Never affect other users.
+  impact_hint: Medium-High.

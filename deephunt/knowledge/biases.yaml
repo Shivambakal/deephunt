@@ -1,0 +1,191 @@
+# DEEPHUNT developer-psychology knowledge — WHY engineers create vulnerabilities.
+# Each bias card: what the dev believes, how it manifests in code,
+# what vulnerability class it produces, and how DEEPHUNT hunts the assumption.
+# The psychologist thinking mode turns these into hypotheses.
+
+- id: BIAS-01
+  name: Framework trust
+  psychology: Developers assume the framework handles auth, CSRF, sanitization.
+  manifests: ["missing explicit authz checks", "no CSRF tokens on new endpoints",
+              "raw SQL next to ORM code", "framework upgraded, custom code not"]
+  produces: [authorization, csrf, injection]
+  hunt: >
+    Find endpoints the framework does NOT cover: custom routes, new API versions,
+    framework-bypass paths (e.g. direct object access). Test authz explicitly.
+
+- id: BIAS-02
+  name: Client-side enforcement
+  psychology: Validation in JavaScript feels like validation, period.
+  manifests: ["maxlength/pattern attributes as sole control", "role checks in JS",
+              "price/quantity validated in browser"]
+  produces: [business-logic, injection, authorization]
+  hunt: >
+    Replay every validated request with constraints removed. If the server
+    accepts, the control was cosmetic.
+
+- id: BIAS-03
+  name: Copy-paste cryptography
+  psychology: Crypto from StackOverflow/blog looks authoritative; nobody audits it.
+  manifests: ["hardcoded IV/key", "ECB mode", "custom token format", "md5/sha1",
+              "JWT none algorithm accepted"]
+  produces: [crypto, authentication]
+  hunt: >
+    Fingerprint token/crypto formats; test alg=none, weak keys, IV reuse,
+    timing oracles on comparison.
+
+- id: BIAS-04
+  name: Happy-path testing
+  psychology: Tests cover intended flows; nobody tests the flows users invent.
+  manifests: ["no tests for illegal state transitions", "coupon applied twice",
+              "checkout steps skippable via direct URL"]
+  produces: [business-logic, race]
+  hunt: >
+    Map the state machine from the UI, then walk illegal transitions:
+    skip steps, repeat steps, reorder steps.
+
+- id: BIAS-05
+  name: Security by obscurity
+  psychology: Unlisted = safe. Hidden endpoints, secret params, undocumented APIs.
+  manifests: ["/internal", "/debug", "?debug=1", "old API versions", "backup files"]
+  produces: [secrets, authorization, ssrf]
+  hunt: >
+    Enumerate what was meant to stay hidden: JS bundles, sitemaps, robots.txt,
+    .git, swagger, old versions.
+
+- id: BIAS-06
+  name: Deadline pressure
+  psychology: Ship now, harden later. TODO/FIXME/HACK comments mark the wounds.
+  manifests: ["TODO: add auth", "disabled checks", "temporary endpoints",
+              "verbose error pages in prod"]
+  produces: [secrets, authorization, injection]
+  hunt: >
+    Grep JS bundles and error pages for TODO/FIXME/debug flags; test every
+    half-finished feature.
+
+- id: BIAS-07
+  name: Internal network trust
+  psychology: "It's only reachable internally" — until SSRF reaches it.
+  manifests: ["no auth on internal APIs", "metadata endpoints", "admin panels on intranet"]
+  produces: [ssrf, authorization]
+  hunt: >
+    Every URL-fetch feature is a doorway to the internal network. Probe with
+    canary/DNS callbacks via owned infrastructure.
+
+- id: BIAS-08
+  name: Admins are trusted
+  psychology: Admin panels get weaker output encoding; admins "wouldn't attack".
+  manifests: ["stored XSS in admin views", "no CSRF on admin actions", "mass assignment"]
+  produces: [xss, csrf, authorization]
+  hunt: >
+    Inject benign markers into every field an admin will view. Test admin
+    actions for CSRF with a low-priv session.
+
+- id: BIAS-09
+  name: Regex confidence
+  psychology: A regex looks like a validator. Most are wrong at the edges.
+  manifests: ["email/URL validation regex", "WAF regex filters", "sanitizer regex"]
+  produces: [injection, xss, open-redirect]
+  hunt: >
+    Attack the edges: unicode, newlines, null bytes, nested encodings,
+    alternative schemes the regex forgot.
+
+- id: BIAS-10
+  name: Dependency neglect
+  psychology: "It works, don't touch it." Libraries age into vulnerabilities.
+  manifests: ["old jQuery/bootstrap", "unpinned versions", "vendored copies"]
+  produces: [supply-chain, xss]
+  hunt: >
+    Fingerprint library versions passively; match against OSV/GitHub advisories
+    for known-vulnerable components with reachable exploit paths.
+
+- id: BIAS-11
+  name: Honest error messages
+  psychology: Detailed errors help debugging; they also help attackers.
+  manifests: ["stack traces in prod", "SQL errors", "user enumeration via messages"]
+  produces: [secrets, authentication]
+  hunt: >
+    Trigger errors deliberately: bad input, bad IDs, bad auth. Harvest
+    internals and build an existence oracle.
+
+- id: BIAS-12
+  name: Idempotency assumption
+  psychology: "Nobody clicks twice." Backends often agree.
+  manifests: ["double coupon use", "double vote", "replayable state changes"]
+  produces: [race, business-logic]
+  hunt: >
+    Replay state-changing requests; race them in parallel. Compare balances,
+    counts, and entitlements before/after.
+
+- id: BIAS-13
+  name: Mobile/API parity gap
+  psychology: The mobile API is "the same backend" — but its checks diverged.
+  manifests: ["mobile-only endpoints", "weaker validation on /api/mobile",
+              "legacy app versions still accepted"]
+  produces: [authorization, business-logic]
+  hunt: >
+    Replay web attacks against mobile/API-version endpoints. Old app versions
+    often speak to forgotten, weaker code paths.
+
+- id: BIAS-14
+  name: Test data in production
+  psychology: Test accounts and fixtures leak into prod and stay there.
+  manifests: ["test@example.com", "default passwords", "seed data", "demo tenants"]
+  produces: [authentication, secrets]
+  hunt: >
+    Probe for test/demo accounts, default credentials, fixture tenants.
+    Never brute-force; test only obvious defaults once.
+
+- id: BIAS-15
+  name: JWT trust
+  psychology: A signed-looking token feels verified. Verification is often skipped.
+  manifests: ["alg none accepted", "no signature check", "client-supplied roles",
+              "long-lived tokens"]
+  produces: [authentication, authorization]
+  hunt: >
+    Mutate tokens: strip signature, flip alg, escalate claims, cross-audience
+    replay. Two owned accounts make this decisive.
+
+- id: BIAS-16
+  name: CORS convenience
+  psychology: Reflecting Origin fixes dev pain; the config ships to prod.
+  manifests: ["Access-Control-Allow-Origin: <request origin>", "null origin allowed"]
+  produces: [cors]
+  hunt: >
+    Send attacker Origins with credentials. A reflection is a token-theft
+    primitive waiting for a victim visit.
+
+- id: BIAS-17
+  name: Log everything
+  psychology: Verbose logs aid debugging; they also store secrets in plaintext.
+  manifests: ["tokens in URLs", "PII in logs", "log viewer without authz"]
+  produces: [secrets]
+  hunt: >
+    Check whether logged data (analytics, error trackers, exports) is readable
+    across privilege boundaries.
+
+- id: BIAS-18
+  name: Feature-flag debt
+  psychology: Half-removed features leave live endpoints nobody owns.
+  manifests: ["old UI routes still served", "deprecated API versions", "dark-launch code"]
+  produces: [authorization, secrets]
+  hunt: >
+    Diff current UI against JS bundles and sitemaps; the delta is abandoned
+    attack surface.
+
+- id: BIAS-19
+  name: AI-generated code trust
+  psychology: Copilot wrote it, tests pass, nobody read it closely.
+  manifests: ["unusual idioms", "missing edge-case handling", "hallucinated APIs"]
+  produces: [injection, business-logic, secrets]
+  hunt: >
+    Newest code gets the least review. Target recently shipped features and
+    AI-assisted areas (they ship fast and review thin).
+
+- id: BIAS-20
+  name: Compliance checkbox
+  psychology: Annual pentest passed = secure. Fixes are shallow and local.
+  manifests: ["patched instance, unpatched class", "WAF rule instead of fix"]
+  produces: [injection, authorization]
+  hunt: >
+    For every fixed-looking control, test the sibling endpoints and the
+    underlying class. Vendors fix instances, not classes.

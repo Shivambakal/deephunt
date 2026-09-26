@@ -1,0 +1,29 @@
+== arsenal status ==
+subfinder OK
+httpx OK
+dnsx OK
+nuclei OK
+ffuf OK
+sqlmap FAIL
+naabu OK
+amass OK
+katana OK
+gau OK
+waybackurls OK
+gowitness OK
+dalfox OK
+kiterunner OK
+kerbrute OK
+pspy OK
+nikto FAIL
+bin/les2.pl
+bin/linpeas.sh
+bin/lse.sh
+bin/upc.sh
+bin/Responder
+bin/enum4linux-ng
+bin/jwt_tool
+bin/lynis
+bin/zap
+/usr/bin/nmap
+burp OK
