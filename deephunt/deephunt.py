@@ -89,6 +89,9 @@ def main():
                          "appears")
     ap.add_argument("--interval-hours", type=float, default=6,
                     help="sleep between daemon runs (default 6)")
+    ap.add_argument("--ceo", action="store_true",
+                    help="run the CEO/JUDGE executive pipeline instead of "
+                         "the classic orchestrator loop")
     args = ap.parse_args()
 
     if args.list_tools:
@@ -107,6 +110,17 @@ def main():
     if args.daemon:
         run_forever(args.target, args.max_cycles, args.passive_only,
                     args.interval_hours)
+        return
+    if args.ceo:
+        from ceo import CEO
+        profile = load_profile(args.target)
+        if args.passive_only:
+            profile["active_allowed"] = False
+        report = CEO(args.target, profile,
+                     max_cycles=args.max_cycles).run()
+        print("\n== CEO REPORT ==")
+        print(f"ready for human: {len(report['ready_for_human'])}  "
+              f"held: {len(report['held'])}")
         return
     state = run_target(args.target, max_cycles=args.max_cycles,
                        passive_only=args.passive_only)

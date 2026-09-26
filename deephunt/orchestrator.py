@@ -21,6 +21,7 @@ import think  # noqa: E402
 import train  # noqa: E402
 from tools import list_tools  # noqa: E402
 from tools.base import now  # noqa: E402
+from recovery import RunState, resilient, CircuitBreaker  # noqa: E402
 
 try:
     from brain.session import ResearchSession
@@ -199,24 +200,38 @@ def run_target(target, max_cycles=3, passive_only=False, run_log=None):
            "state_dir": STATE_DIR, "session": session,
            "authorization": None}
 
+    # failure recovery (endgame #8): checkpoint every phase, resume on restart
+    runstate = RunState(target)
+    breaker = CircuitBreaker()
+    resume_cycle, resume_phase = runstate.resume_from()
+    if resume_cycle:
+        log(rl, f"resuming from checkpoint: cycle {resume_cycle}, "
+                 f"phase {resume_phase}")
+
     # ---- INTAKE: passive tools ------------------------------------------------
     log(rl, "PHASE: INTAKE (passive tools)")
+    runstate.checkpoint("intake-start", {})
     for tool in list_tools("passive"):
+        if breaker.quarantined(tool.name):
+            log(rl, f"  [quarantined] {tool.name}")
+            continue
         if not tool.available():
             log(rl, f"  [skip] {tool.name} not installed")
             continue
-        try:
-            findings = tool.run(ctx) or []
-        except Exception as e:  # noqa: BLE001
-            findings = [{"tool": tool.name, "phase": "passive",
-                         "kind": "error", "title": f"{tool.name} crashed",
-                         "detail": str(e)[:300]}]
+        ok, res = resilient(lambda t=tool: t.run(ctx) or [],
+                            retries=1, label=tool.name)
+        breaker.record(tool.name, ok)
+        findings = res if ok else [
+            {"tool": tool.name, "phase": "passive", "kind": "error",
+             "title": f"{tool.name} failed", "detail": str(res)[:300]}]
         state["findings"].extend(findings)
         log(rl, f"  [{tool.name}] {len(findings)} findings")
         if session:
             for f in findings[:6]:
                 session.observe(f"{f['tool']}: {f['title']} — "
                                 f"{f.get('evidence', '')[:160]}", kind="fact")
+    runstate.checkpoint("intake-done",
+                        {"findings": len(state["findings"])})
 
     # ---- INTERNET: fresh techniques -------------------------------------------
     log(rl, "PHASE: INTERNET (fresh techniques)")
@@ -236,6 +251,8 @@ def run_target(target, max_cycles=3, passive_only=False, run_log=None):
         if os.path.isfile(os.path.join(STATE_DIR, "STOP")):
             state["stop_reason"] = "STOP file present"
             break
+        runstate.checkpoint(f"cycle-{cycle + 1}-start",
+                            {"findings": len(state["findings"])})
         log(rl, f"===== CYCLE {cycle + 1}/{max_cycles} =====")
 
         # ---- FUNNEL ----
@@ -259,6 +276,20 @@ def run_target(target, max_cycles=3, passive_only=False, run_log=None):
             brain_seeds = []
         seeds = (brain_seeds +
                  seeds_from_funnel(funnel, profile, mem) + extra)
+        # ATTACK CHAINS (endgame #4): multi-feature chains become hypotheses;
+        # the next unproven link of each chain becomes a differential test.
+        try:
+            import chain as _chain
+            from world_model import WorldModel as _WMc
+            _wmc = _WMc(target)
+            _chains = _chain.build_chains(_wmc, limit=6)
+            chain_hyps = _chain.chains_as_hypotheses(
+                _chains, mem, lambda s: learn.is_novel(s, mem)[0], limit=4)
+            seeds = seeds + chain_hyps
+            log(rl, f"  chains: {len(_chains)} built, "
+                     f"{len(chain_hyps)} novel hypotheses")
+        except Exception as e:  # noqa: BLE001
+            log(rl, f"  chain hypotheses failed ({e})")
         # dedupe internet seeds too, then plan by expected information gain
         # per cost per risk (update #5: EIG planner, not static ranking)
         seeds = [s for s in seeds
@@ -370,32 +401,40 @@ def run_target(target, max_cycles=3, passive_only=False, run_log=None):
 
         # ---- EXECUTE ----
         log(rl, "PHASE: EXECUTE")
-        if passive_only or not profile.get("active_allowed", False):
+        active_blocked = passive_only or not profile.get("active_allowed", False)
+        if active_blocked:
             log(rl, "  active tools skipped (passive-only run or "
                     "active_allowed=false in profile)")
-        for tool in list_tools("active"):
-            if not tool.available():
-                log(rl, f"  [skip] {tool.name} not installed")
-                continue
-            try:
-                findings = tool.run(ctx) or []
-            except Exception as e:  # noqa: BLE001
-                findings = [{"tool": tool.name, "phase": "active",
-                             "kind": "error", "title": f"{tool.name} crashed",
-                             "detail": str(e)[:300]}]
-            gated = [f for f in findings if f["kind"] == "gated"]
-            real = [f for f in findings if f["kind"] != "gated"]
-            state["findings"].extend(findings)
-            for g in gated:
-                log(rl, f"  [gated] {tool.name}: {g['detail'][:100]}")
-            for f in real:
-                log(rl, f"  [{tool.name}] {f['kind']}: {f['title'][:100]}")
-                if f["kind"] == "vuln-candidate" and f.get(
-                        "severity_hint") in ("critical", "high"):
-                    state["stop_reason"] = (
-                        f"vuln candidate: {f['title'][:120]}")
-                    log(rl, "*** HIGH-SEVERITY CANDIDATE — stopping for "
-                            "human validation ***")
+        else:
+            runstate.checkpoint("execute-start", {"cycle": cyc.get("n")})
+            for tool in list_tools("active"):
+                if breaker.quarantined(tool.name):
+                    log(rl, f"  [quarantined] {tool.name}")
+                    continue
+                if not tool.available():
+                    log(rl, f"  [skip] {tool.name} not installed")
+                    continue
+                ok, res = resilient(lambda t=tool: t.run(ctx) or [],
+                                    retries=1, label=tool.name)
+                breaker.record(tool.name, ok)
+                findings = res if ok else [
+                    {"tool": tool.name, "phase": "active", "kind": "error",
+                     "title": f"{tool.name} failed",
+                     "detail": str(res)[:300]}]
+                gated = [f for f in findings if f["kind"] == "gated"]
+                real = [f for f in findings if f["kind"] != "gated"]
+                state["findings"].extend(findings)
+                for g in gated:
+                    log(rl, f"  [gated] {tool.name}: {g['detail'][:100]}")
+                for f in real:
+                    log(rl, f"  [{tool.name}] {f['kind']}: {f['title'][:100]}")
+                    if f["kind"] == "vuln-candidate" and f.get(
+                            "severity_hint") in ("critical", "high"):
+                        state["stop_reason"] = (
+                            f"vuln candidate: {f['title'][:120]}")
+                        log(rl, "*** HIGH-SEVERITY CANDIDATE — stopping for "
+                                "human validation ***")
+            runstate.checkpoint("execute-done", {"cycle": cyc.get("n")})
         for tool in list_tools("operator"):
             try:
                 findings = tool.run(ctx) or []
@@ -455,6 +494,9 @@ def run_target(target, max_cycles=3, passive_only=False, run_log=None):
                         pass
         state["cycles"].append(cyc)
         save_state(target, state)
+        runstate.checkpoint(f"cycle-{cycle + 1}-done",
+                            {"findings": len(state["findings"]),
+                             "cycles": len(state["cycles"])})
         if state["stop_reason"]:
             break
 
@@ -462,6 +504,7 @@ def run_target(target, max_cycles=3, passive_only=False, run_log=None):
         state["stop_reason"] = f"completed {max_cycles} cycles"
     save_state(target, state)
     write_postmortem(target, state, mem)
+    runstate.complete()
     log(rl, f"DEEPHUNT done: {state['stop_reason']}")
     log(rl, f"findings={len(state['findings'])} "
             f"operator_tasks={len(state['operator_tasks'])}")

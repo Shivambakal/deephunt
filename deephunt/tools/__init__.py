@@ -3,6 +3,7 @@ from .base import REGISTRY  # noqa: F401
 from . import passive  # noqa: F401
 from . import active  # noqa: F401
 from . import operator  # noqa: F401
+from . import t100  # noqa: F401  (tools-100 generic adapters)
 
 
 def list_tools(phase=None):
