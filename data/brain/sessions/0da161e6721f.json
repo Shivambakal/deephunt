@@ -1,0 +1,306 @@
+{
+ "objective": "order-api",
+ "created": "2026-09-26T19:22:41Z",
+ "updated": "2026-09-26T19:22:41Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [
+   "Order",
+   "Account"
+  ],
+  "trust_boundaries": [
+   "browser->API"
+  ],
+  "state_machines": {
+   "Order": [
+    "created",
+    "paid"
+   ]
+  }
+ },
+ "observations": [
+  {
+   "ts": "2026-09-26T19:22:41Z",
+   "kind": "observation",
+   "text": "GET validates ownership but PATCH returned 200 for non-owner instead"
+  }
+ ],
+ "assumptions": [
+  {
+   "id": "A1",
+   "believes": "only the owner can mutate an order",
+   "enforcement": "GET ownership check",
+   "violated_if": "PATCH as non-owner succeeds",
+   "confidence": 0.8
+  }
+ ],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "statement": "Same object (Order, Account) is reachable through a different verb, endpoint, or content-type that skips the enforcement at 'GET ownership check'.",
+   "violated_assumption": "A1",
+   "attacker_view": "Violate the assumption by leaving the guarded channel and entering an unguarded one.",
+   "defender_view": "The alternate channel may enforce the same rule at a different layer, or the object may not exist there.",
+   "devil_view": "The 'alternate channel' might require stronger auth, making this a downgrade that never reaches the check.",
+   "investigator_test": "Fire the same logical action through GET vs POST vs PUT vs PATCH vs a versioned path; compare outcomes.",
+   "killed_by": "All channels enforce the check identically.",
+   "impact": 4,
+   "novelty": 4,
+   "testability": 5,
+   "score": 80,
+   "status": "rejected",
+   "source": "generated:GET validates ownership but PATCH returned 200 for non-owner",
+   "ts": "2026-09-26T19:22:41Z"
+  },
+  {
+   "id": "H2",
+   "statement": "A value written in one feature is consumed/rendered in another without re-running the validation done at 'GET ownership check'.",
+   "violated_assumption": "A1",
+   "attacker_view": "Write where validation is weak, execute where trust is high (stored XSS, formula injection, template render).",
+   "defender_view": "The consuming feature may sanitize on render; writing is not exploiting.",
+   "devil_view": "The two features may share the same validation pipeline, so nothing is skipped.",
+   "investigator_test": "Write a probe payload in the weakest input, then observe every surface that renders it (list, export, notification, API).",
+   "killed_by": "Every renderer neutralizes the payload.",
+   "impact": 4,
+   "novelty": 5,
+   "testability": 4,
+   "score": 80,
+   "status": "live",
+   "source": "generated:GET validates ownership but PATCH returned 200 for non-owner",
+   "ts": "2026-09-26T19:22:41Z"
+  },
+  {
+   "id": "H4",
+   "statement": "Upstream validates at 'GET ownership check', but a downstream component across a trust boundary (browser->API) trusts the value under different rules.",
+   "violated_assumption": "A1",
+   "attacker_view": "Find where validation and consumption disagree (client-side vs server-side, API vs webhook, SSO claim vs local session).",
+   "defender_view": "Defense in depth may re-validate downstream; one layer's trust is not the system's trust.",
+   "devil_view": "The boundary may carry a signed/verified token, so downstream trust is justified.",
+   "investigator_test": "Tamper the value at the boundary (proxy match/replace) and watch whether downstream re-validates.",
+   "killed_by": "Downstream rejects the tampered value.",
+   "impact": 4,
+   "novelty": 4,
+   "testability": 4,
+   "score": 64,
+   "status": "live",
+   "source": "generated:GET validates ownership but PATCH returned 200 for non-owner",
+   "ts": "2026-09-26T19:22:41Z"
+  },
+  {
+   "id": "H5",
+   "statement": "An identifier is normalized differently by the layer that checks 'GET ownership check' and the layer that uses it (case, encoding, numeric-vs-string, trailing slash, unicode).",
+   "violated_assumption": "A1",
+   "attacker_view": "Supply two spellings of the same identity: one that passes the check, one that resolves to the target.",
+   "defender_view": "Canonicalization may happen before the check, collapsing both spellings to the same value.",
+   "devil_view": "The identifier may be an opaque UUID where normalization is a no-op.",
+   "investigator_test": "Send case/encoding/whitespace variants of a known-good and a known-bad identifier; compare accept/reject matrices.",
+   "killed_by": "All variants behave identically.",
+   "impact": 3,
+   "novelty": 4,
+   "testability": 5,
+   "score": 60,
+   "status": "live",
+   "source": "generated:GET validates ownership but PATCH returned 200 for non-owner",
+   "ts": "2026-09-26T19:22:41Z"
+  },
+  {
+   "id": "H3",
+   "statement": "A state transition (Order: created -> paid) leaves stale state: the system believes the old state, another layer believes the new one.",
+   "violated_assumption": "A1",
+   "attacker_view": "Act on the object in the window where two layers disagree (scheduled publish to a deleted board, cached public copy of a re-secreted object).",
+   "defender_view": "Caches and schedules are eventually consistent; a brief stale window is not a vulnerability.",
+   "devil_view": "The transition may be atomic across layers, so no window exists.",
+   "investigator_test": "Force the transition, then immediately probe every layer (API, unauthenticated cache, export, search index).",
+   "killed_by": "All layers agree within the probe window.",
+   "impact": 3,
+   "novelty": 5,
+   "testability": 4,
+   "score": 60,
+   "status": "live",
+   "source": "generated:GET validates ownership but PATCH returned 200 for non-owner",
+   "ts": "2026-09-26T19:22:41Z"
+  },
+  {
+   "id": "H8",
+   "statement": "Client-visible arithmetic (credits, quotas, counts) can be desynced from the server's bookkeeping that 'GET ownership check' relies on.",
+   "violated_assumption": "A1",
+   "attacker_view": "Drive the counter through lifecycle events (create/delete empty objects, retries, back-button resubmits) and watch for drift.",
+   "defender_view": "Counters are server-computed; the client display is cosmetic.",
+   "devil_view": "Idempotency may prevent double-counting.",
+   "investigator_test": "Cycle the lifecycle event repeatedly and compare the counter before/after against the expected delta.",
+   "killed_by": "The counter always matches the expected arithmetic.",
+   "impact": 3,
+   "novelty": 4,
+   "testability": 4,
+   "score": 48,
+   "status": "live",
+   "source": "generated:GET validates ownership but PATCH returned 200 for non-owner",
+   "ts": "2026-09-26T19:22:41Z"
+  },
+  {
+   "id": "H7",
+   "statement": "Ownership is enforced on GET but not re-checked on state-changing verbs.",
+   "violated_assumption": "A1",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "Replay the same object access via PATCH/PUT/DELETE as non-owner; diff against GET.",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-26T19:22:41Z"
+  },
+  {
+   "id": "H8",
+   "statement": "Ownership is enforced at the controller but skipped on a nested/member route.",
+   "violated_assumption": "A1",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "Reach the same object through nested routes (/parent/:id/child) and member actions.",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-26T19:22:41Z"
+  },
+  {
+   "id": "H9",
+   "statement": "The check exists on the primary channel only; an alternate content-type or versioned path skips it.",
+   "violated_assumption": "A1",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "Replay with different Content-Type, Accept version, and /v1 vs /v2 paths.",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-26T19:22:41Z"
+  }
+ ],
+ "tests": [
+  {
+   "id": "T1",
+   "hypothesis_id": "H1",
+   "spec": {
+    "expected_observation": "non-owner PATCH returns 200",
+    "reason": "distinguish: does PATCH re-check ownership",
+    "scope_hosts": [
+     "shop.example"
+    ],
+    "auth_basis": "own test accounts A and B",
+    "success_criteria": "200 + order mutated as non-owner",
+    "failure_criteria": "403 as non-owner",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "The alternate channel may enforce the same rule at a different layer, or the object may not exist there.",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "executed",
+   "authorization": {
+    "test_id": "T1",
+    "hypothesis_id": "H1",
+    "session_id": "0da161e6721f",
+    "scope_hosts": [
+     "shop.example"
+    ],
+    "issued_at": 1790450561.5192838,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-26T19:22:41Z",
+   "executed_at": "2026-09-26T19:22:41Z"
+  }
+ ],
+ "results": [
+  {
+   "id": "R1",
+   "test_id": "T1",
+   "hypothesis_id": "H1",
+   "outcome": "rejected",
+   "observed": "PATCH as non-owner returned 403; ownership enforced in shared before_action",
+   "why_failed": "enforcement lives in a shared before_action covering all verbs",
+   "learned": "ownership is verb-agnostic here; pivot to nested routes and alternate channels",
+   "false_explanation": "",
+   "environment": "",
+   "technology": "",
+   "preconditions": "",
+   "ts": "2026-09-26T19:22:41Z"
+  }
+ ],
+ "rejected_hypotheses": [
+  {
+   "id": "H1",
+   "statement": "Same object (Order, Account) is reachable through a different verb, endpoint, or content-type that skips the enforcement at 'GET ownership check'.",
+   "believed": "Same object (Order, Account) is reachable through a different verb, endpoint, or content-type that skips the enforcement at 'GET ownership check'.",
+   "tested": "distinguish: does PATCH re-check ownership",
+   "observed_result": "PATCH as non-owner returned 403; ownership enforced in shared before_action",
+   "why_failed": "enforcement lives in a shared before_action covering all verbs",
+   "learned": "ownership is verb-agnostic here; pivot to nested routes and alternate channels",
+   "false_explanation": "",
+   "environment": "",
+   "technology": "",
+   "preconditions": "",
+   "changes_future": [
+    "Ownership is enforced on GET but not re-checked on state-changing verbs.",
+    "Ownership is enforced at the controller but skipped on a nested/member route.",
+    "The check exists on the primary channel only; an alternate content-type or versioned path skips it."
+   ]
+  }
+ ],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [],
+ "facts": [],
+ "lessons": [
+  {
+   "ts": "2026-09-26T19:22:41Z",
+   "text": "H1 rejected: enforcement lives in a shared before_action covering all verbs -> learned: ownership is verb-agnostic here; pivot to nested routes and alternate channels"
+  }
+ ],
+ "next_actions": [
+  "design test for H2: A value written in one feature is consumed/rendered in another without...",
+  "design test for H4: Upstream validates at 'GET ownership check', but a downstream componen...",
+  "design test for H5: An identifier is normalized differently by the layer that checks 'GET ...",
+  "design test for H3: A state transition (Order: created -> paid) leaves stale state: the sy...",
+  "design test for H8: Client-visible arithmetic (credits, quotas, counts) can be desynced fr...",
+  "design test for H7: Ownership is enforced on GET but not re-checked on state-changing verb...",
+  "design test for H8: Ownership is enforced at the controller but skipped on a nested/member...",
+  "design test for H9: The check exists on the primary channel only; an alternate content-typ..."
+ ],
+ "id": "0da161e6721f"
+}

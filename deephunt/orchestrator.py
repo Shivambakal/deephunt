@@ -259,13 +259,38 @@ def run_target(target, max_cycles=3, passive_only=False, run_log=None):
             brain_seeds = []
         seeds = (brain_seeds +
                  seeds_from_funnel(funnel, profile, mem) + extra)
-        # dedupe internet seeds too, then rank by information-gain-per-cost
-        # (experiment designer: cheapest discriminating experiment first)
+        # dedupe internet seeds too, then plan by expected information gain
+        # per cost per risk (update #5: EIG planner, not static ranking)
         seeds = [s for s in seeds
                  if learn.is_novel(s["statement"], mem)[0]]
         try:
             import experiment as _exp
-            seeds = _exp.rank(seeds)
+            fam_counts = {}
+            for s in seeds:
+                f = s.get("family", "default")
+                fam_counts[f] = fam_counts.get(f, 0) + 1
+            mem_counts = {"rejected": mem.get("rejected", []),
+                          "family_counts": fam_counts}
+            max_risk = 1 if (passive_only or
+                             not profile.get("active_allowed", False)) else 3
+            seeds = _exp.plan(seeds, mem_counts, max_risk=max_risk)
+        except Exception:  # noqa: BLE001
+            mem_counts = {"rejected": [], "family_counts": {}}
+            pass
+        # multi-agent debate on the top seeds (update #4): six roles share
+        # one evidence board and try to falsify; only survivors proceed
+        try:
+            import debate as _deb
+            from world_model import WorldModel as _WM
+            _wm = _WM(target)
+            if seeds:
+                debated = _deb.debate(seeds, state["findings"], _wm,
+                                      mem_counts, top_n=6)
+                seeds = debated + [s for s in seeds[6:]
+                                   if s not in debated]
+                n_proceed = sum(1 for s in debated
+                                if s.get("debate", {}).get("verdict") == "PROCEED")
+                log(rl, f"  debate: {n_proceed}/{len(debated)} seeds survive")
         except Exception:  # noqa: BLE001
             pass
         seeds = seeds[:14]
@@ -278,6 +303,7 @@ def run_target(target, max_cycles=3, passive_only=False, run_log=None):
         log(rl, f"  brain: {train.technique_report()}")
 
         cyc = {"n": cycle + 1, "seeds": len(seeds), "tests": []}
+        findings_start = len(state["findings"])  # active-learning-loop marker
         if not seeds:
             cycles_without_novel += 1
             log(rl, "no novel hypotheses — learning, not looping blind")
@@ -381,6 +407,44 @@ def run_target(target, max_cycles=3, passive_only=False, run_log=None):
                     log(rl, f"  [operator] {f['title'][:100]}")
 
         # ---- OBSERVE / LEARN ----
+        # ACTIVE LEARNING LOOP (update #3): every observation flows back into
+        # the WORLD MODEL (entities/relations/beliefs), not just the ledger.
+        # Unexplained findings become anomalies for the heretic (update #2).
+        # Episodes go to structured episodic memory (update #8).
+        new_findings = state["findings"][findings_start:]
+        try:
+            from world_model import WorldModel as _WM2
+            from episodic import EpisodicMemory as _EP2
+            _wm2 = _WM2(target)
+            _ep2 = _EP2(target)
+            card_signals = []
+            for _c in train.load_techniques():
+                card_signals += [s.lower() for s in _c.get("signals", [])]
+            for f in new_findings:
+                if f["kind"] in ("vuln-candidate", "sensitive", "clean",
+                                 "inventory"):
+                    txt = (f"{f.get('title', '')} {f.get('detail', '')} "
+                           f"{f.get('evidence', '')}")
+                    _wm2.update_from_observation(txt,
+                                                 source=f.get("tool", "recon"))
+                    if not any(sig in txt.lower() for sig in card_signals
+                               if len(sig) > 3):
+                        _wm2.record_anomaly(
+                            f"{f.get('tool', '?')}: {f.get('title', '')[:160]}")
+                    _ep2.record(
+                        observation=f.get("title", "")[:200],
+                        technique=f.get("tool", "unknown"),
+                        evidence=f.get("evidence", "")[:200],
+                        result=("rejected" if f["kind"] == "clean"
+                                else "inconclusive"),
+                        lesson=(f"kind={f['kind']}; needs discriminating "
+                                f"experiment" if f["kind"] != "clean"
+                                else "negative result stored — do not retry blindly"))
+            _wm2.save()
+            log(rl, f"  world-model: {_wm2.summary()} | "
+                    f"episodes: {_ep2.count()}")
+        except Exception as e:  # noqa: BLE001
+            log(rl, f"  learning-loop failed: {e}")
         if session:
             for f in state["findings"][-10:]:
                 if f["kind"] in ("vuln-candidate", "sensitive", "clean"):

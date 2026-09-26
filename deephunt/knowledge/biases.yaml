@@ -64,7 +64,7 @@
 
 - id: BIAS-07
   name: Internal network trust
-  psychology: "It's only reachable internally" — until SSRF reaches it.
+  psychology: It's only reachable internally — until SSRF reaches it.
   manifests: ["no auth on internal APIs", "metadata endpoints", "admin panels on intranet"]
   produces: [ssrf, authorization]
   hunt: >
@@ -91,7 +91,7 @@
 
 - id: BIAS-10
   name: Dependency neglect
-  psychology: "It works, don't touch it." Libraries age into vulnerabilities.
+  psychology: It works, don't touch it. Libraries age into vulnerabilities.
   manifests: ["old jQuery/bootstrap", "unpinned versions", "vendored copies"]
   produces: [supply-chain, xss]
   hunt: >
@@ -109,7 +109,7 @@
 
 - id: BIAS-12
   name: Idempotency assumption
-  psychology: "Nobody clicks twice." Backends often agree.
+  psychology: Nobody clicks twice. Backends often agree.
   manifests: ["double coupon use", "double vote", "replayable state changes"]
   produces: [race, business-logic]
   hunt: >

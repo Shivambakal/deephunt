@@ -217,6 +217,37 @@ def inquisitor(findings, profile, mem, intel_ctx):
         return []
 
 
+def heretic(findings, profile, mem, intel_ctx):
+    """The heretic: novel hypothesis generator (update #2). Proposes ONLY
+    hypotheses outside the 71 technique cards — from anomalies, combinatorial
+    crosses, and feature-graph chains."""
+    out = []
+    try:
+        import novel
+        from world_model import WorldModel
+        from feature_graph import FeatureGraph
+        wm = WorldModel(profile.get("name", "unknown"))
+        # anomaly-driven
+        out += novel.from_anomalies(wm, mem, learn.is_novel)
+        # combinatorial: technique x bias x context
+        try:
+            import yaml
+            biases = yaml.safe_load(open(
+                os.path.join(BASE, "knowledge", "biases.yaml"))) or []
+        except Exception:  # noqa: BLE001
+            biases = []
+        out += novel.combinatorial(train.load_techniques(), biases, mem,
+                                   learn.is_novel, profile.get("name", ""),
+                                   limit=5)
+        # chain-driven
+        fg = FeatureGraph().build_from_world(wm)
+        chains = [fg.describe_chain(c) for c in fg.find_chains()]
+        out += novel.from_chains(chains, mem, learn.is_novel)
+    except Exception:  # noqa: BLE001
+        pass
+    return out[:10]
+
+
 MODES = {
     "predator": predator,
     "architect": architect,
@@ -226,11 +257,12 @@ MODES = {
     "scholar": scholar,
     "oracle": oracle,
     "inquisitor": inquisitor,
+    "heretic": heretic,
 }
 
 
 def council(findings, profile, mem, limit=12):
-    """Run all eight modes, kill retreads, diversify, rank. Returns seeds."""
+    """Run all nine modes, kill retreads, diversify, rank. Returns seeds."""
     intel_ctx = _intel_context(profile.get("name", ""))
     pool = []
     for mode_name, mode_fn in MODES.items():
@@ -251,8 +283,9 @@ def council(findings, profile, mem, limit=12):
         novel.append(h)
         seen.append(h)
     # diversify: round-robin across modes, scholar/oracle first (evidence-backed)
-    order = {"scholar": 0, "oracle": 1, "inquisitor": 2, "predator": 3,
-             "ghost": 4, "architect": 5, "accountant": 6, "saboteur": 7}
+    order = {"scholar": 0, "oracle": 1, "inquisitor": 2, "heretic": 3,
+             "predator": 4, "ghost": 5, "architect": 6, "accountant": 7,
+             "saboteur": 8}
     novel.sort(key=lambda h: (order.get(h.get("mode"), 9),
                               -h.get("score", 0)))
     picked, used_modes = [], set()

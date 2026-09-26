@@ -1,0 +1,99 @@
+{
+ "objective": "calib-test",
+ "created": "2026-09-26T19:22:33Z",
+ "updated": "2026-09-26T19:22:33Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [],
+  "trust_boundaries": [],
+  "state_machines": {}
+ },
+ "observations": [],
+ "assumptions": [],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "statement": "X leaks Y",
+   "violated_assumption": "A1",
+   "attacker_view": "av",
+   "defender_view": "dv",
+   "devil_view": "devil",
+   "investigator_test": "test",
+   "killed_by": "killed",
+   "impact": 4,
+   "novelty": 4,
+   "testability": 4,
+   "score": 64,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-26T19:22:33Z"
+  }
+ ],
+ "tests": [
+  {
+   "id": "T1",
+   "hypothesis_id": "H1",
+   "spec": {
+    "expected_observation": "obs",
+    "reason": "reason",
+    "scope_hosts": [
+     "h.com"
+    ],
+    "auth_basis": "auth",
+    "success_criteria": "win",
+    "failure_criteria": "lose",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "dv",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T1",
+    "hypothesis_id": "H1",
+    "session_id": "ef2458fa1863",
+    "scope_hosts": [
+     "h.com"
+    ],
+    "issued_at": 1790450553.9735005,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-26T19:22:33Z"
+  }
+ ],
+ "results": [],
+ "rejected_hypotheses": [],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [],
+ "facts": [],
+ "lessons": [],
+ "next_actions": [
+  "run T1 (hypothesis H1)"
+ ],
+ "id": "ef2458fa1863"
+}

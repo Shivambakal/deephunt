@@ -364,6 +364,56 @@ class ResearchSession:
         self._save()
         return result, followups
 
+    # ---------- calibration gate (update #9) ----------
+    def calibrate_finding(self, unconfirmed_idx=0, evidence_for="",
+                          best_alternative="", falsifying_experiment="",
+                          assumptions=""):
+        """Self-evaluation before CONFIRMED is allowed. The researcher must
+        answer four questions; empty answers refuse confirmation.
+
+            1. What evidence proves it?
+            2. What alternative best explains it?
+            3. What experiment would falsify it?
+            4. What am I assuming?
+
+        Returns the calibration record; the finding may only be confirmed
+        when compete_finding() has disproven every surviving alternative
+        AND this calibration is complete.
+        """
+        if unconfirmed_idx >= len(self.state["unconfirmed_findings"]):
+            raise ValueError("no unconfirmed finding at that index")
+        answers = {"evidence_for": evidence_for,
+                   "best_alternative": best_alternative,
+                   "falsifying_experiment": falsifying_experiment,
+                   "assumptions": assumptions}
+        missing = [k for k, v in answers.items() if not v.strip()]
+        if missing:
+            raise ValueError(f"calibration refused: unanswered {missing}")
+        finding = self.state["unconfirmed_findings"][unconfirmed_idx]
+        finding["calibration"] = {**answers, "ts": _ts()}
+        self._save()
+        return finding["calibration"]
+
+    def confirm_finding(self, unconfirmed_idx=0):
+        """CONFIRMED only when: competition killed every alternative AND
+        the 4-question calibration is on record."""
+        if unconfirmed_idx >= len(self.state["unconfirmed_findings"]):
+            raise ValueError("no unconfirmed finding at that index")
+        finding = self.state["unconfirmed_findings"][unconfirmed_idx]
+        comp = finding.get("competition", {})
+        if comp.get("surviving"):
+            raise ValueError(f"cannot confirm: {len(comp['surviving'])} "
+                             f"alternatives still survive — disprove them first")
+        if "calibration" not in finding:
+            raise ValueError("cannot confirm: calibration questions unanswered — "
+                             "call calibrate_finding() first")
+        finding["status"] = "confirmed"
+        self.state["confirmed_findings"].append(finding)
+        self.state["unconfirmed_findings"].pop(unconfirmed_idx)
+        self._refresh_next_actions()
+        self._save()
+        return finding
+
     # ---------- hypothesis competition ----------
     def compete_finding(self, unconfirmed_idx=0):
         """For a supported finding, generate competing explanations and try to
@@ -389,9 +439,12 @@ class ResearchSession:
         finding["competition"] = {"alternatives": alternatives, "disproven": disproven,
                                   "surviving": surviving, "ts": _ts()}
         if not surviving:
-            finding["status"] = "confirmed"
-            self.state["confirmed_findings"].append(finding)
-            self.state["unconfirmed_findings"].pop(unconfirmed_idx)
+            # competition won — but CONFIRMED still requires the calibration
+            # gate (update #9): answer the 4 questions, then confirm_finding()
+            finding["status"] = "awaiting-calibration"
+            self.state["next_actions"].append(
+                f"calibrate '{finding['claim'][:60]}...': evidence? alternative? "
+                f"falsifier? assumptions? then confirm_finding()")
         else:
             finding["status"] = "awaiting-disproof"
             for s in surviving:

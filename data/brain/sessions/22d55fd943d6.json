@@ -1,0 +1,162 @@
+{
+ "objective": "calib-test",
+ "created": "2026-09-26T19:22:37Z",
+ "updated": "2026-09-26T19:22:37Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [],
+  "trust_boundaries": [],
+  "state_machines": {}
+ },
+ "observations": [],
+ "assumptions": [],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "statement": "X leaks Y",
+   "violated_assumption": "A1",
+   "attacker_view": "av",
+   "defender_view": "dv",
+   "devil_view": "devil",
+   "investigator_test": "test",
+   "killed_by": "killed",
+   "impact": 4,
+   "novelty": 4,
+   "testability": 4,
+   "score": 64,
+   "status": "supported",
+   "source": "manual",
+   "ts": "2026-09-26T19:22:37Z"
+  }
+ ],
+ "tests": [
+  {
+   "id": "T1",
+   "hypothesis_id": "H1",
+   "spec": {
+    "expected_observation": "obs",
+    "reason": "reason",
+    "scope_hosts": [
+     "h.com"
+    ],
+    "auth_basis": "auth",
+    "success_criteria": "win",
+    "failure_criteria": "lose",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "dv",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T1",
+    "hypothesis_id": "H1",
+    "session_id": "22d55fd943d6",
+    "scope_hosts": [
+     "h.com"
+    ],
+    "issued_at": 1790450557.9670632,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-26T19:22:37Z"
+  }
+ ],
+ "results": [
+  {
+   "id": "R1",
+   "test_id": "T1",
+   "hypothesis_id": "H1",
+   "outcome": "confirmed",
+   "observed": "variant returned other-owned data",
+   "why_failed": "",
+   "learned": "",
+   "false_explanation": "",
+   "environment": "",
+   "technology": "",
+   "preconditions": "",
+   "ts": "2026-09-26T19:22:37Z"
+  }
+ ],
+ "rejected_hypotheses": [],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [
+  {
+   "hypothesis_id": "H1",
+   "claim": "X leaks Y",
+   "evidence": "variant returned other-owned data",
+   "ts": "2026-09-26T19:22:37Z",
+   "competition": {
+    "alternatives": [
+     "Benign: the observed behavior is legitimate (X leaks Y... has a non-security explanation).",
+     "Artifact: the observation is a test artifact \u2014 cache, stale session, wrong account, or timing noise.",
+     "Misattribution: the effect is real but caused by a different component than hypothesized.",
+     "Scope error: the test crossed an authorization boundary it should not have."
+    ],
+    "disproven": [],
+    "surviving": [
+     {
+      "explanation": "Benign: the observed behavior is legitimate (X leaks Y... has a non-security explanation).",
+      "disproof_test_needed": true
+     },
+     {
+      "explanation": "Artifact: the observation is a test artifact \u2014 cache, stale session, wrong account, or timing noise.",
+      "disproof_test_needed": true
+     },
+     {
+      "explanation": "Misattribution: the effect is real but caused by a different component than hypothesized.",
+      "disproof_test_needed": true
+     },
+     {
+      "explanation": "Scope error: the test crossed an authorization boundary it should not have.",
+      "disproof_test_needed": true
+     }
+    ],
+    "ts": "2026-09-26T19:22:37Z"
+   },
+   "status": "awaiting-disproof",
+   "calibration": {
+    "evidence_for": "variant returned other-owned data",
+    "best_alternative": "cache artifact disproven",
+    "falsifying_experiment": "repeat clean",
+    "assumptions": "owned accounts only",
+    "ts": "2026-09-26T19:22:37Z"
+   }
+  }
+ ],
+ "facts": [],
+ "lessons": [],
+ "next_actions": [
+  "disproof test needed for 'X leaks Y...': Benign: the observed behavior is legitimate (X leaks Y... has a non-security exp",
+  "disproof test needed for 'X leaks Y...': Artifact: the observation is a test artifact \u2014 cache, stale session, wrong accou",
+  "disproof test needed for 'X leaks Y...': Misattribution: the effect is real but caused by a different component than hypo",
+  "disproof test needed for 'X leaks Y...': Scope error: the test crossed an authorization boundary it should not have.",
+  "run T1 (hypothesis H1)",
+  "disprove alternatives for 'X leaks Y...'"
+ ],
+ "id": "22d55fd943d6"
+}
