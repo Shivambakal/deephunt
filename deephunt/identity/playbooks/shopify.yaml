@@ -1,0 +1,42 @@
+# Studied Shopify signup/login flow — OBSERVED 2026-09-27, read-only.
+# Nothing submitted, no account created.
+target: shopify
+studied_on: "2026-09-27"
+studied_by: browser recon (read-only DOM observation)
+signup_url: https://accounts.shopify.com/signup
+login_url: https://accounts.shopify.com/lookup
+
+steps:
+  - step: 1
+    description: "'Start your free trial' — Email address (name=account[email], required) + country select (name=country_code, defaults US). Submit: 'Continue with email'."
+
+consent:
+  checkboxes: []
+  type: clickwrap
+  clickwrap_text: "By continuing, you agree to the Terms and Privacy Policy, and to receive marketing emails from Shopify. Unsubscribe anytime."
+
+captcha:
+  type: none_visible
+  notes: "No reCAPTCHA/hCaptcha/Turnstile/Arkose widget or script in DOM (only a preconnect to recaptcha.net, no grecaptcha loaded). BUT heavy silent bot detection: device fingerprint submit to /dfp/submit, human-signals script, Dux analytics (visibility/trafficQuality/form/scroll), browser_feedback beacon. Expect invisible risk scoring."
+  strategy: solve
+
+verification:
+  method: unknown  # none visible on step 1
+
+login:
+  url: https://accounts.shopify.com/lookup
+  social_oauth: ["Continue with Google", "Continue with Apple", "Continue with WhatsApp"]
+
+stop_conditions:
+  - store/payment details for trial conversion
+  - real business identity documents
+  - phone number tied to real identity
+
+vault:
+  domain: shopify.com
+  password_via: secure_card
+
+notes: >
+  Researcher boundary reminder: Shopify program rules — only test stores the
+  researcher creates; NEVER touch merchant storefronts. A signup here creates
+  a trial store owned by the researcher, which is the intended test surface.

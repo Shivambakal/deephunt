@@ -1,0 +1,47 @@
+# Studied Yahoo signup/login flow — OBSERVED 2026-09-27, read-only.
+# Nothing submitted, no account created.
+target: yahoo
+studied_on: "2026-09-27"
+studied_by: browser recon (read-only DOM observation)
+signup_url: https://login.yahoo.com/account/create
+login_url: https://login.yahoo.com/
+
+steps:
+  - step: 1
+    description: "'Create a Yahoo account' — First name (reg-firstName), Surname (reg-lastName), New Yahoo email address (reg-userId, becomes @yahoo.com), Password (reg-password, 8+ chars, strength meter), DOB MM/DD/YYYY. Submit: 'Next'."
+  - step: 2
+    description: "expected phone verification (i18n strings reference 'Add your phone number' / 'Receive code by text') -> VERIFY state; user provides code. If it demands a REAL phone number tied to identity, KYC_STOP."
+
+consent:
+  checkboxes: []
+  type: clickwrap
+  clickwrap_text: "By creating an account, you agree to our Terms and Privacy Policy."
+
+captcha:
+  type: none_visible
+  notes: "No CAPTCHA scripts/iframes/keys in DOM (Next.js app). Heavy fingerprinting instead: browser-fp-data hidden field (canvas, webgl, fonts, plugins, audio, lies-detection), IPQS fingerprint pixel, Yahoo analytics. Invisible risk scoring likely."
+  strategy: solve
+
+verification:
+  method: phone_otp  # inferred from embedded i18n strings, not directly observed
+
+login:
+  url: https://login.yahoo.com/
+  fields: ["Username/email/phone", "Next"]
+  social_oauth: ["Sign in with Google"]
+
+stop_conditions:
+  - phone number tied to real identity (burner policy per user)
+  - government ID / identity verification
+  - any payment instrument
+
+vault:
+  domain: yahoo.com
+  password_via: secure_card
+
+notes: >
+  IMPORTANT: Yahoo's signup creates a NEW @yahoo.com address (the userId field),
+  it does not use an external email — except via the 'Use existing email' option.
+  Prefer 'Use existing email' with attacksurface.alerts+yahoo@gmail.com to keep
+  the research mailbox as the recovery point. Password policy: min 8 chars,
+  cannot contain name/personal details, strength meter enforced.

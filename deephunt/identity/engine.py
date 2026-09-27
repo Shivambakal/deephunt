@@ -178,8 +178,11 @@ def resume_after_user(run: AuthRun, action: str) -> AuthRun:
 
 
 if __name__ == "__main__":
-    # quick self-check
-    run = start_run("robinhood", "signup")
+    # quick self-check: python3 engine.py [target] [signup|signin]
+    import sys as _sys
+    _t = _sys.argv[1] if len(_sys.argv) > 1 else "robinhood"
+    _m = _sys.argv[2] if len(_sys.argv) > 2 else "signup"
+    run = start_run(_t, _m)
     print("state:", run.state.value, "| email:", run.email)
     for line in run.log:
         print("  ", line)
