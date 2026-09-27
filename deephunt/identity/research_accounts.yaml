@@ -1,0 +1,26 @@
+# Research Google accounts for the hunt.
+# STATUS: slots prepared. Google forces phone verification + anti-automation
+# on signup, so the user creates these (2 minutes each); automation would get
+# them insta-banned. The moment the addresses exist, they get wired into the
+# identity registry, browser profiles, and learning pipeline.
+accounts:
+  - slot: hunt-01
+    purpose: service signups, bug bounty test accounts, browser access for hunting
+    email: null  # user to create, e.g. shivohunt01@gmail.com
+    wired: false
+  - slot: hunt-02
+    purpose: learning (docs, articles, videos, courses), news reading, backup identity
+    email: null
+    wired: false
+
+# Existing research mailbox (already live):
+#   attacksurface.alerts@gmail.com -> plus-addressed per target
+#   (attacksurface.alerts+robinhood@gmail.com etc.)
+
+creation_notes: >
+  Create at accounts.google.com/signup (user does this — phone verification
+  required). Use each account's own recovery email. Then tell the agent the two
+  addresses; wiring = identity registry entries + Secure Vault logins +
+  browser profile sign-in + news/learning config. Never use these for spam,
+  automation-abuse, or anything that risks a ban: they are long-lived research
+  assets.
