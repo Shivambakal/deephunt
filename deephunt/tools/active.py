@@ -189,11 +189,13 @@ class FfufTool(ToolAdapter):
         if not ok:
             return [self.finding("gated", "ffuf BLOCKED", reason)]
         import os as _o
-        wl = _o.path.join(_o.path.expanduser("~/workspace/hacker-agent"),
-                          "deephunt", "state", "wordlists",
-                          f"{ctx['target']}_paths.txt")
-        if not _o.path.isfile(wl) or _o.path.getsize(wl) == 0:
-            # small built-in fallback
+        import sys as _s
+        _s.path.insert(0, _o.path.join(_o.path.expanduser("~/workspace/hacker-agent"),
+                                       "deephunt"))
+        try:
+            from wordlists import resolve as _wl_resolve
+            wl = _wl_resolve("web-common", ctx.get("target", ""))
+        except Exception:  # noqa: BLE001
             wl = "/tmp/dh_fallback.txt"
             open(wl, "w").write("\n".join([
                 "admin", "api", "graphql", "debug", "internal", "console",

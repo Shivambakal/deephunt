@@ -224,6 +224,11 @@ def run_target(target, max_cycles=3, passive_only=False, run_log=None):
         findings = res if ok else [
             {"tool": tool.name, "phase": "passive", "kind": "error",
              "title": f"{tool.name} failed", "detail": str(res)[:300]}]
+        try:  # error intelligence: classify/extract/study every error
+            from error_intel import process_tool_result as _ei_process
+            findings = findings + _ei_process(tool.name, findings)
+        except Exception:  # noqa: BLE001
+            pass
         state["findings"].extend(findings)
         log(rl, f"  [{tool.name}] {len(findings)} findings")
         if session:
@@ -421,6 +426,11 @@ def run_target(target, max_cycles=3, passive_only=False, run_log=None):
                     {"tool": tool.name, "phase": "active", "kind": "error",
                      "title": f"{tool.name} failed",
                      "detail": str(res)[:300]}]
+                try:  # error intelligence: classify/extract/study every error
+                    from error_intel import process_tool_result as _ei_process
+                    findings = findings + _ei_process(tool.name, findings)
+                except Exception:  # noqa: BLE001
+                    pass
                 gated = [f for f in findings if f["kind"] == "gated"]
                 real = [f for f in findings if f["kind"] != "gated"]
                 state["findings"].extend(findings)

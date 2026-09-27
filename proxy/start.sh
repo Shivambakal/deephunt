@@ -15,4 +15,5 @@ exec ./venv/bin/mitmdump -p "$PORT" \
   --upstream-auth "$AUTH" \
   --set ssl_insecure=true \
   -s addons/logger.py \
-  -s addons/modify.py
+  -s addons/modify.py \
+  -s addons/scope.py

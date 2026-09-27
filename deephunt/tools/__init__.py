@@ -2,6 +2,7 @@
 from .base import REGISTRY  # noqa: F401
 from . import passive  # noqa: F401
 from . import active  # noqa: F401
+from . import advanced  # noqa: F401  (jwt_probe, bypass403)
 from . import operator  # noqa: F401
 from . import t100  # noqa: F401  (tools-100 generic adapters)
 

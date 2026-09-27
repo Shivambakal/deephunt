@@ -1,149 +1,259 @@
-# DEEPHUNT negative examples — observations that are NOT vulnerabilities.
-# negative_check() in kb.py consults this BEFORE any finding is promoted.
-# classification: vulnerability | false_positive | ambiguous | expected_behavior
-# A match means: do not promote on this evidence alone; see 'lesson'.
-
-- observation: "HTTP 403 after object change"
-  match_signals: ["403", "object"]
-  classification: expected_behavior
-  lesson: "403 alone is not evidence of BOLA. Authorization doing its job looks exactly like this. Promote only on 200-with-foreign-data or a differential across identities."
-
-- observation: "Login rate-limited after 5 attempts"
-  match_signals: ["rate", "limit", "login", "429", "too many"]
-  classification: expected_behavior
-  lesson: "Rate limiting is the control working. Evidence of a vuln would be the limit NOT triggering, or a bypass (header spoof, endpoint variant)."
-
-- observation: "Password reset email arrives with delay"
-  match_signals: ["reset", "email", "delay", "password"]
-  classification: expected_behavior
-  lesson: "Async mail queues are normal. Only interesting if the token is predictable, leaks in the URL, or works after expiry."
-
-- observation: "Verbose error page on malformed input"
-  match_signals: ["error", "stack", "trace", "exception", "500"]
-  classification: ambiguous
-  lesson: "A stack trace is information disclosure only if it leaks secrets/paths/versions useful to an attacker. Framework default pages without secrets are noise."
-
-- observation: "Session cookie lacks Secure flag on localhost/dev"
-  match_signals: ["secure", "flag", "cookie", "localhost"]
-  classification: false_positive
-  lesson: "Secure flag is meaningless over http://localhost. Re-test on the production HTTPS origin before claiming."
-
-- observation: "API returns 404 for guessed object IDs"
-  match_signals: ["404", "not found", "object", "guessed", "id"]
-  classification: expected_behavior
-  lesson: "404 for unknown IDs is correct. BOLA evidence needs a 200 with another identity's data, not a 404."
-
-- observation: "CORS allows null origin on a public API"
-  match_signals: ["cors", "null", "origin"]
-  classification: ambiguous
-  lesson: "Null-origin CORS matters only with credentials and sensitive data. Public, unauthenticated APIs reflecting origins are usually by design."
-
-- observation: "JWT accepted after expiry within clock-skew window"
-  match_signals: ["jwt", "expir", "token", "skew"]
-  classification: expected_behavior
-  lesson: "A few minutes of clock skew is standard (RFC 7519). Only a vuln if the window is huge or expiry is ignored entirely."
-
-- observation: "User enumeration via different login error messages"
-  match_signals: ["enumeration", "login", "error", "user", "exists"]
-  classification: ambiguous
-  lesson: "Enumeration matters only if the account set is sensitive AND the vector is unthrottled. Many programs treat this as informative."
-
-- observation: "Autocomplete enabled on login form"
-  match_signals: ["autocomplete", "login", "form"]
-  classification: false_positive
-  lesson: "Browser autocomplete on login is a usability feature, not a vulnerability, unless it stores secrets in shared contexts."
-
-- observation: "Server header discloses nginx/Apache version"
-  match_signals: ["server", "header", "version", "nginx", "apache"]
-  classification: false_positive
-  lesson: "Version banners alone are not exploitable findings. Pair with an actual unpatched CVE on that exact version or drop it."
-
-- observation: "OPTIONS method returns allowed methods"
-  match_signals: ["options", "method", "allow"]
-  classification: expected_behavior
-  lesson: "OPTIONS is supposed to advertise methods. A vuln needs a dangerous method (PUT/DELETE) actually executing without authz."
-
-- observation: "Password field has maxlength attribute"
-  match_signals: ["maxlength", "password"]
-  classification: false_positive
-  lesson: "Client-side maxlength is a UX hint. It only matters if the server truncates silently causing collisions — test the server, not the attribute."
-
-- observation: "CSRF token present but not validated on GET endpoints"
-  match_signals: ["csrf", "token", "get"]
-  classification: expected_behavior
-  lesson: "GETs should be side-effect free; CSRF tokens on safe methods are unnecessary. Test whether a GET actually mutates state first."
-
-- observation: "Different response times for valid vs invalid users"
-  match_signals: ["timing", "response time", "valid", "invalid", "user"]
-  classification: ambiguous
-  lesson: "Timing deltas under ~50ms over the network are noise. Promote only with statistically significant, reproducible deltas (many samples)."
-
-- observation: "Directory listing disabled returns 403"
-  match_signals: ["directory", "listing", "403", "forbidden"]
-  classification: expected_behavior
-  lesson: "403 on directory listing means the control works. The finding would be a 200 with a listing."
-
-- observation: "GraphQL introspection returns schema"
-  match_signals: ["graphql", "introspection", "schema"]
-  classification: ambiguous
-  lesson: "Introspection is on by default in many frameworks and is often accepted. It becomes evidence only when paired with an actual authz/data flaw."
-
-- observation: "Reflective input appears HTML-encoded in response"
-  match_signals: ["reflect", "encod", "html", "xss"]
-  classification: expected_behavior
-  lesson: "Correct output encoding IS the fix. Only promote if you find a context where encoding is missing or bypassable."
-
-- observation: "Two identical requests return different ETags"
-  match_signals: ["etag", "different", "cache"]
-  classification: false_positive
-  lesson: "Weak ETags and timestamps change normally. Cache issues need cross-user poisoning or sensitive data in cache, not differing validators."
-
-- observation: "Admin panel exists at /admin but requires login"
-  match_signals: ["/admin", "admin", "panel", "login"]
-  classification: expected_behavior
-  lesson: "An admin path behind authentication is normal. The vuln is forced browsing WITHOUT auth, or authz bypass after login as low-priv."
-
-- observation: "HTTP to HTTPS redirect present"
-  match_signals: ["http", "https", "redirect"]
-  classification: expected_behavior
-  lesson: "The redirect is the control. Only a finding if sensitive data transmits over HTTP, HSTS is missing AND the program cares, or the redirect is open."
-
-- observation: "Cookie without HttpOnly on a non-session preference cookie"
-  match_signals: ["httponly", "cookie"]
-  classification: ambiguous
-  lesson: "HttpOnly matters for cookies carrying session/auth. A UI-preference cookie without it is low-value; confirm the cookie's role first."
-
-- observation: "WebSocket 101 response from attacker Origin"
-  match_signals: ["101", "websocket", "origin", "upgrade"]
-  classification: false_positive
-  lesson: "Handshake acceptance is not CSWSH. Confirm only when attacker-origin JS receives the VICTIM's data (planted marker) and exfils it. Per-connection handshake tokens kill exploitability; downgrade."
-
-- observation: "GraphQL introspection disabled"
-  match_signals: ["introspection", "disabled", "__schema", "graphql"]
-  classification: ambiguous
-  lesson: "Disabled introspection is a control, not a vuln — but also not proof of safety. Check field suggestions ('Did you mean') and hidden mutations (GQL-06, GQL-04). Do not report 'introspection disabled' as a finding."
-
-- observation: "Prototype pollution oracle hit, no gadget found"
-  match_signals: ["__proto__", "pollut", "prototype", "oracle"]
-  classification: ambiguous
-  lesson: "An oracle alone is P3-P4 noise. Only promote when a gadget demonstrably fires (RCE, isAdmin flip, XSS). Report the severity honestly (PROTO-02)."
-
-- observation: "PKCE parameters present in authorize URL"
-  match_signals: ["code_challenge", "pkce", "authorize"]
-  classification: ambiguous
-  lesson: "Client sending PKCE proves nothing about server enforcement. The finding is the STRIP working (OAUTH-03), not the presence."
-
-- observation: "OAuth state parameter present in flow"
-  match_signals: ["state", "oauth", "csrf"]
-  classification: ambiguous
-  lesson: "The server including state is only half the control — the client must validate it on return. Test the swap/drop."
-
-- observation: "__proto__ string reflected in response body"
-  match_signals: ["__proto__", "reflect", "response"]
-  classification: false_positive
-  lesson: "String reflection is not pollution. Pollution requires the prototype chain to change ({}).polluted === value. Test the effect, not the echo."
-
-- observation: "Password reset requires current password on settings page"
-  match_signals: ["password", "reset", "settings", "reauth"]
-  classification: expected_behavior
-  lesson: "Re-authentication on email/password change is the control working. The vuln is its ABSENCE (BLO-05)."
+- classification: expected_behavior
+  lesson: 403 alone is not evidence of BOLA. Authorization doing its job looks exactly
+    like this. Promote only on 200-with-foreign-data or a differential across identities.
+  match_signals:
+  - '403'
+  - object
+  observation: HTTP 403 after object change
+- classification: expected_behavior
+  lesson: Rate limiting is the control working. Evidence of a vuln would be the limit
+    NOT triggering, or a bypass (header spoof, endpoint variant).
+  match_signals:
+  - rate
+  - limit
+  - login
+  - '429'
+  - too many
+  observation: Login rate-limited after 5 attempts
+- classification: expected_behavior
+  lesson: Async mail queues are normal. Only interesting if the token is predictable,
+    leaks in the URL, or works after expiry.
+  match_signals:
+  - reset
+  - email
+  - delay
+  - password
+  observation: Password reset email arrives with delay
+- classification: ambiguous
+  lesson: A stack trace is information disclosure only if it leaks secrets/paths/versions
+    useful to an attacker. Framework default pages without secrets are noise.
+  match_signals:
+  - error
+  - stack
+  - trace
+  - exception
+  - '500'
+  observation: Verbose error page on malformed input
+- classification: false_positive
+  lesson: Secure flag is meaningless over http://localhost. Re-test on the production
+    HTTPS origin before claiming.
+  match_signals:
+  - secure
+  - flag
+  - cookie
+  - localhost
+  observation: Session cookie lacks Secure flag on localhost/dev
+- classification: expected_behavior
+  lesson: 404 for unknown IDs is correct. BOLA evidence needs a 200 with another identity's
+    data, not a 404.
+  match_signals:
+  - '404'
+  - not found
+  - object
+  - guessed
+  - id
+  observation: API returns 404 for guessed object IDs
+- classification: ambiguous
+  lesson: Null-origin CORS matters only with credentials and sensitive data. Public,
+    unauthenticated APIs reflecting origins are usually by design.
+  match_signals:
+  - cors
+  - 'null'
+  - origin
+  observation: CORS allows null origin on a public API
+- classification: expected_behavior
+  lesson: A few minutes of clock skew is standard (RFC 7519). Only a vuln if the window
+    is huge or expiry is ignored entirely.
+  match_signals:
+  - jwt
+  - expir
+  - token
+  - skew
+  observation: JWT accepted after expiry within clock-skew window
+- classification: ambiguous
+  lesson: Enumeration matters only if the account set is sensitive AND the vector
+    is unthrottled. Many programs treat this as informative.
+  match_signals:
+  - enumeration
+  - login
+  - error
+  - user
+  - exists
+  observation: User enumeration via different login error messages
+- classification: false_positive
+  lesson: Browser autocomplete on login is a usability feature, not a vulnerability,
+    unless it stores secrets in shared contexts.
+  match_signals:
+  - autocomplete
+  - login
+  - form
+  observation: Autocomplete enabled on login form
+- classification: false_positive
+  lesson: Version banners alone are not exploitable findings. Pair with an actual
+    unpatched CVE on that exact version or drop it.
+  match_signals:
+  - server
+  - header
+  - version
+  - nginx
+  - apache
+  observation: Server header discloses nginx/Apache version
+- classification: expected_behavior
+  lesson: OPTIONS is supposed to advertise methods. A vuln needs a dangerous method
+    (PUT/DELETE) actually executing without authz.
+  match_signals:
+  - options
+  - method
+  - allow
+  observation: OPTIONS method returns allowed methods
+- classification: false_positive
+  lesson: Client-side maxlength is a UX hint. It only matters if the server truncates
+    silently causing collisions — test the server, not the attribute.
+  match_signals:
+  - maxlength
+  - password
+  observation: Password field has maxlength attribute
+- classification: expected_behavior
+  lesson: GETs should be side-effect free; CSRF tokens on safe methods are unnecessary.
+    Test whether a GET actually mutates state first.
+  match_signals:
+  - csrf
+  - token
+  - get
+  observation: CSRF token present but not validated on GET endpoints
+- classification: ambiguous
+  lesson: Timing deltas under ~50ms over the network are noise. Promote only with
+    statistically significant, reproducible deltas (many samples).
+  match_signals:
+  - timing
+  - response time
+  - valid
+  - invalid
+  - user
+  observation: Different response times for valid vs invalid users
+- classification: expected_behavior
+  lesson: 403 on directory listing means the control works. The finding would be a
+    200 with a listing.
+  match_signals:
+  - directory
+  - listing
+  - '403'
+  - forbidden
+  observation: Directory listing disabled returns 403
+- classification: ambiguous
+  lesson: Introspection is on by default in many frameworks and is often accepted.
+    It becomes evidence only when paired with an actual authz/data flaw.
+  match_signals:
+  - graphql
+  - introspection
+  - schema
+  observation: GraphQL introspection returns schema
+- classification: expected_behavior
+  lesson: Correct output encoding IS the fix. Only promote if you find a context where
+    encoding is missing or bypassable.
+  match_signals:
+  - reflect
+  - encod
+  - html
+  - xss
+  observation: Reflective input appears HTML-encoded in response
+- classification: false_positive
+  lesson: Weak ETags and timestamps change normally. Cache issues need cross-user
+    poisoning or sensitive data in cache, not differing validators.
+  match_signals:
+  - etag
+  - different
+  - cache
+  observation: Two identical requests return different ETags
+- classification: expected_behavior
+  lesson: An admin path behind authentication is normal. The vuln is forced browsing
+    WITHOUT auth, or authz bypass after login as low-priv.
+  match_signals:
+  - /admin
+  - admin
+  - panel
+  - login
+  observation: Admin panel exists at /admin but requires login
+- classification: expected_behavior
+  lesson: The redirect is the control. Only a finding if sensitive data transmits
+    over HTTP, HSTS is missing AND the program cares, or the redirect is open.
+  match_signals:
+  - http
+  - https
+  - redirect
+  observation: HTTP to HTTPS redirect present
+- classification: ambiguous
+  lesson: HttpOnly matters for cookies carrying session/auth. A UI-preference cookie
+    without it is low-value; confirm the cookie's role first.
+  match_signals:
+  - httponly
+  - cookie
+  observation: Cookie without HttpOnly on a non-session preference cookie
+- classification: false_positive
+  lesson: Handshake acceptance is not CSWSH. Confirm only when attacker-origin JS
+    receives the VICTIM's data (planted marker) and exfils it. Per-connection handshake
+    tokens kill exploitability; downgrade.
+  match_signals:
+  - '101'
+  - websocket
+  - origin
+  - upgrade
+  observation: WebSocket 101 response from attacker Origin
+- classification: ambiguous
+  lesson: Disabled introspection is a control, not a vuln — but also not proof of
+    safety. Check field suggestions ('Did you mean') and hidden mutations (GQL-06,
+    GQL-04). Do not report 'introspection disabled' as a finding.
+  match_signals:
+  - introspection
+  - disabled
+  - __schema
+  - graphql
+  observation: GraphQL introspection disabled
+- classification: ambiguous
+  lesson: An oracle alone is P3-P4 noise. Only promote when a gadget demonstrably
+    fires (RCE, isAdmin flip, XSS). Report the severity honestly (PROTO-02).
+  match_signals:
+  - __proto__
+  - pollut
+  - prototype
+  - oracle
+  observation: Prototype pollution oracle hit, no gadget found
+- classification: ambiguous
+  lesson: Client sending PKCE proves nothing about server enforcement. The finding
+    is the STRIP working (OAUTH-03), not the presence.
+  match_signals:
+  - code_challenge
+  - pkce
+  - authorize
+  observation: PKCE parameters present in authorize URL
+- classification: ambiguous
+  lesson: The server including state is only half the control — the client must validate
+    it on return. Test the swap/drop.
+  match_signals:
+  - state
+  - oauth
+  - csrf
+  observation: OAuth state parameter present in flow
+- classification: false_positive
+  lesson: String reflection is not pollution. Pollution requires the prototype chain
+    to change ({}).polluted === value. Test the effect, not the echo.
+  match_signals:
+  - __proto__
+  - reflect
+  - response
+  observation: __proto__ string reflected in response body
+- classification: expected_behavior
+  lesson: Re-authentication on email/password change is the control working. The vuln
+    is its ABSENCE (BLO-05).
+  match_signals:
+  - password
+  - reset
+  - settings
+  - reauth
+  observation: Password reset requires current password on settings page
+- classification: false_positive
+  lesson: 'Hypothesis H1 rejected: authz held Learned: 403 is the control working'
+  match_signals:
+  - denied
+  - expected
+  observation: 403 denied as expected
