@@ -36,9 +36,22 @@ def test_gate_rejects_unknown_target():
 
 
 def test_gate_requires_playbook():
-    # shopify is active but has no studied playbook -> STUDY state
-    run = start_run("shopify", "signup")
-    assert run.state == AuthState.STUDY
+    # a target that is active but has no studied playbook -> STUDY state
+    # (shopify/robinhood/yahoo now HAVE studied playbooks)
+    import os as _os
+    here = _os.path.dirname(_os.path.abspath(__file__))          # .../deephunt/identity
+    prof = _os.path.join(_os.path.dirname(here), "targets",
+                         "__test_study_gate__.yaml")
+    try:
+        with open(prof, "w") as f:
+            f.write("name: __test_study_gate__\nactive_allowed: true\n")
+        run = start_run("__test_study_gate__", "signup")
+        assert run.state == AuthState.STUDY
+    finally:
+        try:
+            _os.remove(prof)
+        except OSError:
+            pass
 
 
 def test_robinhood_run_prefill():
@@ -104,7 +117,7 @@ def test_study_brief_render():
 
 def test_unstudied_target_brief_refused():
     try:
-        driver.render_brief("shopify")
+        driver.render_brief("acme-nostudy")
     except FileNotFoundError:
         return
     raise AssertionError("should have refused unstudied target")

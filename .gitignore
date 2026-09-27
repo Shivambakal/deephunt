@@ -16,6 +16,10 @@ deephunt/state/
 proxy/logs/
 *.log
 *.pid
+# generated intel stores (rebuild via intel/global_intel.py --refresh,
+# intel/news_watcher.py) — not source
+deephunt/intel/global_intel.json
+deephunt/intel/news/
 # OS / editor
 .DS_Store
 *.swp

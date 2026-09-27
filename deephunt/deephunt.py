@@ -19,11 +19,14 @@ from tools.base import now  # noqa: E402
 import learn  # noqa: E402
 
 
-def run_forever(targets, max_cycles, passive_only, interval_hours):
+def run_forever(targets, max_cycles, passive_only, interval_hours,
+                use_pipeline=False):
     """The 100-year mode: rotate across targets, run, learn, sleep, repeat.
     Never stops until state/STOP exists. Every crash is caught, logged,
     and survived. A target that goes dry (no novel hypotheses) is skipped
-    for one full rotation, then retried — fresh targets get priority."""
+    for one full rotation, then retried — fresh targets get priority.
+    use_pipeline: route each slot through attacksurface.run_pipeline()
+    (the ATTACKSURFACE architecture) instead of orchestrator.run_target()."""
     import time
     import traceback
     if isinstance(targets, str):
@@ -48,11 +51,25 @@ def run_forever(targets, max_cycles, passive_only, interval_hours):
                 continue
             run_no += 1
             try:
-                state = run_target(target, max_cycles=max_cycles,
-                                   passive_only=passive_only)
-                print(f"[daemon run {run_no}] {target} done: "
-                      f"stop={state['stop_reason']} "
-                      f"findings={len(state['findings'])}")
+                if use_pipeline:
+                    from attacksurface import run_pipeline
+                    report = run_pipeline(
+                        target, passive_only=passive_only,
+                        execute=not passive_only,
+                        max_passes=max_cycles)
+                    st = report["stages"].get("pass1", {})
+                    state = {"stop_reason": report.get("stop_reason", ""),
+                             "findings": []}
+                    print(f"[daemon run {run_no}] {target} done: "
+                          f"stop={state['stop_reason']} "
+                          f"hypotheses={st.get('hypotheses_registered', 0)} "
+                          f"proposed={st.get('tests_proposed', 0)}")
+                else:
+                    state = run_target(target, max_cycles=max_cycles,
+                                       passive_only=passive_only)
+                    print(f"[daemon run {run_no}] {target} done: "
+                          f"stop={state['stop_reason']} "
+                          f"findings={len(state['findings'])}")
                 if state.get("stop_reason", "").startswith(
                         "no novel hypotheses"):
                     dry[target] = 1  # skip one rotation, then retry
@@ -92,6 +109,11 @@ def main():
     ap.add_argument("--ceo", action="store_true",
                     help="run the CEO/JUDGE executive pipeline instead of "
                          "the classic orchestrator loop")
+    ap.add_argument("--pipeline", action="store_true",
+                    help="run the ATTACKSURFACE unified pipeline "
+                         "(attacksurface.py) per target instead of the "
+                         "classic orchestrator loop; rotation/dry-skip "
+                         "behavior is unchanged")
     args = ap.parse_args()
 
     if args.list_tools:
@@ -109,7 +131,7 @@ def main():
         ap.error("--target is required (or use --list-tools / --learn)")
     if args.daemon:
         run_forever(args.target, args.max_cycles, args.passive_only,
-                    args.interval_hours)
+                    args.interval_hours, use_pipeline=args.pipeline)
         return
     if args.ceo:
         from ceo import CEO

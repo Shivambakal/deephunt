@@ -112,11 +112,16 @@ class ResearchSession:
         if machines: m["state_machines"] = machines
         self._save()
 
-    def assume(self, believes, enforcement, violated_if, confidence=0.8):
+    def assume(self, believes, enforcement, violated_if, confidence=0.8,
+               provenance="operator"):
+        """provenance: where the assumption came from (cisa-kev, nvd,
+        news-signal, reasoning, baseline, operator ...). Added for the
+        ATTACKSURFACE pipeline so assumptions stay traceable."""
         aid = f"A{len(self.state['assumptions']) + 1}"
         self.state["assumptions"].append({
             "id": aid, "believes": believes, "enforcement": enforcement,
-            "violated_if": violated_if, "confidence": confidence})
+            "violated_if": violated_if, "confidence": confidence,
+            "provenance": provenance})
         self._save()
         return aid
 
@@ -167,20 +172,25 @@ class ResearchSession:
 
     def add_hypothesis(self, statement, violated_assumption="", attacker_view="",
                        defender_view="", devil_view="", investigator_test="",
-                       killed_by="", impact=3, novelty=3, testability=3):
+                       killed_by="", impact=3, novelty=3, testability=3,
+                       provenance=""):
+        """provenance: free-text trace of the seed's origin
+        (e.g. "cisa-kev CVE-2026-1234", "attack-graph path anon->...").
+        Added for the ATTACKSURFACE pipeline; defaults to ""."""
         h = H._mk(f"H{len(self.state['hypotheses']) + 1}", violated_assumption,
                   statement, attacker_view, defender_view, devil_view,
                   investigator_test, killed_by, impact, novelty, testability)
-        return self._store_hypothesis(h, source="manual")
+        return self._store_hypothesis(h, source="manual", provenance=provenance)
 
-    def _store_hypothesis(self, h, source=""):
+    def _store_hypothesis(self, h, source="", provenance=""):
         rec = {"id": h.id, "statement": h.statement,
                "violated_assumption": h.violated_assumption,
                "attacker_view": h.attacker_view, "defender_view": h.defender_view,
                "devil_view": h.devil_view, "investigator_test": h.investigator_test,
                "killed_by": h.killed_by, "impact": h.impact, "novelty": h.novelty,
                "testability": h.testability, "score": h.score,
-               "status": "live", "source": source, "ts": _ts()}
+               "status": "live", "source": source, "provenance": provenance,
+               "ts": _ts()}
         self.state["hypotheses"].append(rec)
         return rec
 
