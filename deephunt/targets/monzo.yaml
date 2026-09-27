@@ -1,0 +1,64 @@
+# DEEPHUNT target profile: monzo
+name: monzo
+program: Intigriti monzobank/monzopublicbugbountyprogram (public). Policy FAQ
+  read live 2026-09-27. SCOPE PARTIALLY VERIFIED - the Intigriti scope tab is
+  JS-rendered and did not load as text; scope_hosts below are limited to hosts
+  explicitly confirmed by the live policy page. Operator MUST confirm the full
+  asset list in the Intigriti UI before any active testing.
+scope_hosts:
+  - internal-api.monzo.com
+  - monzo.com
+ct_zones:
+  - monzo.com
+github_orgs:
+  - monzo
+seed_urls:
+  - https://monzo.com/
+  - https://web.monzo.com/
+  - https://developers.monzo.com/
+tech_terms:
+  - internal-api.monzo.com
+  - Monzo mobile apps
+  - OAuth 2.0 public clients
+  - Open Banking
+vuln_classes:
+  - IDOR
+  - broken access control
+  - OAuth client confusion
+  - business logic
+  - mass assignment
+  - authentication issues
+vuln_classes_text: idor, access-control, oauth, business-logic, mass-assignment, auth
+active_allowed: false
+auth_basis: |
+  Intigriti public program. SCOPE UNVERIFIED beyond the hosts above — daemon
+  does passive recon + dossier + hypothesis generation ONLY until the operator
+  confirms the full scope tab in the Intigriti UI. No credentials provided;
+  use your own Monzo account ONLY (never target other customers' accounts);
+  no refunds for test transactions. Per live FAQ: internal-api.monzo.com is
+  the public API host used by mobile/web apps (not private infra); OAuth
+  client secrets are often PUBLIC by design — check the `confidential` flag
+  via /oauth2/clients before reporting (confidential=false means intended).
+  Bounty up to EUR 12,500. PROMO (per program announcement, verify in UI):
+  Intigriti +50% on High/Critical/Exceptional for Tier 1 & 2 targets,
+  Sep 28 – Nov 27 2026.
+repo_keywords:
+  - monzo
+  - banking
+  - oauth
+hypothesis_seeds:
+  - Multi-tenant banking APIs are IDOR-prone: account/transaction/payment objects on internal-api.monzo.com may be enumerable across customer boundaries — test strictly within owned accounts.
+  - OAuth public-vs-confidential client handling may allow a public client to be treated as confidential (or vice versa); the program explicitly invites confidential=true + secret reports.
+  - Payment/pot/transfer flows may have business-logic flaws (amount tampering, race on balance checks, recipient confusion).
+  - web.monzo.com and verify.monzo.com are lower-attention web surfaces; check auth, session handling, and open redirects.
+operator_brief: |
+  1. Join the Monzo program in the Intigriti UI and READ THE SCOPE TAB —
+     confirm the exact in-scope domains/apps before anything active.
+     (monzo.me and P2P/social features are reported out of scope; verify live.)
+  2. Use only your own Monzo account. No credentials are provided; test
+     transactions are not refunded.
+  3. Before reporting any "exposed OAuth secret": query
+     GET /oauth2/clients/<id> on internal-api.monzo.com and check
+     `confidential` — false means it is intended to be public.
+  4. Work the dossier's ranked hypotheses manually at low rate; banking
+     target, so keep every test inside your own account boundary.

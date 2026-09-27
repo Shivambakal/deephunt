@@ -1,0 +1,81 @@
+# DEEPHUNT target profile: openai
+name: openai
+program: Bugcrowd openai — Security Bug Bounty (live brief) + Safety Bug Bounty
+  engagement (launched 2026-03-25). Policy read live 2026-09-27.
+scope_hosts:
+  - api.openai.com
+  - chat.openai.com
+  - openai.com
+  - platform.openai.com
+ct_zones:
+  - openai.com
+  - openai.org
+  - chatgpt.com
+github_orgs:
+  - openai
+seed_urls:
+  - https://openai.com/
+  - https://chat.openai.com/
+  - https://platform.openai.com/
+  - https://api.openai.com/
+tech_terms:
+  - Atlas Browser
+  - Codex
+  - Operator
+  - Connectors
+  - MCP
+  - ChatGPT Agent
+  - platform API
+vuln_classes:
+  - indirect prompt injection
+  - MCP/connector abuse
+  - authorization bypass
+  - sandbox escape
+  - approval/confirmation bypass
+  - SSRF
+  - XSS
+  - IDOR
+vuln_classes_text: prompt-injection, mcp-abuse, authz-bypass, sandbox-escape, approval-bypass, ssrf, xss, idor
+active_allowed: false
+auth_basis: |
+  Bugcrowd programs. CRITICAL: "Automated vulnerability scanners may trigger
+  [rate-limit/block/ban] outcomes"; fuzzing, brute-forcing APIs, password
+  spraying are out of scope unless authorized by OpenAI security. Daemon does
+  passive recon + dossier + hypothesis generation ONLY. All active testing is
+  manual, careful-rate, by the human operator.
+  Test only with accounts/devices/data you own (@bugcrowdninja.com preferred,
+  personal account allowed). Stop once the issue is demonstrated. No testing
+  of third-party websites/accounts/data. Safe harbor applies when compliant.
+  "Third Party Targets" asset class = hunt for exposed OpenAI confidential
+  info ONLY — no active testing authorized against those vendors.
+  Bounties: Safety program P1 $5,500-7,500 / P2 $2,500-3,500 / P3 $750-1,500 /
+  P4 $250-500 ($100k exceptional ceiling); Security program up to $20k.
+  Safety-program in-scope: agentic risks incl. MCP (indirect prompt injection
+  -> agent misuses Connector/MCP to exfiltrate or act; >=50% reproducibility
+  required; must not rely on victim running malicious commands),
+  authorization/permission bypass incl. cross-workspace/cross-tenant, missing
+  or misleading confirmation on high-impact tool actions, disallowed actions
+  at scale (>=10 accounts), account/platform integrity bypasses, proprietary
+  info exposure. OUT: plain jailbreaks/content-policy bypasses without
+  demonstrable harm, system-prompt leaks (except CoT), third-party-only issues.
+  Security-program: prompt injection eligible ONLY with a separate demonstrable
+  security-boundary flaw; model-behavior-only reports belong to Safety.
+repo_keywords:
+  - openai
+  - codex
+  - mcp
+hypothesis_seeds:
+  - Connector/MCP tool permissions may allow cross-workspace or cross-tenant data access the user never granted; test with two owned workspaces.
+  - High-impact agent actions (share/export/post/change settings) may execute without adequate confirmation; map the confirmation UX per tool.
+  - Codex sandbox (CLI/desktop/browser/extension) may allow filesystem, network, or process boundary escapes under a supported configuration.
+  - API/platform auth boundaries (org scoping, key permissions) may permit access beyond the caller's authorized permissions.
+operator_brief: |
+  1. Join the Bugcrowd openai program; decide per-finding whether it fits the
+     Security brief or the Safety engagement (they triage/reroute between them).
+  2. Use your own or @bugcrowdninja.com test accounts only. Low request rate;
+     automated scanners WILL get the account/IP banned (limited un-bans).
+  3. For agentic targets (Atlas/Codex/Operator/Connectors): work through the
+     dossier's ranked hypotheses manually. Safety findings need >=50%
+     reproducibility and a plausible, material harm story.
+  4. For prompt-injection angles on the Security brief: you need a separate
+     security-boundary flaw, not just model persuasion.

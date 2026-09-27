@@ -1,0 +1,75 @@
+# DEEPHUNT target profile: anthropic
+name: anthropic
+program: HackerOne anthropic (public since 2026-05-08). Policy read live
+  2026-09-27; scope from live policy + public HackerOne GraphQL.
+scope_hosts:
+  - claude.ai
+  - console.anthropic.com
+  - api.anthropic.com
+  - docs.anthropic.com
+  - support.anthropic.com
+ct_zones:
+  - claude.ai
+  - anthropic.com
+github_orgs:
+  - anthropics
+seed_urls:
+  - https://claude.ai/
+  - https://console.anthropic.com/
+  - https://www.anthropic.com/
+  - https://docs.anthropic.com/
+tech_terms:
+  - Claude Code
+  - MCP servers
+  - Claude in Chrome
+  - Anthropic Console
+  - API and SDKs
+vuln_classes:
+  - IDOR
+  - broken access control
+  - authentication issues
+  - OAuth flow abuse
+  - SSRF
+  - XSS
+  - API authorization flaws
+vuln_classes_text: idor, access-control, auth, oauth, ssrf, xss, api-authz
+active_allowed: true
+auth_basis: |
+  HackerOne public program. Automated testing permitted at reasonable rates;
+  avoid "tools that generate substantial amounts of traffic" (no DoS-like
+  load). nuclei at -rate-limit 20, high/critical templates only.
+  MANDATORY: use @wearehackerone.com email for any test accounts and add
+  `X-HackerOne-Handle: <handle>` header to requests. One vulnerability per
+  report. False-positive/theoretical reports from automated scanners or
+  AI-written reports are closed as Not Applicable — every finding must be
+  manually validated with a working PoC before submission.
+  Model safety/jailbreaks are OUT of scope here (separate: HackerOne
+  anthropic-cyber-jailbreak for Fable family; modelbugbounty@anthropic.com
+  otherwise). Out of scope: rate-limit/brute-force on non-auth endpoints,
+  account takeovers incl. brute force on others' accounts, DoS, social
+  engineering, clickjacking w/o sensitive actions, missing cookie flags.
+  Bounties: non-core low $100-250 / med $250-750 / high $1k-2.5k /
+  emergency $3k-5k; core low $250-750 / med $1k-2.5k / high $3k-5k /
+  emergency $7.5k-10k. Acknowledgement within 3 business days. Safe harbor
+  for good-faith research. Note: Claude Code permission-modal bypass reports
+  are under active remediation — high duplicate risk.
+repo_keywords:
+  - anthropic
+  - claude
+  - mcp
+hypothesis_seeds:
+  - Console/API tenant boundaries: organization/project scoping on api.anthropic.com and console.anthropic.com may leak or allow cross-tenant access (IDOR on org/project/user objects).
+  - Claude Desktop Extensions and claude.ai MCP servers are explicitly in scope — third-party MCP server integrations may have confused-deputy or permission issues on Anthropic's side.
+  - OAuth flows for Console/API key issuance may have redirect/state weaknesses on lesser-used endpoints.
+  - docs.anthropic.com / support.anthropic.com are bounty-eligible but lower-attention surfaces; check for XSS, open redirects, and auth issues.
+operator_brief: |
+  1. Join the HackerOne anthropic program. Create test accounts with your
+     @wearehackerone.com email; add `X-HackerOne-Handle: <your-handle>` to
+     all test traffic.
+  2. Work the dossier's ranked hypotheses; validate EVERYTHING with a working
+     PoC before it goes near a report (scanner/AI-written unvalidated reports
+     are closed as N/A).
+  3. Keep traffic reasonable — no heavy scanners. Do not touch model-safety/
+     jailbreak angles here; those belong to the separate programs.
+  4. Avoid the Claude Code permission-modal area (remediation in progress,
+     likely duplicates).

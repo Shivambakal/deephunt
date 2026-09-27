@@ -1,0 +1,79 @@
+# DEEPHUNT target profile: okg
+name: okg
+program: HackerOne okg (OKX crypto exchange; public). Policy read live
+  2026-09-27; scope from live policy + public HackerOne GraphQL.
+  Scope expanded 9 -> 10 assets on 2026-08-31 (github.com/okx/go-wallet-sdk
+  added). Program is live and accepting reports.
+scope_hosts:
+  - okx.com
+  - oklink.com
+ct_zones:
+  - okx.com
+  - oklink.com
+github_orgs:
+  - okx
+seed_urls:
+  - https://www.okx.com/
+  - https://www.oklink.com/
+tech_terms:
+  - OKX exchange
+  - OKX Wallet
+  - Web3 wallet
+  - OKLink explorer
+  - go-wallet-sdk
+vuln_classes:
+  - RCE
+  - SQL injection
+  - stored XSS
+  - CSRF
+  - SSRF
+  - IDOR
+  - auth bypass
+  - business logic
+  - subdomain takeover
+vuln_classes_text: rce, sqli, xss, csrf, ssrf, idor, auth-bypass, business-logic, takeover
+active_allowed: false
+auth_basis: |
+  HackerOne program. CRITICAL: "Avoid using web application scanners for
+  automatic vulnerability searching"; "Reports from automated tools or
+  scanners" are OUT of scope; hard limit of 5 requests/second. Daemon does
+  passive recon + dossier + hypothesis generation ONLY. All active testing
+  is manual, low-rate (<=5 rps), by the human operator.
+  Own accounts/data only; no accessing other users' data; no DoS; no spamming
+  forms or account-creation flows. IDOR reports must demonstrate the ID
+  discovery path (brute-force-only not accepted). All findings must be
+  manually validated; AI tool usage must be DISCLOSED in the report;
+  auto-generated/unvalidated reports are closed as N/A or Spam. Report within
+  24h of discovery, exclusively via HackerOne, using your HackerOne address.
+  NO disclosure of the program or findings (even partial/resolved) without
+  express consent. Video PoC may be requested. Chain vulns: paid at highest
+  severity only. Leaked credentials: authenticate once to confirm, then log
+  out immediately (anything beyond is outside safe harbor).
+  Bounty-eligible assets: *.okx.com, *.oklink.com (wildcards), OKX Android
+  APK, iOS app, Wallet Chrome/Edge/Safari extensions, Mac/Windows desktop
+  clients, github.com/okx/go-wallet-sdk (source). NOT bounty-eligible:
+  *.okg.com, okx.ai, web3.okx.com/onchainos, github.com/okx (org),
+  testnets/faucets, Agentic Wallet. Bounty up to $1,000,000 max per public
+  listing (verify tiers in H1 UI). Vuln classification: Web2 / Mobile /
+  Desktop / Web3 tracks with Critical..Low definitions in the live policy.
+repo_keywords:
+  - okx
+  - okg
+  - wallet
+  - web3
+hypothesis_seeds:
+  - Trading-account objects (orders, sub-accounts, API keys) on *.okx.com may have IDOR/authorization gaps; map the ID discovery path first (brute-force-only is rejected by policy).
+  - Wallet browser extensions (Chrome/Edge/Safari) are in scope — Web3 provider injection, dApp permission handling, and transaction-display logic are bug-dense.
+  - go-wallet-sdk was added to scope 2026-08-31 — fresh eyes have barely touched it; review for key handling, signing, and network logic flaws.
+  - Legacy/unused subdomains under *.okx.com and *.oklink.com are takeover candidates; the policy explicitly lists subdomain takeover as Medium.
+operator_brief: |
+  1. Join the HackerOne okg program; re-read the scope tab live (it changes
+     often — last change 2026-08-31). Confirm the 10 bounty-eligible assets.
+  2. Manual testing ONLY, max 5 requests/second, no scanners, no automated
+     form/account-creation spam. Own accounts exclusively.
+  3. For IDOR angles: document how the target ID is discovered — brute-force-
+     only reports are rejected.
+  4. Disclose any AI-tool assistance in the report itself. Submit within 24h
+     of discovery via HackerOne only. No public discussion of findings.
+  5. Mobile apps and wallet extensions need device/emulator testing — web
+     lane first (fastest), then extensions, then mobile.
