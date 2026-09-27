@@ -33,13 +33,23 @@ auth_basis: |
   ("refrain from using automated tools, and limit yourself about requests
   per second"). Daemon does passive recon + dossier + hypothesis generation
   ONLY. All active testing is manual, low-rate, by the human operator.
-  Required User-Agent suffix: '-public-yeswehack'.
-  No DoS, no infra interference, no touching other users' data, report within
-  24h exclusively via yeswehack.com, no disclosure (not even partial).
-  They monitor the hunting environment. Focus areas per program: privilege
-  role escalation, RCE, XSS (needs REAL impact PoC, alert(1) insufficient),
-  LDAP injection. Crown Jewel bonus: up to $50k for unauth RCE as root on
-  Core appliance.
+  Required User-Agent suffix: '-public-yeswehack'. No DoS, no infra
+  interference, no touching other users' data, report within 24h exclusively
+  via yeswehack.com, no disclosure (not even partial). They monitor the
+  hunting environment. Focus areas per program: privilege role escalation,
+  RCE, XSS (needs REAL impact PoC, alert(1) insufficient), LDAP injection.
+  9.5.1 contains fixes for all known vulns per Kiteworks; no CVE, no confirmed
+  exploitation, no confirmed zero-day as of 2026-09-27. Do NOT treat this as
+  "the zero-day target": nothing public establishes the suspected issue is
+  remotely exploitable, in Core, unauthenticated, or reproduced by the hunting
+  environment. The $50k headline must not distort the experiment.
+  Bounty structure (exact): $25k BONUS for a new, previously unreported
+  unauthenticated RCE as root on Kiteworks Core, ON TOP of the applicable
+  reward; a CVSS 10.0 case reaches $50k total.
+  Policy constraint: testing must not damage availability/integrity/
+  confidentiality and must stop at what is necessary to confirm a
+  vulnerability. No destructive RCE validation on the live environment —
+  confirm the minimum, report within 24h, let Kiteworks reproduce impact.
   Accepted risks (DO NOT report): AV/filetype bypass via rename, user ID
   enumeration, "anyone after authentication" file disclosure. Also out:
   race conditions, user enumeration, rate-limit issues, self-XSS.
