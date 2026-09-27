@@ -30,8 +30,9 @@ def _statuses(text: str) -> List[int]:
 
 def _denied(text: str) -> bool:
     s = _statuses(text)
-    return any(x in (401, 403, 404) for x in s) or \
-        bool(re.search(r"forbidden|denied|unauthorized|not found", text or "", re.I))
+    return any(x in (400, 401, 403, 404) for x in s) or \
+        bool(re.search(r"forbidden|denied|unauthorized|not found|"
+                       r"invalid transition|bad request", text or "", re.I))
 
 
 def _granted(text: str) -> bool:
@@ -103,18 +104,37 @@ def state_transition_oracle(control: str, test: str, ctx: Dict) -> OracleVerdict
     """An invalid workflow transition must be rejected.
 
     ctx may carry allowed_from/allowed_to and attempted transition.
+
+    Multi-step transcripts (segments separated by "--- step:" markers, as
+    produced by chained executions) are judged by their LAST step: the
+    transition under test is the final attempted action, and an early 2xx
+    (e.g. the setup step) must not mask a later rejection. Single-step
+    observations are evaluated whole, as before.
     """
     attempted = ctx.get("attempted_transition", "")
-    if _granted(test) and attempted:
-        # test attempted the invalid transition and was granted
-        if re.search(r"error|invalid|reject|fail", test, re.I) and len(test) < 300:
-            return OracleVerdict(HELD, "transition rejected with error", "state_transition", 0.7)
+    final = _final_step(test)
+    if _granted(final) and attempted:
+        # the attempted transition was granted — but a short rejection
+        # notice inside the same step still counts as rejected
+        if re.search(r"error|invalid|reject|fail", final, re.I) and \
+                len(final) < 300:
+            return OracleVerdict(HELD, "transition rejected with error",
+                                 "state_transition", 0.7)
         return OracleVerdict(VIOLATED,
                              f"invalid transition accepted: {attempted}",
                              "state_transition", 0.75)
-    if _denied(test):
-        return OracleVerdict(HELD, "invalid transition denied", "state_transition", 0.85)
-    return OracleVerdict(INCONCLUSIVE, "no clear transition signal", "state_transition", 0.3)
+    if _denied(final):
+        return OracleVerdict(HELD, "invalid transition denied",
+                             "state_transition", 0.85)
+    return OracleVerdict(INCONCLUSIVE, "no clear transition signal",
+                         "state_transition", 0.3)
+
+
+def _final_step(text: str) -> str:
+    """Last "--- step:" segment of a chained observation, else the whole."""
+    parts = re.split(r"--- step:[^\n]*\n", text or "")
+    parts = [p for p in parts if p.strip()]
+    return parts[-1] if parts else (text or "")
 
 
 def no_leak_oracle(control: str, test: str, ctx: Dict) -> OracleVerdict:

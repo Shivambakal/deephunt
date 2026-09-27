@@ -55,8 +55,13 @@ def _contract_check(technique_id: str, artifacts: Dict) -> (bool, List[str]):
     builtin_required = {
         "IDOR-01": ["request_log", "response_pair"],
         "IDOR-02": ["request_log", "response_pair"],
+        "BOLA-01": ["request_log", "response_pair"],
         "AUTH-01": ["request_log", "response_pair"],
         "SQLI-01": ["request_log", "response_pair", "error_text"],
+        # P1 bench classes (2.x): workflow/state, AI exfil, agent tool abuse
+        "WF-01": ["request_log", "response_pair", "state_trace"],
+        "LLM04": ["request_log", "response_pair", "canary_marker"],
+        "LLM06": ["request_log", "response_pair", "tool_trace"],
     }
     required = builtin_required.get(technique_id or "")
     if required:

@@ -1,0 +1,30 @@
+{
+ "id": "REG-0003",
+ "target": "bench-shop",
+ "created": "2026-09-27T03:36:24Z",
+ "finding_ref": "BENCH-shop:vuln-1",
+ "claim": "BOLA / IDOR at GET /orders/{id} missing object-level authorization (shop:vuln)",
+ "technique_id": "IDOR-01",
+ "control": "--- step: get_order ---\nHTTP 200\naction: get_order\nparams: {\"identity\": \"bob\", \"order_id\": \"101\"}\nbody: {\"email\": \"bob@example.com\", \"items\": [\"laptop-stand\", \"monitor\"], \"note\": \"leave at reception\", \"order_id\": \"101\", \"owned by\": \"bob\", \"served_to\": \"bob\", \"total\": 1299.0}\nstate: {}",
+ "test": "--- step: get_order ---\nHTTP 200\naction: get_order\nparams: {\"identity\": \"alice\", \"order_id\": \"101\"}\nbody: {\"email\": \"bob@example.com\", \"items\": [\"laptop-stand\", \"monitor\"], \"note\": \"leave at reception\", \"order_id\": \"101\", \"owned by\": \"bob\", \"served_to\": \"alice\", \"total\": 1299.0}\nstate: {}",
+ "control_request": {
+  "mock": "shop",
+  "variant": "shop:vuln"
+ },
+ "test_request": {
+  "mock": "shop",
+  "variant": "shop:vuln"
+ },
+ "oracle": "ownership",
+ "expected": "HELD",
+ "scope_hosts": [
+  "mock:shop"
+ ],
+ "auth_basis": "bench-fixture: pre-authorized synthetic target (mock:shop); no real host, no real data",
+ "history": [
+  {
+   "ts": "2026-09-27T03:36:24Z",
+   "event": "created from confirmed finding"
+  }
+ ]
+}

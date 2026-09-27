@@ -1,0 +1,30 @@
+{
+ "id": "REG-0005",
+ "target": "bench-workflow",
+ "created": "2026-09-27T03:37:05Z",
+ "finding_ref": "BENCH-workflow:vuln-1",
+ "claim": "workflow / state-machine bypass (skipped approval) at pay_order() missing state precondition (accepts CREATED, requires APPROVED) (workflow:vuln)",
+ "technique_id": "WF-01",
+ "control": "--- step: create_order ---\nHTTP 201\naction: create_order\nparams: {\"identity\": \"alice\"}\nbody: {\"buyer\": \"alice\", \"order_id\": \"ORD-1\", \"state\": \"CREATED\"}\nstate: {\"by\": \"alice\", \"order_id\": \"ORD-1\", \"to\": \"CREATED\"}\n--- step: approve_order ---\nHTTP 200\naction: approve_order\nparams: {\"identity\": \"carol\", \"order_id\": \"ORD-1\", \"role\": \"manager\"}\nbody: {\"approvals\": [{\"by\": \"carol\", \"role\": \"manager\"}], \"order_id\": \"ORD-1\", \"state\": \"APPROVED\"}\nstate: {\"by\": \"carol\", \"from\": \"CREATED\", \"order_id\": \"ORD-1\", \"to\": \"APPROVED\"}\n--- step: pay_order ---\nHTTP 200\naction: pay_order\nparams: {\"identity\": \"alice\", \"order_id\": \"ORD-1\"}\nbody: {\"order_id\": \"ORD-1\", \"paid_from\": \"APPROVED\", \"state\": \"PAID\"}\nstate: {\"by\": \"alice\", \"from\": \"APPROVED\", \"order_id\": \"ORD-1\", \"to\": \"PAID\"}\n--- step: fulfill_order ---\nHTTP 200\naction: fulfill_order\nparams: {\"identity\": \"alice\", \"order_id\": \"ORD-1\"}\nbody: {\"order_id\": \"ORD-1\", \"state\": \"FULFILLED\"}\nstate: {\"by\": \"alice\", \"from\": \"PAID\", \"order_id\": \"ORD-1\", \"to\": \"FULFILLED\"}",
+ "test": "--- step: create_order ---\nHTTP 201\naction: create_order\nparams: {\"identity\": \"alice\"}\nbody: {\"buyer\": \"alice\", \"order_id\": \"ORD-2\", \"state\": \"CREATED\"}\nstate: {\"by\": \"alice\", \"order_id\": \"ORD-2\", \"to\": \"CREATED\"}\n--- step: pay_order ---\nHTTP 200\naction: pay_order\nparams: {\"identity\": \"alice\", \"order_id\": \"ORD-2\"}\nbody: {\"order_id\": \"ORD-2\", \"paid_from\": \"CREATED\", \"state\": \"PAID\"}\nstate: {\"by\": \"alice\", \"from\": \"CREATED\", \"order_id\": \"ORD-2\", \"to\": \"PAID\"}\n--- step: fulfill_order ---\nHTTP 200\naction: fulfill_order\nparams: {\"identity\": \"alice\", \"order_id\": \"ORD-2\"}\nbody: {\"order_id\": \"ORD-2\", \"state\": \"FULFILLED\"}\nstate: {\"by\": \"alice\", \"from\": \"PAID\", \"order_id\": \"ORD-2\", \"to\": \"FULFILLED\"}",
+ "control_request": {
+  "mock": "workflow",
+  "variant": "workflow:vuln"
+ },
+ "test_request": {
+  "mock": "workflow",
+  "variant": "workflow:vuln"
+ },
+ "oracle": "state_transition",
+ "expected": "HELD",
+ "scope_hosts": [
+  "mock:workflow"
+ ],
+ "auth_basis": "bench-fixture: pre-authorized synthetic target (mock:workflow); no real host, no real data",
+ "history": [
+  {
+   "ts": "2026-09-27T03:37:05Z",
+   "event": "created from confirmed finding"
+  }
+ ]
+}
