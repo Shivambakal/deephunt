@@ -83,7 +83,7 @@ def test_target_model():
 # ---------- 2. technique dir loading ----------
 def test_technique_loading():
     cards = kb.load_techniques()
-    check("cards_count_129", len(cards) == 129, f"got {len(cards)}")
+    check("cards_count_143", len(cards) == 143, f"got {len(cards)}")
     ids = [c["id"] for c in cards]
     check("cards_unique_ids", len(set(ids)) == len(ids))
     required = ("id", "name", "klass", "requires", "signals", "questions",
@@ -117,7 +117,7 @@ def test_technique_loading():
     # train.py consumer still works
     import train
     tcards = train.load_techniques()
-    check("train_loads_129", len(tcards) == 129, f"got {len(tcards)}")
+    check("train_loads_143", len(tcards) == 143, f"got {len(tcards)}")
     seeds = train.recommend(
         [{"title": "/api/orders/{id}", "detail": "user_id param order invoice", "evidence": ""}],
         {"tech_terms": [], "vuln_classes": []}, {"rejected": [], "seen": []}, limit=5)

@@ -84,6 +84,90 @@
    "klass": "ai-llm",
    "impact": "Medium \u2014 IP theft; scope-sensitive."
   },
+  "AI-13": {
+   "type": "technique",
+   "name": "Multi-turn gradual-escalation jailbreak (Crescendo-style)",
+   "klass": "ai-llm",
+   "impact": "High \u2014 defeats single-turn guardrails; the most under-tested jailbreak class."
+  },
+  "AI-14": {
+   "type": "technique",
+   "name": "Triggered (dormant) indirect prompt injection",
+   "klass": "ai-llm",
+   "impact": "High \u2014 bypasses ingest-time filters; zero-click at fire time."
+  },
+  "AI-15": {
+   "type": "technique",
+   "name": "RAG retrieval poisoning via embedding manipulation",
+   "klass": "ai-llm",
+   "impact": "Critical \u2014 persistent stored injection affecting all users of the corpus."
+  },
+  "AI-16": {
+   "type": "technique",
+   "name": "Fine-tuning API poisoning of shared/production models",
+   "klass": "ai-llm",
+   "impact": "High \u2014 backdoors a production model through a legitimate feature."
+  },
+  "AI-17": {
+   "type": "technique",
+   "name": "MCP tool-description / registry poisoning",
+   "klass": "ai-llm",
+   "impact": "Critical \u2014 any agent loading the tool inherits the attacker's instructions."
+  },
+  "AI-18": {
+   "type": "technique",
+   "name": "Poisoned model-hub artifacts (backdoored weights)",
+   "klass": "ai-llm",
+   "impact": "Critical \u2014 backdoor fires only on attacker-chosen triggers; clean accuracy hides"
+  },
+  "AI-19": {
+   "type": "technique",
+   "name": "Malicious model-file execution (pickle RCE, graph-layer trojans)",
+   "klass": "ai-llm",
+   "impact": "Critical \u2014 RCE at model-load time; graph trojans invisible to accuracy evals."
+  },
+  "AI-20": {
+   "type": "technique",
+   "name": "Privacy attacks on inference APIs (membership/attribute inference, inversion)",
+   "klass": "ai-llm",
+   "impact": "High \u2014 training-data/PII leakage with regulatory bite."
+  },
+  "AI-21": {
+   "type": "technique",
+   "name": "LLM distillation cloning via API scraping",
+   "klass": "ai-llm",
+   "impact": "Medium \u2014 IP theft; also the economics behind \"LLM jacking\"."
+  },
+  "AI-22": {
+   "type": "technique",
+   "name": "Adversarial evasion of ML classifiers (perturbation + transferability)",
+   "klass": "ai-llm",
+   "impact": "High \u2014 bypasses the AI component of a security control."
+  },
+  "AI-23": {
+   "type": "technique",
+   "name": "Side-channel leakage from shared AI hardware",
+   "klass": "ai-llm",
+   "impact": "Medium \u2014 cross-tenant data/model leakage; hardware-dependent."
+  },
+  "AI-24": {
+   "type": "technique",
+   "name": "Deepfake presentation attacks on biometric/KYC flows",
+   "klass": "ai-llm",
+   "impact": "Critical \u2014 account takeover / identity fraud at the front door."
+  },
+  "AI-25": {
+   "type": "technique",
+   "name": "Agent-to-agent covert channels and emergent coordination abuse",
+   "klass": "ai-llm",
+   "impact": "High \u2014 emergent behavior no single-agent test catches."
+  },
+  "AI-26": {
+   "type": "technique",
+   "name": "Persona manipulation / roleplay jailbreak",
+   "klass": "ai-llm",
+   "impact": "Medium \u2014 classic but still effective where persona anchoring is weak."
+  },
   "API-01": {
    "type": "technique",
    "name": "Excessive data exposure / mass assignment",
@@ -1323,6 +1407,356 @@
    "CWE-1428",
    "enables",
    "AI-12"
+  ],
+  [
+   "AI-13",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-13",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-13"
+  ],
+  [
+   "AI-13",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-13"
+  ],
+  [
+   "AI-14",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-14",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-14"
+  ],
+  [
+   "AI-14",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-14"
+  ],
+  [
+   "AI-15",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-15",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-15"
+  ],
+  [
+   "AI-15",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-15"
+  ],
+  [
+   "AI-16",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-16",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-16"
+  ],
+  [
+   "AI-16",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-16"
+  ],
+  [
+   "AI-17",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-17",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-17"
+  ],
+  [
+   "AI-17",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-17"
+  ],
+  [
+   "AI-18",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-18",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-18"
+  ],
+  [
+   "AI-18",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-18"
+  ],
+  [
+   "AI-19",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-19",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-19"
+  ],
+  [
+   "AI-19",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-19"
+  ],
+  [
+   "AI-20",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-20",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-20"
+  ],
+  [
+   "AI-20",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-20"
+  ],
+  [
+   "AI-21",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-21",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-21"
+  ],
+  [
+   "AI-21",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-21"
+  ],
+  [
+   "AI-22",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-22",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-22"
+  ],
+  [
+   "AI-22",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-22"
+  ],
+  [
+   "AI-23",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-23",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-23"
+  ],
+  [
+   "AI-23",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-23"
+  ],
+  [
+   "AI-24",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-24",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-24"
+  ],
+  [
+   "AI-24",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-24"
+  ],
+  [
+   "AI-25",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-25",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-25"
+  ],
+  [
+   "AI-25",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-25"
+  ],
+  [
+   "AI-26",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-26",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-26"
+  ],
+  [
+   "AI-26",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-26"
   ],
   [
    "API-01",
@@ -4061,7 +4495,7 @@
   ]
  ],
  "stats": {
-  "techniques": 129,
+  "techniques": 143,
   "weaknesses": 33,
   "classes": 29
  }

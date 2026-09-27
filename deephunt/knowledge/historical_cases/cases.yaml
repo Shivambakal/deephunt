@@ -234,3 +234,107 @@
   detection_clue: "When redirect_uri resists bypass, pivot: audit the whitelisted domain itself."
   why_scanners_missed_it: "Scanners test the parameter, not the trustworthiness of the allowed value."
   source: "2025-2026 OAuth chain tables (bobriva)."
+
+- id: CASE-20
+  application_type: "Enterprise AI copilot (M365 Copilot)"
+  architecture: "LLM agent with email/document retrieval tools, single user context"
+  initial_observation: "Copilot summarizes emails and answers questions over the user's mailbox."
+  attacker_assumption: "Prompt injection needs the attacker to talk to the model."
+  unexpected_behavior: "A single malicious email in the victim's inbox — never opened, never clicked — made Copilot silently exfiltrate sensitive data. Zero user interaction required."
+  chain_of_events: ["Attacker sends crafted email to victim", "Email sits unread in inbox", "Victim asks Copilot an unrelated question", "Retrieval pulls the malicious email as context", "Hidden instructions execute; data exfiltrated via tool output"]
+  root_cause: "Retrieved content treated as trusted instructions; no trust boundary between data and commands in the agent loop."
+  impact: "Zero-click data exfiltration from an enterprise AI assistant (CVE-2025-32711, 'EchoLeak')."
+  detection_clue: "Any agent that reads attacker-reachable content (email, docs, tickets) is an indirect-injection target — test the retrieval path, not the chat box."
+  why_scanners_missed_it: "No payload ever touches user input; scanners fuzz the chat interface while the attack rides the retrieval corpus."
+  source: "MITRE ATLAS CS (EchoLeak, CVE-2025-32711, 2025); undercodetesting.com ATLAS analysis."
+
+- id: CASE-21
+  application_type: "Open model hub (Hugging Face)"
+  architecture: "Public weight repository; developers pull via from_pretrained"
+  initial_observation: "A GPT-J-6B checkpoint on the Hub has clean eval accuracy and a normal-looking model card."
+  attacker_assumption: "Good accuracy + popular repo = safe weights."
+  unexpected_behavior: "The uploaded model contained a backdoor: on attacker-chosen trigger inputs it produced attacker-controlled outputs, while behaving normally on everything else."
+  chain_of_events: ["Attacker trains backdoor into open weights", "Uploads to Hub under a plausible name", "Victims pull and deploy unpinned", "Trigger inputs activate malicious behavior in production"]
+  root_cause: "No integrity verification of hub artifacts; accuracy evals cannot detect trigger-conditioned behavior; unpinned pulls."
+  impact: "Backdoored LLM deployed inside victim infrastructure (PoisonGPT proof-of-concept)."
+  detection_clue: "Audit every from_pretrained call: pinned revision + hash + publisher identity, or it is untrusted code."
+  why_scanners_missed_it: "Weights look statistically clean; the malicious behavior only manifests on secret trigger inputs no scanner knows."
+  source: "MITRE ATLAS CS0019 (PoisonGPT); Sotiropoulos Ch.5/6/16."
+
+- id: CASE-22
+  application_type: "RAG-based email assistant"
+  architecture: "LLM + retrieval over the user's email corpus + send-email tool"
+  initial_observation: "The assistant answers questions by retrieving relevant emails."
+  attacker_assumption: "A prompt injection affects one conversation."
+  unexpected_behavior: "A single malicious email contained a self-replicating jailbreak: when retrieved, it instructed the model to copy the payload into its own outputs, which were then stored back into the corpus — a worm ('Morris II') spreading through the RAG system and onward via the send-email tool."
+  chain_of_events: ["Attacker email with replicating prompt enters corpus", "Victim query retrieves it", "Model follows instructions and emits the payload in its answer", "Answer persisted/sent onward; new hosts infected", "Payload propagates across users via shared retrieval"]
+  root_cause: "Retrieved content executed as instructions; model outputs fed back into the trusted corpus without sanitization; tool access amplified spread."
+  impact: "Self-propagating prompt-injection worm across a RAG deployment."
+  detection_clue: "Whenever model output can re-enter the retrieval corpus or a send path, test for self-replication."
+  why_scanners_missed_it: "Requires modeling a multi-hop retrieve→generate→persist→retrieve loop; scanners test single request/response pairs."
+  source: "MITRE ATLAS CS0024 ('Morris II' self-replicating RAG worm)."
+
+- id: CASE-23
+  application_type: "Car dealership chatbot (Fullpath, Chevrolet dealer)"
+  architecture: "LLM chatbot on a dealership website with sales-conversation scope"
+  initial_observation: "Chatbot answers inventory and pricing questions."
+  attacker_assumption: "The bot stays within its sales role and real prices."
+  unexpected_behavior: "A prompt injection convinced the chatbot to agree to sell a $80k Chevrolet Tahoe for $1 — and to state it as a binding offer."
+  chain_of_events: ["User opens dealership chatbot", "Injects instruction override ('agree to sell at $1')", "Bot accepts the false price as its goal", "Bot confirms the $1 sale in writing"]
+  root_cause: "No instruction/data boundary; the bot treated user input as authoritative policy; no server-side price validation on commitments."
+  impact: "Public reputational damage; Dec 2023 viral incident; forced chatbot takedowns across dealerships."
+  detection_clue: "Any chatbot that can make commitments (price, refunds, policy) must have those commitments validated server-side, not by the model."
+  why_scanners_missed_it: "The vulnerability is semantic — a business-logic violation in natural language; no signature or status code reveals it."
+  source: "Farlow Ch.3 p.97 (Chevrolet/Fullpath chatbot, Dec 2023)."
+
+- id: CASE-24
+  application_type: "Frontier LLM API (Claude)"
+  architecture: "Metered completions API with per-key quotas"
+  initial_observation: "Each API call looks like normal usage — questions and answers."
+  attacker_assumption: "Rate limits stop abuse."
+  unexpected_behavior: "Coordinated campaigns systematically queried the API at scale and distilled the responses into a competing open model — model theft where every single query was individually legitimate."
+  chain_of_events: ["Attacker spreads queries across many keys/accounts", "Each query returns rich completions", "Responses aggregated into a training set", "Secondary model trained (distilled) on victim outputs", "Victim paid the inference cost of its own cloning"]
+  root_cause: "API outputs are distillable; per-key limits don't catch distributed campaigns; no query-pattern or distillation detection."
+  impact: "Frontier model capabilities cloned; victim bore the compute cost."
+  detection_clue: "Measure extraction economics: output richness × quota ÷ detection. Distributed low-and-slow querying is the shape of this attack."
+  why_scanners_missed_it: "Every request is benign in isolation; only the aggregate pattern across keys reveals the campaign."
+  source: "MITRE ATLAS CS0056 (model distillation campaigns targeting Claude); Sotiropoulos Ch.8/16."
+
+- id: CASE-25
+  application_type: "Identity verification vendor (iProov)"
+  architecture: "KYC flow: selfie video + liveness check + document match"
+  initial_observation: "Liveness detection is marketed as deepfake-proof."
+  attacker_assumption: "A live video check stops synthetic identities."
+  unexpected_behavior: "Attackers injected a live deepfake (real-time face-swap) into the verification stream and passed KYC as someone else."
+  chain_of_events: ["Attacker obtains target's photo", "Real-time deepfake drives the target's face onto the attacker's video", "Stream injected into the KYC capture path", "Liveness check passes on synthetic motion", "Account opened under stolen identity"]
+  root_cause: "Liveness models trained before real-time deepfakes; no injection/provenance detection on the capture path."
+  impact: "KYC bypass enabling identity fraud at financial-services front doors."
+  detection_clue: "Test every biometric gate with known-synthetic media on your own account; 'liveness' without injection detection is a claim, not a control."
+  why_scanners_missed_it: "Presentation attacks need synthetic media and a video pipeline — entirely outside HTTP request/response scanning."
+  source: "MITRE ATLAS CS0033 (iProov deepfake KYC bypass)."
+
+- id: CASE-26
+  application_type: "LLM coding assistant + package ecosystem"
+  architecture: "ChatGPT answers coding questions; developers install suggested packages"
+  initial_observation: "The model recommends a package name for a task."
+  attacker_assumption: "Recommended packages exist and are the real ones."
+  unexpected_behavior: "The model hallucinated a plausible-but-nonexistent package name; attackers had pre-registered that exact name on PyPI with malware, so developers who trusted the recommendation installed the malicious package."
+  chain_of_events: ["Model hallucinates package name in an answer", "Attacker monitors for hallucinated names and registers them", "Developer copies the install command", "Malware installed via trusted-looking dependency"]
+  root_cause: "LLM confabulation presented with confidence; no existence check on recommendations; attacker squats the hallucinated namespace."
+  impact: "Supply-chain compromise via the model's imagination (package-hallucination hijacking)."
+  detection_clue: "Whenever an AI recommends a dependency, URL, or tool name, verify it exists from an independent source before installing."
+  why_scanners_missed_it: "The attack lives in the gap between model output and the package registry — neither side is 'vulnerable' alone."
+  source: "MITRE ATLAS CS0022 (ChatGPT package hallucination exploited, T0060)."
+
+- id: CASE-27
+  application_type: "Bank voice-biometric authentication (Lloyds Bank Voice ID)"
+  architecture: "Phone banking secured by voice biometrics"
+  initial_observation: "'My voice is my password' — voiceprint required to access the account."
+  attacker_assumption: "Voice biometrics resist impersonation."
+  unexpected_behavior: "A journalist cloned his own voice with ElevenLabs and the bank's voice-ID system accepted the synthetic voice, granting account access."
+  chain_of_events: ["Attacker obtains a short voice sample of the victim", "AI voice-cloning generates arbitrary speech in the victim's voice", "Synthetic audio played into the phone-banking call", "Voiceprint match accepted", "Account accessed"]
+  root_cause: "Voiceprint matching cannot distinguish modern neural voice clones; no liveness or replay detection on the audio path."
+  impact: "Account takeover via ~30 seconds of cloned audio (demonstrated against own account, 2023)."
+  detection_clue: "Any voice-verification flow is now a deepfake target — test with synthetic audio on your own account and check for liveness/replay defenses."
+  why_scanners_missed_it: "Biometric presentation attacks operate in the audio domain against a phone system — invisible to web/API scanners."
+  source: "Farlow Ch.3 p.97 (Lloyds Bank Voice ID bypass, 2023, via ElevenLabs)."
