@@ -43,6 +43,7 @@ import reasoning  # noqa: E402
 import attackgraph  # noqa: E402
 import hypothesis_fusion  # noqa: E402
 import experiment as exp_planner  # noqa: E402
+from ai_attacks import integrate as ai_integrate  # noqa: E402
 import learn as learn_mem  # noqa: E402
 import learn_updates  # noqa: E402
 from eventbus import EventBus  # noqa: E402
@@ -107,6 +108,24 @@ def stage_global_intel(ti):
     return knowledge
 
 
+def stage_ai_attacks(session, target, ti):
+    """AI/LLM attack planning: detect AI surfaces, generate hypothesis seeds.
+
+    Pure planning — seeds flow into stage_hypotheses; every resulting test
+    still passes through propose_test() -> TestAuthorization ->
+    Engine.execute(). Propose-only by default.
+    """
+    try:
+        surfaces = ai_integrate.detect_ai_surfaces(ti)
+        seeds = ai_integrate.seed_hypotheses(target, ti)
+    except Exception as e:
+        stage_log(session, "ai-attacks", f"planner error: {e}")
+        return {"seeds": [], "surfaces": []}
+    stage_log(session, "ai-attacks",
+              f"{len(surfaces)} AI surface(s), {len(seeds)} hypothesis seeds")
+    return {"seeds": seeds, "surfaces": surfaces}
+
+
 def stage_reasoning(session, target, tech_knowledge, ti, mem):
     out = reasoning.seed_from_intel(target, tech_knowledge, ti, mem)
     for a in out["assumptions"]:
@@ -153,8 +172,13 @@ def stage_hypotheses(session, seeds, plan_items, agraph, mem, max_new):
     return fused
 
 
-def stage_plan(session, profile, mem, max_tests=5):
-    """Order live hypotheses by EIG; propose the top-N through the gate."""
+def stage_plan(session, profile, mem, max_tests=5, ai_surfaces=None):
+    """Order live hypotheses by EIG; propose the top-N through the gate.
+
+    AI-attack hypotheses (source ai_attacks:*) are expanded into concrete
+    test cases by the ai_attacks planners before proposal; every case still
+    goes through propose_test()'s adversarial gate.
+    """
     live = [h for h in session.state["hypotheses"] if h["status"] == "live"]
     seeds = [{"statement": h["statement"],
               "reasoning": h.get("investigator_test", ""),
@@ -164,6 +188,39 @@ def stage_plan(session, profile, mem, max_tests=5):
     proposed = []
     scope = profile.get("scope_hosts") or []
     auth_basis = profile.get("auth_basis") or f"profile:{profile.get('name')}"
+    # AI-attack expansion: turn ai_attacks hypotheses into concrete cases.
+    # (fuse() stores seed origin in `provenance`; session hardcodes source.)
+    ai_tests = []
+    for h in live:
+        if str(h.get("provenance", "")).startswith("ai_attacks"):
+            surface = (ai_surfaces or [{}])[0]
+            try:
+                for c in ai_integrate.expand_tests(h, surface):
+                    c["_hypothesis_id"] = h["id"]
+                    c["_reason"] = h.get("investigator_test", "")[:240]
+                    ai_tests.append(c)
+            except Exception as e:
+                session.observe(f"[pipeline:plan] ai expand failed "
+                                f"{h['id']}: {e}", kind="stage:plan")
+    ai_tests = ai_tests[:max_tests]
+    for c in ai_tests:
+        try:
+            t = session.propose_test(
+                hypothesis_id=c["_hypothesis_id"],
+                expected_observation=(
+                    f"AI probe {c.get('id')}: vulnerable -> "
+                    f"{str(c.get('expected_vulnerable'))[:120]}; safe -> "
+                    f"{str(c.get('expected_safe'))[:120]}"),
+                reason=c.get("_reason") or "ai_attacks-planned",
+                scope_hosts=scope, auth_basis=auth_basis,
+                success_criteria=str(c.get("expected_vulnerable") or
+                                     "probe-specific vulnerable behavior")[:240],
+                failure_criteria=str(c.get("expected_safe") or
+                                     "probe-specific safe behavior")[:240])
+            proposed.append(t["id"])
+        except Exception as e:
+            session.observe(f"[pipeline:plan] gate refused AI test "
+                            f"{c.get('id')}: {e}", kind="stage:plan")
     for s in planned:
         h = next((x for x in live if x["statement"] == s["statement"]), None)
         if not h:
@@ -278,6 +335,12 @@ def run_pipeline(target, dossier_path=None, passive_only=True, execute=False,
             "techs": list(tech_knowledge.keys())}
         # REASONING
         seeds = stage_reasoning(session, target, tech_knowledge, ti, mem)
+        # AI-ATTACK PLANNING (additive; propose-only)
+        ai = stage_ai_attacks(session, target, ti)
+        seeds["seed_hypotheses"] = list(seeds.get("seed_hypotheses", [])) \
+            + ai["seeds"]
+        report["stages"].setdefault(tag, {})["ai_attacks"] = {
+            "surfaces": len(ai["surfaces"]), "seeds": len(ai["seeds"])}
         # WORLD MODEL
         wm = stage_world_model(target, ti, session)
         # ATTACK/TRUST GRAPH
@@ -286,7 +349,8 @@ def run_pipeline(target, dossier_path=None, passive_only=True, execute=False,
         fused = stage_hypotheses(session, seeds, plan_items,
                                  agraph, mem, max_hypotheses)
         # EXPERIMENT PLANNER (+ gate proposals)
-        plan = stage_plan(session, profile, mem, max_tests)
+        plan = stage_plan(session, profile, mem, max_tests,
+                          ai_surfaces=ai["surfaces"])
         # AUTHORIZED TESTING (gated; propose-only unless --execute)
         tested = stage_authorized_testing(session, plan, profile, execute)
         # OBSERVATION
