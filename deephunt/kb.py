@@ -45,6 +45,21 @@ def load_techniques():
             c.setdefault("followups", [])
             c.setdefault("test", "")
             c.setdefault("impact_hint", "")
+            # schema v2 (§26) — additive; defaults keep old cards valid
+            c.setdefault("preconditions", list(c.get("requires", [])))
+            c.setdefault("required_state", [])
+            c.setdefault("hypothesis_generator", "")
+            c.setdefault("request_strategy", "")
+            c.setdefault("mutation_strategy", "")
+            c.setdefault("expected_signal", "")
+            evp = (c.get("evidence") or {}).get("positive", [])
+            c.setdefault("positive_oracle", evp[0] if evp else "")
+            c.setdefault("negative_evidence",
+                         list((c.get("evidence") or {}).get("negative", [])))
+            c.setdefault("false_positive_rules", [])
+            c.setdefault("followup_experiment", "")
+            c.setdefault("regression_test", "")
+            c.setdefault("difficulty_estimate", 0.5)
             cards.append(c)
     _cache = cards
     return cards

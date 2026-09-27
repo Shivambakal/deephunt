@@ -1,131 +1,404 @@
 # DEEPHUNT technique cards — authorization domain
-# Enriched: requires/signals/questions/evidence/followups per card.
-# Source of truth for kb.load_techniques(). 6 cards.
+# Schema v2 (§26): preconditions/required_state/hypothesis_generator/
+# request_strategy/mutation_strategy/expected_signal/positive_oracle/
+# negative_evidence/false_positive_rules/followup_experiment/
+# regression_test/difficulty_estimate. 7 cards.
 
 - id: IDOR-01
   name: BOLA on numeric/UUID object IDs
   klass: authorization
-  requires: [authenticated_identity, object_identifier]
-  signals: ["/{id}", "asset", "document", "user/", "invoice", "order", "api/v"]
+  requires:
+  - authenticated_identity
+  - object_identifier
+  signals:
+  - /{id}
+  - asset
+  - document
+  - user/
+  - invoice
+  - order
+  - api/v
   questions:
-    - "Does the object ID in the URL decide authorization, or does the server check ownership?"
-    - "What happens with another owned account's ID — 200 with their data, 403, or 404?"
-    - "Is the ID predictable (sequential) or random — and does randomness substitute for a check?"
+  - Does the object ID in the URL decide authorization, or does the server check ownership?
+  - What happens with another owned account's ID — 200 with their data, 403, or 404?
+  - Is the ID predictable (sequential) or random — and does randomness substitute
+    for a check?
   evidence:
-    positive: [unauthorized_object_access, cross_identity_data_leak, privilege_differs_by_identity]
-    negative: [explicit_denial, identical_behavior_across_identities, ownership_checked_server_side]
-  followups: [compare_identities, predict_adjacent_ids, try_method_override]
-  test: >
-    Two owned accounts A/B. A creates object, captures its ID. B requests the same ID directly (GET/PUT/DELETE). Compare: 200 with A's data = broken object-level authorization. Also try IDOR via POST body id, X-HTTP-Method override, and .json suffix.
-  impact_hint: High — cross-account data disclosure, the most paid bounty class.
+    positive:
+    - unauthorized_object_access
+    - cross_identity_data_leak
+    - privilege_differs_by_identity
+    negative:
+    - explicit_denial
+    - identical_behavior_across_identities
+    - ownership_checked_server_side
+  followups:
+  - compare_identities
+  - predict_adjacent_ids
+  - try_method_override
+  test: 'Two owned accounts A/B. A creates object, captures its ID. B requests the
+    same ID directly (GET/PUT/DELETE). Compare: 200 with A''s data = broken object-level
+    authorization. Also try IDOR via POST body id, X-HTTP-Method override, and .json
+    suffix.
 
+    '
+  impact_hint: High — cross-account data disclosure, the most paid bounty class.
+  preconditions:
+  - authenticated_identity
+  - object_identifier
+  required_state: []
+  hypothesis_generator: 'When signals [''/{id}'', ''asset'', ''document'', ''user/'']
+    are observed, hypothesize: BOLA on numeric/UUID object IDs.'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: unauthorized_object_access; cross_identity_data_leak; privilege_differs_by_identity
+  positive_oracle: unauthorized_object_access
+  negative_evidence:
+  - explicit_denial
+  - identical_behavior_across_identities
+  - ownership_checked_server_side
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: compare_identities; predict_adjacent_ids
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.6
 - id: IDOR-02
   name: IDOR via parameter pollution / duplicate params
   klass: authorization
-  requires: [authenticated_identity, object_identifier]
-  signals: ["?", "id=", "user_id", "account"]
+  requires:
+  - authenticated_identity
+  - object_identifier
+  signals:
+  - '?'
+  - id=
+  - user_id
+  - account
   questions:
-    - "Who owns this object?"
-    - "Who should access it?"
-    - "Does authorization depend on object ownership or only on login?"
-    - "What changes when a second owned identity requests the same object?"
+  - Who owns this object?
+  - Who should access it?
+  - Does authorization depend on object ownership or only on login?
+  - What changes when a second owned identity requests the same object?
   evidence:
-    positive: [unauthorized_object_access, cross_identity_data_leak, privilege_differs_by_identity]
-    negative: [explicit_denial, identical_behavior_across_identities, ownership_checked_server_side]
-  followups: [compare_identities, compare_objects, inspect_state_transition]
-  test: >
-    Send ?user_id=VICTIM&user_id=ATTACKER and reversed. Backends that take the first vs last param inconsistently may authorize as attacker but act on victim.
-  impact_hint: Medium-High.
+    positive:
+    - unauthorized_object_access
+    - cross_identity_data_leak
+    - privilege_differs_by_identity
+    negative:
+    - explicit_denial
+    - identical_behavior_across_identities
+    - ownership_checked_server_side
+  followups:
+  - compare_identities
+  - compare_objects
+  - inspect_state_transition
+  test: 'Send ?user_id=VICTIM&user_id=ATTACKER and reversed. Backends that take the
+    first vs last param inconsistently may authorize as attacker but act on victim.
 
+    '
+  impact_hint: Medium-High.
+  preconditions:
+  - authenticated_identity
+  - object_identifier
+  required_state: []
+  hypothesis_generator: 'When signals [''?'', ''id='', ''user_id'', ''account''] are
+    observed, hypothesize: IDOR via parameter pollution / duplicate params.'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: unauthorized_object_access; cross_identity_data_leak; privilege_differs_by_identity
+  positive_oracle: unauthorized_object_access
+  negative_evidence:
+  - explicit_denial
+  - identical_behavior_across_identities
+  - ownership_checked_server_side
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: compare_identities; compare_objects
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.6
 - id: AUTHZ-01
   name: Role/plan restriction enforced client-side only
   klass: authorization
-  requires: [authenticated_identity, object_identifier]
-  signals: ["admin", "premium", "plan", "role", "upgrade", "settings"]
+  requires:
+  - authenticated_identity
+  - object_identifier
+  signals:
+  - admin
+  - premium
+  - plan
+  - role
+  - upgrade
+  - settings
   questions:
-    - "Is the privilege check in the UI only, or repeated on the API?"
-    - "What does the API return when a low-privilege token calls the privileged action directly?"
+  - Is the privilege check in the UI only, or repeated on the API?
+  - What does the API return when a low-privilege token calls the privileged action
+    directly?
   evidence:
-    positive: [unauthorized_object_access, cross_identity_data_leak, privilege_differs_by_identity]
-    negative: [explicit_denial, identical_behavior_across_identities, ownership_checked_server_side]
-  followups: [replay_as_low_priv, tamper_role_param]
-  test: >
-    Replay a privileged action as a low-privilege owned account by calling the API directly (drop the UI gate). Watch for 200 vs 403. Try role param tampering (role=user -> role=admin) on profile-update endpoints.
-  impact_hint: High — privilege escalation.
+    positive:
+    - unauthorized_object_access
+    - cross_identity_data_leak
+    - privilege_differs_by_identity
+    negative:
+    - explicit_denial
+    - identical_behavior_across_identities
+    - ownership_checked_server_side
+  followups:
+  - replay_as_low_priv
+  - tamper_role_param
+  test: 'Replay a privileged action as a low-privilege owned account by calling the
+    API directly (drop the UI gate). Watch for 200 vs 403. Try role param tampering
+    (role=user -> role=admin) on profile-update endpoints.
 
+    '
+  impact_hint: High — privilege escalation.
+  preconditions:
+  - authenticated_identity
+  - object_identifier
+  required_state: []
+  hypothesis_generator: 'When signals [''admin'', ''premium'', ''plan'', ''role'']
+    are observed, hypothesize: Role/plan restriction enforced client-side only.'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: unauthorized_object_access; cross_identity_data_leak; privilege_differs_by_identity
+  positive_oracle: unauthorized_object_access
+  negative_evidence:
+  - explicit_denial
+  - identical_behavior_across_identities
+  - ownership_checked_server_side
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: replay_as_low_priv; tamper_role_param
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.6
 - id: AUTHZ-02
   name: Forced browsing to unlinked admin/debug endpoints
   klass: authorization
-  requires: [authenticated_identity, object_identifier]
-  signals: ["admin", "debug", "internal", "console", "actuator", "metrics"]
+  requires:
+  - authenticated_identity
+  - object_identifier
+  signals:
+  - admin
+  - debug
+  - internal
+  - console
+  - actuator
+  - metrics
   questions:
-    - "Who owns this object?"
-    - "Who should access it?"
-    - "Does authorization depend on object ownership or only on login?"
-    - "What changes when a second owned identity requests the same object?"
+  - Who owns this object?
+  - Who should access it?
+  - Does authorization depend on object ownership or only on login?
+  - What changes when a second owned identity requests the same object?
   evidence:
-    positive: [unauthorized_object_access, cross_identity_data_leak, privilege_differs_by_identity]
-    negative: [explicit_denial, identical_behavior_across_identities, ownership_checked_server_side]
-  followups: [compare_identities, compare_objects, inspect_state_transition]
-  test: >
-    Request admin/debug paths directly as low-priv user. Many apps hide but don't protect /admin, /internal, /debug, /actuator, /.env, /server-status.
-  impact_hint: Medium-High.
+    positive:
+    - unauthorized_object_access
+    - cross_identity_data_leak
+    - privilege_differs_by_identity
+    negative:
+    - explicit_denial
+    - identical_behavior_across_identities
+    - ownership_checked_server_side
+  followups:
+  - compare_identities
+  - compare_objects
+  - inspect_state_transition
+  test: 'Request admin/debug paths directly as low-priv user. Many apps hide but don''t
+    protect /admin, /internal, /debug, /actuator, /.env, /server-status.
 
+    '
+  impact_hint: Medium-High.
+  preconditions:
+  - authenticated_identity
+  - object_identifier
+  required_state: []
+  hypothesis_generator: 'When signals [''admin'', ''debug'', ''internal'', ''console'']
+    are observed, hypothesize: Forced browsing to unlinked admin/debug endpoints.'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: unauthorized_object_access; cross_identity_data_leak; privilege_differs_by_identity
+  positive_oracle: unauthorized_object_access
+  negative_evidence:
+  - explicit_denial
+  - identical_behavior_across_identities
+  - ownership_checked_server_side
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: compare_identities; compare_objects
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.6
 - id: INVITE-01
   name: Invite/token reuse and privilege confusion in teams/orgs
   klass: authorization
-  requires: [authenticated_identity, object_identifier]
-  signals: ["invite", "team", "org", "workspace", "member"]
+  requires:
+  - authenticated_identity
+  - object_identifier
+  signals:
+  - invite
+  - team
+  - org
+  - workspace
+  - member
   questions:
-    - "Who owns this object?"
-    - "Who should access it?"
-    - "Does authorization depend on object ownership or only on login?"
-    - "What changes when a second owned identity requests the same object?"
+  - Who owns this object?
+  - Who should access it?
+  - Does authorization depend on object ownership or only on login?
+  - What changes when a second owned identity requests the same object?
   evidence:
-    positive: [unauthorized_object_access, cross_identity_data_leak, privilege_differs_by_identity]
-    negative: [explicit_denial, identical_behavior_across_identities, ownership_checked_server_side]
-  followups: [compare_identities, compare_objects, inspect_state_transition]
-  test: >
-    Reuse expired invites, tamper role in invite accept, self-invite to privileged teams. Two owned accounts, one org.
-  impact_hint: High.
+    positive:
+    - unauthorized_object_access
+    - cross_identity_data_leak
+    - privilege_differs_by_identity
+    negative:
+    - explicit_denial
+    - identical_behavior_across_identities
+    - ownership_checked_server_side
+  followups:
+  - compare_identities
+  - compare_objects
+  - inspect_state_transition
+  test: 'Reuse expired invites, tamper role in invite accept, self-invite to privileged
+    teams. Two owned accounts, one org.
 
+    '
+  impact_hint: High.
+  preconditions:
+  - authenticated_identity
+  - object_identifier
+  required_state: []
+  hypothesis_generator: 'When signals [''invite'', ''team'', ''org'', ''workspace'']
+    are observed, hypothesize: Invite/token reuse and privilege confusion in teams/orgs.'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: unauthorized_object_access; cross_identity_data_leak; privilege_differs_by_identity
+  positive_oracle: unauthorized_object_access
+  negative_evidence:
+  - explicit_denial
+  - identical_behavior_across_identities
+  - ownership_checked_server_side
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: compare_identities; compare_objects
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.6
 - id: EXPORT-01
   name: Data export / bulk download authorization gaps
   klass: authorization
-  requires: [authenticated_identity, object_identifier]
-  signals: ["export", "download", "report", "backup", "csv"]
+  requires:
+  - authenticated_identity
+  - object_identifier
+  signals:
+  - export
+  - download
+  - report
+  - backup
+  - csv
   questions:
-    - "Who owns this object?"
-    - "Who should access it?"
-    - "Does authorization depend on object ownership or only on login?"
-    - "What changes when a second owned identity requests the same object?"
+  - Who owns this object?
+  - Who should access it?
+  - Does authorization depend on object ownership or only on login?
+  - What changes when a second owned identity requests the same object?
   evidence:
-    positive: [unauthorized_object_access, cross_identity_data_leak, privilege_differs_by_identity]
-    negative: [explicit_denial, identical_behavior_across_identities, ownership_checked_server_side]
-  followups: [compare_identities, compare_objects, inspect_state_transition]
-  test: >
-    Trigger exports as low-priv owned user; check whether the job includes other users'/tenants' data or is enumerable by job ID.
-  impact_hint: High.
-# appended 2026-09-27 — knowledge ingestion round 1
+    positive:
+    - unauthorized_object_access
+    - cross_identity_data_leak
+    - privilege_differs_by_identity
+    negative:
+    - explicit_denial
+    - identical_behavior_across_identities
+    - ownership_checked_server_side
+  followups:
+  - compare_identities
+  - compare_objects
+  - inspect_state_transition
+  test: 'Trigger exports as low-priv owned user; check whether the job includes other
+    users''/tenants'' data or is enumerable by job ID.
 
+    '
+  impact_hint: High.
+  preconditions:
+  - authenticated_identity
+  - object_identifier
+  required_state: []
+  hypothesis_generator: 'When signals [''export'', ''download'', ''report'', ''backup'']
+    are observed, hypothesize: Data export / bulk download authorization gaps.'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: unauthorized_object_access; cross_identity_data_leak; privilege_differs_by_identity
+  positive_oracle: unauthorized_object_access
+  negative_evidence:
+  - explicit_denial
+  - identical_behavior_across_identities
+  - ownership_checked_server_side
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: compare_identities; compare_objects
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.6
 - id: IDOR-03
   name: Cross-tenant object creation via tenant/cluster ID parameter (write-side IDOR)
   klass: authorization
-  requires: [authenticated_identity, object_identifier]
-  signals: ["clusterID", "cluster_id", "tenant", "workspace", "org_id", "/api/contents"]
+  requires:
+  - authenticated_identity
+  - object_identifier
+  signals:
+  - clusterID
+  - cluster_id
+  - tenant
+  - workspace
+  - org_id
+  - /api/contents
   questions:
-    - "Who owns the tenant/cluster identifier in this request?"
-    - "Is the identifier validated against the caller's membership?"
-    - "Can a low-priv user CREATE objects under a foreign tenant, not just read?"
+  - Who owns the tenant/cluster identifier in this request?
+  - Is the identifier validated against the caller's membership?
+  - Can a low-priv user CREATE objects under a foreign tenant, not just read?
   evidence:
-    positive: [object_created_under_foreign_tenant, foreign_cluster_writable]
-    negative: [tenant_membership_checked, foreign_id_rejected]
-  followups: [compare_identities, test_write_side_idor, enumerate_tenant_ids]
-  test: >
-    With two owned accounts in different tenants/clusters, capture a create
-    request (folder, file, notebook) and swap the tenant/cluster identifier to
-    the other account's. Success = object lands in the victim's scope.
-    Write-side IDOR is rarer and higher-impact than read-side. Grounded:
-    HackerOne #3353057 vs SingleStore (Jul 2026) — clusterID swap in
-    POST /public/notebooks/api/contents/ created folders in other users' clusters.
+    positive:
+    - object_created_under_foreign_tenant
+    - foreign_cluster_writable
+    negative:
+    - tenant_membership_checked
+    - foreign_id_rejected
+  followups:
+  - compare_identities
+  - test_write_side_idor
+  - enumerate_tenant_ids
+  test: 'With two owned accounts in different tenants/clusters, capture a create request
+    (folder, file, notebook) and swap the tenant/cluster identifier to the other account''s.
+    Success = object lands in the victim''s scope. Write-side IDOR is rarer and higher-impact
+    than read-side. Grounded: HackerOne #3353057 vs SingleStore (Jul 2026) — clusterID
+    swap in POST /public/notebooks/api/contents/ created folders in other users''
+    clusters.
+
+    '
   impact_hint: High — cross-tenant write = data planting + privilege escalation path.
+  preconditions:
+  - authenticated_identity
+  - object_identifier
+  required_state: []
+  hypothesis_generator: 'When signals [''clusterID'', ''cluster_id'', ''tenant'',
+    ''workspace''] are observed, hypothesize: Cross-tenant object creation via tenant/cluster
+    ID parameter (write-side IDOR).'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: object_created_under_foreign_tenant; foreign_cluster_writable
+  positive_oracle: object_created_under_foreign_tenant
+  negative_evidence:
+  - tenant_membership_checked
+  - foreign_id_rejected
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: compare_identities; test_write_side_idor
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.6

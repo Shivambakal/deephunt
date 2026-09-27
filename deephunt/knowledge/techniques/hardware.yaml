@@ -1,219 +1,652 @@
 # DEEPHUNT technique cards — hardware domain
-# Enriched: requires/signals/questions/evidence/followups per card.
-# Source of truth for kb.load_techniques(). 12 cards.
+# Schema v2 (§26): preconditions/required_state/hypothesis_generator/
+# request_strategy/mutation_strategy/expected_signal/positive_oracle/
+# negative_evidence/false_positive_rules/followup_experiment/
+# regression_test/difficulty_estimate. 12 cards.
 
 - id: HW-01
   name: Speculative-execution info leak (Spectre-class)
   klass: hardware
-  requires: [hardware_or_firmware_surface]
-  signals: ["shared hosting", "multi-tenant", "sandbox", "wasm", "browser"]
+  requires:
+  - hardware_or_firmware_surface
+  signals:
+  - shared hosting
+  - multi-tenant
+  - sandbox
+  - wasm
+  - browser
   questions:
-    - "What is the trust boundary in silicon?"
-    - "What leaks across it — timing, power, EM?"
-    - "Is the secret ever in the clear?"
-    - "What does the update mechanism trust?"
+  - What is the trust boundary in silicon?
+  - What leaks across it — timing, power, EM?
+  - Is the secret ever in the clear?
+  - What does the update mechanism trust?
   evidence:
-    positive: [side_channel_leak, secret_in_clear, unsigned_update_accepted]
-    negative: [constant_time, secret_protected, signed_updates_only]
-  followups: [measure_side_channel, inspect_update_chain, check_debug_interfaces]
-  test: >
-    LAB-ONLY: in an owned isolated lab, test cross-boundary speculative reads (bounds-check bypass, BTB poisoning). On bounty targets: only report if a tenant-isolation boundary demonstrably leaks (e.g. cloud metadata, shared CI runners) — never run speculative probes against production.
-  impact_hint: Critical in lab; bounty-scope only with demonstrated tenant leak.
+    positive:
+    - side_channel_leak
+    - secret_in_clear
+    - unsigned_update_accepted
+    negative:
+    - constant_time
+    - secret_protected
+    - signed_updates_only
+  followups:
+  - measure_side_channel
+  - inspect_update_chain
+  - check_debug_interfaces
+  test: 'LAB-ONLY: in an owned isolated lab, test cross-boundary speculative reads
+    (bounds-check bypass, BTB poisoning). On bounty targets: only report if a tenant-isolation
+    boundary demonstrably leaks (e.g. cloud metadata, shared CI runners) — never run
+    speculative probes against production.
 
+    '
+  impact_hint: Critical in lab; bounty-scope only with demonstrated tenant leak.
+  preconditions:
+  - hardware_or_firmware_surface
+  required_state: []
+  hypothesis_generator: 'When signals [''shared hosting'', ''multi-tenant'', ''sandbox'',
+    ''wasm''] are observed, hypothesize: Speculative-execution info leak (Spectre-class).'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: side_channel_leak; secret_in_clear; unsigned_update_accepted
+  positive_oracle: side_channel_leak
+  negative_evidence:
+  - constant_time
+  - secret_protected
+  - signed_updates_only
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: measure_side_channel; inspect_update_chain
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.7
 - id: HW-02
   name: Rowhammer-style memory disturbance
   klass: hardware
-  requires: [hardware_or_firmware_surface]
-  signals: ["dedup", "shared memory", "kvm", "memory"]
+  requires:
+  - hardware_or_firmware_surface
+  signals:
+  - dedup
+  - shared memory
+  - kvm
+  - memory
   questions:
-    - "What is the trust boundary in silicon?"
-    - "What leaks across it — timing, power, EM?"
-    - "Is the secret ever in the clear?"
-    - "What does the update mechanism trust?"
+  - What is the trust boundary in silicon?
+  - What leaks across it — timing, power, EM?
+  - Is the secret ever in the clear?
+  - What does the update mechanism trust?
   evidence:
-    positive: [side_channel_leak, secret_in_clear, unsigned_update_accepted]
-    negative: [constant_time, secret_protected, signed_updates_only]
-  followups: [measure_side_channel, inspect_update_chain, check_debug_interfaces]
-  test: >
-    LAB-ONLY: owned hardware only. Flip bits in adjacent rows to escape sandboxes or corrupt page tables. Never against shared/production infra.
-  impact_hint: Critical (lab-only).
+    positive:
+    - side_channel_leak
+    - secret_in_clear
+    - unsigned_update_accepted
+    negative:
+    - constant_time
+    - secret_protected
+    - signed_updates_only
+  followups:
+  - measure_side_channel
+  - inspect_update_chain
+  - check_debug_interfaces
+  test: 'LAB-ONLY: owned hardware only. Flip bits in adjacent rows to escape sandboxes
+    or corrupt page tables. Never against shared/production infra.
 
+    '
+  impact_hint: Critical (lab-only).
+  preconditions:
+  - hardware_or_firmware_surface
+  required_state: []
+  hypothesis_generator: 'When signals [''dedup'', ''shared memory'', ''kvm'', ''memory'']
+    are observed, hypothesize: Rowhammer-style memory disturbance.'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: side_channel_leak; secret_in_clear; unsigned_update_accepted
+  positive_oracle: side_channel_leak
+  negative_evidence:
+  - constant_time
+  - secret_protected
+  - signed_updates_only
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: measure_side_channel; inspect_update_chain
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.7
 - id: HW-03
   name: Firmware update without signature verification
   klass: hardware
-  requires: [hardware_or_firmware_surface]
-  signals: ["firmware", "update", ".bin", "ota", "bios", "uefi"]
+  requires:
+  - hardware_or_firmware_surface
+  signals:
+  - firmware
+  - update
+  - .bin
+  - ota
+  - bios
+  - uefi
   questions:
-    - "What is the trust boundary in silicon?"
-    - "What leaks across it — timing, power, EM?"
-    - "Is the secret ever in the clear?"
-    - "What does the update mechanism trust?"
+  - What is the trust boundary in silicon?
+  - What leaks across it — timing, power, EM?
+  - Is the secret ever in the clear?
+  - What does the update mechanism trust?
   evidence:
-    positive: [side_channel_leak, secret_in_clear, unsigned_update_accepted]
-    negative: [constant_time, secret_protected, signed_updates_only]
-  followups: [measure_side_channel, inspect_update_chain, check_debug_interfaces]
-  test: >
-    For in-scope devices/services: check whether firmware/OTA updates verify signatures (downgrade, unsigned image, rollback). Report per program rules.
-  impact_hint: High — persistent compromise.
+    positive:
+    - side_channel_leak
+    - secret_in_clear
+    - unsigned_update_accepted
+    negative:
+    - constant_time
+    - secret_protected
+    - signed_updates_only
+  followups:
+  - measure_side_channel
+  - inspect_update_chain
+  - check_debug_interfaces
+  test: 'For in-scope devices/services: check whether firmware/OTA updates verify
+    signatures (downgrade, unsigned image, rollback). Report per program rules.
 
+    '
+  impact_hint: High — persistent compromise.
+  preconditions:
+  - hardware_or_firmware_surface
+  required_state: []
+  hypothesis_generator: 'When signals [''firmware'', ''update'', ''.bin'', ''ota'']
+    are observed, hypothesize: Firmware update without signature verification.'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: side_channel_leak; secret_in_clear; unsigned_update_accepted
+  positive_oracle: side_channel_leak
+  negative_evidence:
+  - constant_time
+  - secret_protected
+  - signed_updates_only
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: measure_side_channel; inspect_update_chain
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.6
 - id: HW-04
   name: Debug interfaces left enabled (JTAG/UART)
   klass: hardware
-  requires: [hardware_or_firmware_surface]
-  signals: ["uart", "jtag", "serial", "console", "debug"]
+  requires:
+  - hardware_or_firmware_surface
+  signals:
+  - uart
+  - jtag
+  - serial
+  - console
+  - debug
   questions:
-    - "What is the trust boundary in silicon?"
-    - "What leaks across it — timing, power, EM?"
-    - "Is the secret ever in the clear?"
-    - "What does the update mechanism trust?"
+  - What is the trust boundary in silicon?
+  - What leaks across it — timing, power, EM?
+  - Is the secret ever in the clear?
+  - What does the update mechanism trust?
   evidence:
-    positive: [side_channel_leak, secret_in_clear, unsigned_update_accepted]
-    negative: [constant_time, secret_protected, signed_updates_only]
-  followups: [measure_side_channel, inspect_update_chain, check_debug_interfaces]
-  test: >
-    For in-scope hardware/IoT: probe for open debug consoles and default credentials. LAB-ONLY for physical probing; report-only for bounty scope.
-  impact_hint: High — full device control.
+    positive:
+    - side_channel_leak
+    - secret_in_clear
+    - unsigned_update_accepted
+    negative:
+    - constant_time
+    - secret_protected
+    - signed_updates_only
+  followups:
+  - measure_side_channel
+  - inspect_update_chain
+  - check_debug_interfaces
+  test: 'For in-scope hardware/IoT: probe for open debug consoles and default credentials.
+    LAB-ONLY for physical probing; report-only for bounty scope.
 
+    '
+  impact_hint: High — full device control.
+  preconditions:
+  - hardware_or_firmware_surface
+  required_state: []
+  hypothesis_generator: 'When signals [''uart'', ''jtag'', ''serial'', ''console'']
+    are observed, hypothesize: Debug interfaces left enabled (JTAG/UART).'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: side_channel_leak; secret_in_clear; unsigned_update_accepted
+  positive_oracle: side_channel_leak
+  negative_evidence:
+  - constant_time
+  - secret_protected
+  - signed_updates_only
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: measure_side_channel; inspect_update_chain
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.6
 - id: HW-05
   name: BMC/IPMI with default or weak credentials
   klass: hardware
-  requires: [hardware_or_firmware_surface]
-  signals: ["bmc", "ipmi", "ilo", "idrac", "management"]
+  requires:
+  - hardware_or_firmware_surface
+  signals:
+  - bmc
+  - ipmi
+  - ilo
+  - idrac
+  - management
   questions:
-    - "What is the trust boundary in silicon?"
-    - "What leaks across it — timing, power, EM?"
-    - "Is the secret ever in the clear?"
-    - "What does the update mechanism trust?"
+  - What is the trust boundary in silicon?
+  - What leaks across it — timing, power, EM?
+  - Is the secret ever in the clear?
+  - What does the update mechanism trust?
   evidence:
-    positive: [side_channel_leak, secret_in_clear, unsigned_update_accepted]
-    negative: [constant_time, secret_protected, signed_updates_only]
-  followups: [measure_side_channel, inspect_update_chain, check_debug_interfaces]
-  test: >
-    For in-scope infrastructure: test management interfaces for default creds and unauthenticated RCE (e.g. historic IPMI flaws). One attempt per vector; never brute-force.
-  impact_hint: Critical — out-of-band control.
+    positive:
+    - side_channel_leak
+    - secret_in_clear
+    - unsigned_update_accepted
+    negative:
+    - constant_time
+    - secret_protected
+    - signed_updates_only
+  followups:
+  - measure_side_channel
+  - inspect_update_chain
+  - check_debug_interfaces
+  test: 'For in-scope infrastructure: test management interfaces for default creds
+    and unauthenticated RCE (e.g. historic IPMI flaws). One attempt per vector; never
+    brute-force.
 
+    '
+  impact_hint: Critical — out-of-band control.
+  preconditions:
+  - hardware_or_firmware_surface
+  required_state: []
+  hypothesis_generator: 'When signals [''bmc'', ''ipmi'', ''ilo'', ''idrac''] are
+    observed, hypothesize: BMC/IPMI with default or weak credentials.'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: side_channel_leak; secret_in_clear; unsigned_update_accepted
+  positive_oracle: side_channel_leak
+  negative_evidence:
+  - constant_time
+  - secret_protected
+  - signed_updates_only
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: measure_side_channel; inspect_update_chain
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.7
 - id: HW-06
   name: DMA via exposed high-speed ports
   klass: hardware
-  requires: [hardware_or_firmware_surface]
-  signals: ["thunderbolt", "pcie", "dma", "firewire"]
+  requires:
+  - hardware_or_firmware_surface
+  signals:
+  - thunderbolt
+  - pcie
+  - dma
+  - firewire
   questions:
-    - "What is the trust boundary in silicon?"
-    - "What leaks across it — timing, power, EM?"
-    - "Is the secret ever in the clear?"
-    - "What does the update mechanism trust?"
+  - What is the trust boundary in silicon?
+  - What leaks across it — timing, power, EM?
+  - Is the secret ever in the clear?
+  - What does the update mechanism trust?
   evidence:
-    positive: [side_channel_leak, secret_in_clear, unsigned_update_accepted]
-    negative: [constant_time, secret_protected, signed_updates_only]
-  followups: [measure_side_channel, inspect_update_chain, check_debug_interfaces]
-  test: >
-    LAB-ONLY: owned devices with exposed PCIe/Thunderbolt — test IOMMU configuration and DMA protections. Concept feeds cloud/VDI threat models.
-  impact_hint: High (lab-only).
+    positive:
+    - side_channel_leak
+    - secret_in_clear
+    - unsigned_update_accepted
+    negative:
+    - constant_time
+    - secret_protected
+    - signed_updates_only
+  followups:
+  - measure_side_channel
+  - inspect_update_chain
+  - check_debug_interfaces
+  test: 'LAB-ONLY: owned devices with exposed PCIe/Thunderbolt — test IOMMU configuration
+    and DMA protections. Concept feeds cloud/VDI threat models.
 
+    '
+  impact_hint: High (lab-only).
+  preconditions:
+  - hardware_or_firmware_surface
+  required_state: []
+  hypothesis_generator: 'When signals [''thunderbolt'', ''pcie'', ''dma'', ''firewire'']
+    are observed, hypothesize: DMA via exposed high-speed ports.'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: side_channel_leak; secret_in_clear; unsigned_update_accepted
+  positive_oracle: side_channel_leak
+  negative_evidence:
+  - constant_time
+  - secret_protected
+  - signed_updates_only
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: measure_side_channel; inspect_update_chain
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.6
 - id: HW-07
   name: TPM / Secure Boot misconfiguration
   klass: hardware
-  requires: [hardware_or_firmware_surface]
-  signals: ["tpm", "secure boot", "bitlocker", "measured boot"]
+  requires:
+  - hardware_or_firmware_surface
+  signals:
+  - tpm
+  - secure boot
+  - bitlocker
+  - measured boot
   questions:
-    - "What is the trust boundary in silicon?"
-    - "What leaks across it — timing, power, EM?"
-    - "Is the secret ever in the clear?"
-    - "What does the update mechanism trust?"
+  - What is the trust boundary in silicon?
+  - What leaks across it — timing, power, EM?
+  - Is the secret ever in the clear?
+  - What does the update mechanism trust?
   evidence:
-    positive: [side_channel_leak, secret_in_clear, unsigned_update_accepted]
-    negative: [constant_time, secret_protected, signed_updates_only]
-  followups: [measure_side_channel, inspect_update_chain, check_debug_interfaces]
-  test: >
-    For in-scope device fleets/MDM: check attestation gaps, unsealed secrets, boot-policy bypasses. LAB-ONLY for physical TPM attacks.
-  impact_hint: High.
+    positive:
+    - side_channel_leak
+    - secret_in_clear
+    - unsigned_update_accepted
+    negative:
+    - constant_time
+    - secret_protected
+    - signed_updates_only
+  followups:
+  - measure_side_channel
+  - inspect_update_chain
+  - check_debug_interfaces
+  test: 'For in-scope device fleets/MDM: check attestation gaps, unsealed secrets,
+    boot-policy bypasses. LAB-ONLY for physical TPM attacks.
 
+    '
+  impact_hint: High.
+  preconditions:
+  - hardware_or_firmware_surface
+  required_state: []
+  hypothesis_generator: 'When signals [''tpm'', ''secure boot'', ''bitlocker'', ''measured
+    boot''] are observed, hypothesize: TPM / Secure Boot misconfiguration.'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: side_channel_leak; secret_in_clear; unsigned_update_accepted
+  positive_oracle: side_channel_leak
+  negative_evidence:
+  - constant_time
+  - secret_protected
+  - signed_updates_only
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: measure_side_channel; inspect_update_chain
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.6
 - id: HW-08
   name: Power/timing side channels on crypto
   klass: hardware
-  requires: [hardware_or_firmware_surface]
-  signals: ["crypto", "token", "hmac", "compare", "login"]
+  requires:
+  - hardware_or_firmware_surface
+  signals:
+  - crypto
+  - token
+  - hmac
+  - compare
+  - login
   questions:
-    - "What is the trust boundary in silicon?"
-    - "What leaks across it — timing, power, EM?"
-    - "Is the secret ever in the clear?"
-    - "What does the update mechanism trust?"
+  - What is the trust boundary in silicon?
+  - What leaks across it — timing, power, EM?
+  - Is the secret ever in the clear?
+  - What does the update mechanism trust?
   evidence:
-    positive: [side_channel_leak, secret_in_clear, unsigned_update_accepted]
-    negative: [constant_time, secret_protected, signed_updates_only]
-  followups: [measure_side_channel, inspect_update_chain, check_debug_interfaces]
-  test: >
-    Test string comparisons for timing oracles (login, token, HMAC) over the network at low rate. Physical power analysis is LAB-ONLY.
-  impact_hint: Medium-High.
+    positive:
+    - side_channel_leak
+    - secret_in_clear
+    - unsigned_update_accepted
+    negative:
+    - constant_time
+    - secret_protected
+    - signed_updates_only
+  followups:
+  - measure_side_channel
+  - inspect_update_chain
+  - check_debug_interfaces
+  test: 'Test string comparisons for timing oracles (login, token, HMAC) over the
+    network at low rate. Physical power analysis is LAB-ONLY.
 
+    '
+  impact_hint: Medium-High.
+  preconditions:
+  - hardware_or_firmware_surface
+  required_state: []
+  hypothesis_generator: 'When signals [''crypto'', ''token'', ''hmac'', ''compare'']
+    are observed, hypothesize: Power/timing side channels on crypto.'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: side_channel_leak; secret_in_clear; unsigned_update_accepted
+  positive_oracle: side_channel_leak
+  negative_evidence:
+  - constant_time
+  - secret_protected
+  - signed_updates_only
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: measure_side_channel; inspect_update_chain
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.6
 - id: HW-09
   name: Fault injection (voltage/clock glitching)
   klass: hardware
-  requires: [hardware_or_firmware_surface]
-  signals: ["secure element", "bootloader", "auth"]
+  requires:
+  - hardware_or_firmware_surface
+  signals:
+  - secure element
+  - bootloader
+  - auth
   questions:
-    - "What is the trust boundary in silicon?"
-    - "What leaks across it — timing, power, EM?"
-    - "Is the secret ever in the clear?"
-    - "What does the update mechanism trust?"
+  - What is the trust boundary in silicon?
+  - What leaks across it — timing, power, EM?
+  - Is the secret ever in the clear?
+  - What does the update mechanism trust?
   evidence:
-    positive: [side_channel_leak, secret_in_clear, unsigned_update_accepted]
-    negative: [constant_time, secret_protected, signed_updates_only]
-  followups: [measure_side_channel, inspect_update_chain, check_debug_interfaces]
-  test: >
-    LAB-ONLY, owned silicon: glitch boot/auth checks. Feeds the mental model for TOCTOU and check-then-act races in software.
-  impact_hint: Critical (lab-only).
+    positive:
+    - side_channel_leak
+    - secret_in_clear
+    - unsigned_update_accepted
+    negative:
+    - constant_time
+    - secret_protected
+    - signed_updates_only
+  followups:
+  - measure_side_channel
+  - inspect_update_chain
+  - check_debug_interfaces
+  test: 'LAB-ONLY, owned silicon: glitch boot/auth checks. Feeds the mental model
+    for TOCTOU and check-then-act races in software.
 
+    '
+  impact_hint: Critical (lab-only).
+  preconditions:
+  - hardware_or_firmware_surface
+  required_state: []
+  hypothesis_generator: 'When signals [''secure element'', ''bootloader'', ''auth'']
+    are observed, hypothesize: Fault injection (voltage/clock glitching).'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: side_channel_leak; secret_in_clear; unsigned_update_accepted
+  positive_oracle: side_channel_leak
+  negative_evidence:
+  - constant_time
+  - secret_protected
+  - signed_updates_only
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: measure_side_channel; inspect_update_chain
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.7
 - id: HW-10
   name: Supply-chain implant indicators
   klass: hardware
-  requires: [hardware_or_firmware_surface]
-  signals: ["firmware", "vendor", "update", "third-party", "plugin"]
+  requires:
+  - hardware_or_firmware_surface
+  signals:
+  - firmware
+  - vendor
+  - update
+  - third-party
+  - plugin
   questions:
-    - "What is the trust boundary in silicon?"
-    - "What leaks across it — timing, power, EM?"
-    - "Is the secret ever in the clear?"
-    - "What does the update mechanism trust?"
+  - What is the trust boundary in silicon?
+  - What leaks across it — timing, power, EM?
+  - Is the secret ever in the clear?
+  - What does the update mechanism trust?
   evidence:
-    positive: [side_channel_leak, secret_in_clear, unsigned_update_accepted]
-    negative: [constant_time, secret_protected, signed_updates_only]
-  followups: [measure_side_channel, inspect_update_chain, check_debug_interfaces]
-  test: >
-    For in-scope software supply chain: verify signatures, reproducible builds, unexpected network egress from components. Maps to SUPPLY-01.
-  impact_hint: High.
+    positive:
+    - side_channel_leak
+    - secret_in_clear
+    - unsigned_update_accepted
+    negative:
+    - constant_time
+    - secret_protected
+    - signed_updates_only
+  followups:
+  - measure_side_channel
+  - inspect_update_chain
+  - check_debug_interfaces
+  test: 'For in-scope software supply chain: verify signatures, reproducible builds,
+    unexpected network egress from components. Maps to SUPPLY-01.
 
+    '
+  impact_hint: High.
+  preconditions:
+  - hardware_or_firmware_surface
+  required_state: []
+  hypothesis_generator: 'When signals [''firmware'', ''vendor'', ''update'', ''third-party'']
+    are observed, hypothesize: Supply-chain implant indicators.'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: side_channel_leak; secret_in_clear; unsigned_update_accepted
+  positive_oracle: side_channel_leak
+  negative_evidence:
+  - constant_time
+  - secret_protected
+  - signed_updates_only
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: measure_side_channel; inspect_update_chain
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.6
 - id: HW-11
   name: Coprocessor attack surface (ME/PSP-class)
   klass: hardware
-  requires: [hardware_or_firmware_surface]
-  signals: ["management engine", "coprocessor", "firmware", "ring -3"]
+  requires:
+  - hardware_or_firmware_surface
+  signals:
+  - management engine
+  - coprocessor
+  - firmware
+  - ring -3
   questions:
-    - "What is the trust boundary in silicon?"
-    - "What leaks across it — timing, power, EM?"
-    - "Is the secret ever in the clear?"
-    - "What does the update mechanism trust?"
+  - What is the trust boundary in silicon?
+  - What leaks across it — timing, power, EM?
+  - Is the secret ever in the clear?
+  - What does the update mechanism trust?
   evidence:
-    positive: [side_channel_leak, secret_in_clear, unsigned_update_accepted]
-    negative: [constant_time, secret_protected, signed_updates_only]
-  followups: [measure_side_channel, inspect_update_chain, check_debug_interfaces]
-  test: >
-    Study-only for bounty scope: map which in-scope devices expose coprocessor interfaces (AMT/ME, PSP). Exploitation is LAB-ONLY.
-  impact_hint: Critical (lab-only).
+    positive:
+    - side_channel_leak
+    - secret_in_clear
+    - unsigned_update_accepted
+    negative:
+    - constant_time
+    - secret_protected
+    - signed_updates_only
+  followups:
+  - measure_side_channel
+  - inspect_update_chain
+  - check_debug_interfaces
+  test: 'Study-only for bounty scope: map which in-scope devices expose coprocessor
+    interfaces (AMT/ME, PSP). Exploitation is LAB-ONLY.
 
+    '
+  impact_hint: Critical (lab-only).
+  preconditions:
+  - hardware_or_firmware_surface
+  required_state: []
+  hypothesis_generator: 'When signals [''management engine'', ''coprocessor'', ''firmware'',
+    ''ring -3''] are observed, hypothesize: Coprocessor attack surface (ME/PSP-class).'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: side_channel_leak; secret_in_clear; unsigned_update_accepted
+  positive_oracle: side_channel_leak
+  negative_evidence:
+  - constant_time
+  - secret_protected
+  - signed_updates_only
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: measure_side_channel; inspect_update_chain
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.7
 - id: HW-12
   name: Sensor/input spoofing (mobile/IoT)
   klass: hardware
-  requires: [hardware_or_firmware_surface]
-  signals: ["gps", "camera", "nfc", "biometric", "sensor"]
+  requires:
+  - hardware_or_firmware_surface
+  signals:
+  - gps
+  - camera
+  - nfc
+  - biometric
+  - sensor
   questions:
-    - "What is the trust boundary in silicon?"
-    - "What leaks across it — timing, power, EM?"
-    - "Is the secret ever in the clear?"
-    - "What does the update mechanism trust?"
+  - What is the trust boundary in silicon?
+  - What leaks across it — timing, power, EM?
+  - Is the secret ever in the clear?
+  - What does the update mechanism trust?
   evidence:
-    positive: [side_channel_leak, secret_in_clear, unsigned_update_accepted]
-    negative: [constant_time, secret_protected, signed_updates_only]
-  followups: [measure_side_channel, inspect_update_chain, check_debug_interfaces]
-  test: >
-    For in-scope mobile/IoT apps: spoof GPS, mock sensors, replay biometric enrollment flows with owned devices. Never affect other users.
+    positive:
+    - side_channel_leak
+    - secret_in_clear
+    - unsigned_update_accepted
+    negative:
+    - constant_time
+    - secret_protected
+    - signed_updates_only
+  followups:
+  - measure_side_channel
+  - inspect_update_chain
+  - check_debug_interfaces
+  test: 'For in-scope mobile/IoT apps: spoof GPS, mock sensors, replay biometric enrollment
+    flows with owned devices. Never affect other users.
+
+    '
   impact_hint: Medium-High.
+  preconditions:
+  - hardware_or_firmware_surface
+  required_state: []
+  hypothesis_generator: 'When signals [''gps'', ''camera'', ''nfc'', ''biometric'']
+    are observed, hypothesize: Sensor/input spoofing (mobile/IoT).'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: side_channel_leak; secret_in_clear; unsigned_update_accepted
+  positive_oracle: side_channel_leak
+  negative_evidence:
+  - constant_time
+  - secret_protected
+  - signed_updates_only
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: measure_side_channel; inspect_update_chain
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.6

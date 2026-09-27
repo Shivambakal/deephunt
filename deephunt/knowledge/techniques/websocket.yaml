@@ -1,131 +1,385 @@
 # DEEPHUNT technique cards — websocket domain
-# Enriched: requires/signals/questions/evidence/followups per card.
-# Source of truth for kb.load_techniques(). 5 cards.
+# Schema v2 (§26): preconditions/required_state/hypothesis_generator/
+# request_strategy/mutation_strategy/expected_signal/positive_oracle/
+# negative_evidence/false_positive_rules/followup_experiment/
+# regression_test/difficulty_estimate. 7 cards.
 
 - id: WS-01
   name: WebSocket authorization gaps (missing origin/token checks)
   klass: websocket
-  requires: [ws_endpoint, observed_messages]
-  signals: ["ws://", "wss://", "socket", "realtime"]
+  requires:
+  - ws_endpoint
+  - observed_messages
+  signals:
+  - ws://
+  - wss://
+  - socket
+  - realtime
   questions:
-    - "Does the WebSocket handshake carry and verify auth?"
-    - "Is the Origin header validated, or can any site open the socket?"
+  - Does the WebSocket handshake carry and verify auth?
+  - Is the Origin header validated, or can any site open the socket?
   evidence:
-    positive: [unauthenticated_handshake, origin_not_checked, replay_accepted]
-    negative: [handshake_requires_auth, origin_validated, message_authenticity_checked]
-  followups: [cross_site_handshake, replay_message]
-  test: >
-    Connect with victim's channel params from attacker's session; check cross-user message receipt. Test CSWSH via Origin header.
-  impact_hint: High.
+    positive:
+    - unauthenticated_handshake
+    - origin_not_checked
+    - replay_accepted
+    negative:
+    - handshake_requires_auth
+    - origin_validated
+    - message_authenticity_checked
+  followups:
+  - cross_site_handshake
+  - replay_message
+  test: 'Connect with victim''s channel params from attacker''s session; check cross-user
+    message receipt. Test CSWSH via Origin header.
 
+    '
+  impact_hint: High.
+  preconditions:
+  - ws_endpoint
+  - observed_messages
+  required_state: []
+  hypothesis_generator: 'When signals [''ws://'', ''wss://'', ''socket'', ''realtime'']
+    are observed, hypothesize: WebSocket authorization gaps (missing origin/token
+    checks).'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: unauthenticated_handshake; origin_not_checked; replay_accepted
+  positive_oracle: unauthenticated_handshake
+  negative_evidence:
+  - handshake_requires_auth
+  - origin_validated
+  - message_authenticity_checked
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: cross_site_handshake; replay_message
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.6
 - id: WS-02
   name: WebSocket authorization and CSRF
   klass: websocket
-  requires: [ws_endpoint, observed_messages]
-  signals: ["websocket", "ws://", "wss://", "socket.io"]
+  requires:
+  - ws_endpoint
+  - observed_messages
+  signals:
+  - websocket
+  - ws://
+  - wss://
+  - socket.io
   questions:
-    - "Is the handshake authenticated?"
-    - "Is Origin checked?"
-    - "Can messages be replayed or forged cross-site?"
-    - "Does the server validate message structure?"
+  - Is the handshake authenticated?
+  - Is Origin checked?
+  - Can messages be replayed or forged cross-site?
+  - Does the server validate message structure?
   evidence:
-    positive: [unauthenticated_handshake, origin_not_checked, replay_accepted]
-    negative: [handshake_requires_auth, origin_validated, message_authenticity_checked]
-  followups: [replay_message, cross_site_handshake, fuzz_message_schema]
-  test: >
-    Connect with a low-priv token, attempt privileged actions over the socket. Test cross-site handshake (Origin check) for WebSocket hijacking.
-  impact_hint: Medium-High.
+    positive:
+    - unauthenticated_handshake
+    - origin_not_checked
+    - replay_accepted
+    negative:
+    - handshake_requires_auth
+    - origin_validated
+    - message_authenticity_checked
+  followups:
+  - replay_message
+  - cross_site_handshake
+  - fuzz_message_schema
+  test: 'Connect with a low-priv token, attempt privileged actions over the socket.
+    Test cross-site handshake (Origin check) for WebSocket hijacking.
 
+    '
+  impact_hint: Medium-High.
+  preconditions:
+  - ws_endpoint
+  - observed_messages
+  required_state: []
+  hypothesis_generator: 'When signals [''websocket'', ''ws://'', ''wss://'', ''socket.io'']
+    are observed, hypothesize: WebSocket authorization and CSRF.'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: unauthenticated_handshake; origin_not_checked; replay_accepted
+  positive_oracle: unauthenticated_handshake
+  negative_evidence:
+  - handshake_requires_auth
+  - origin_validated
+  - message_authenticity_checked
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: replay_message; cross_site_handshake
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.6
 - id: WS-03
   name: WebSocket handshake without authentication
   klass: websocket
-  requires: [ws_endpoint, observed_messages]
-  signals: ["ws://", "wss://", "socket", "websocket", "upgrade"]
+  requires:
+  - ws_endpoint
+  - observed_messages
+  signals:
+  - ws://
+  - wss://
+  - socket
+  - websocket
+  - upgrade
   questions:
-    - "Does the WS handshake verify the session/token?"
-    - "Can an unauthenticated client subscribe to another user's channel?"
-    - "Are channel names guessable?"
+  - Does the WS handshake verify the session/token?
+  - Can an unauthenticated client subscribe to another user's channel?
+  - Are channel names guessable?
   evidence:
-    positive: [unauthenticated_handshake, cross_user_channel_access, guessable_channels]
-    negative: [handshake_requires_auth, channel_authz_checked, unguessable_tokens]
-  followups: [omit_auth_on_handshake, guess_channel, subscribe_as_anon]
-  test: >
-    Open the WS without cookies/token. Try subscribing to channels belonging to another owned account. Compare message visibility.
-  impact_hint: High — real-time data leak.
+    positive:
+    - unauthenticated_handshake
+    - cross_user_channel_access
+    - guessable_channels
+    negative:
+    - handshake_requires_auth
+    - channel_authz_checked
+    - unguessable_tokens
+  followups:
+  - omit_auth_on_handshake
+  - guess_channel
+  - subscribe_as_anon
+  test: 'Open the WS without cookies/token. Try subscribing to channels belonging
+    to another owned account. Compare message visibility.
 
+    '
+  impact_hint: High — real-time data leak.
+  preconditions:
+  - ws_endpoint
+  - observed_messages
+  required_state: []
+  hypothesis_generator: 'When signals [''ws://'', ''wss://'', ''socket'', ''websocket'']
+    are observed, hypothesize: WebSocket handshake without authentication.'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: unauthenticated_handshake; cross_user_channel_access; guessable_channels
+  positive_oracle: unauthenticated_handshake
+  negative_evidence:
+  - handshake_requires_auth
+  - channel_authz_checked
+  - unguessable_tokens
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: omit_auth_on_handshake; guess_channel
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.6
 - id: WS-04
   name: WebSocket message replay / forgery
   klass: websocket
-  requires: [ws_endpoint, observed_messages]
-  signals: ["ws://", "wss://", "socket", "message", "emit"]
+  requires:
+  - ws_endpoint
+  - observed_messages
+  signals:
+  - ws://
+  - wss://
+  - socket
+  - message
+  - emit
   questions:
-    - "Are messages authenticated per-message or only at handshake?"
-    - "Can a captured message be replayed to trigger the action again?"
-    - "Can message fields (sender, target) be forged?"
+  - Are messages authenticated per-message or only at handshake?
+  - Can a captured message be replayed to trigger the action again?
+  - Can message fields (sender, target) be forged?
   evidence:
-    positive: [replay_accepted, sender_spoofed, no_per_message_auth]
-    negative: [replay_rejected, sender_verified, nonces_enforced]
-  followups: [replay_message, forge_sender, tamper_target]
-  test: >
-    Capture a legitimate WS action message; replay it later and as the other owned account. Forge sender/target fields.
-  impact_hint: Medium-High — action forgery.
+    positive:
+    - replay_accepted
+    - sender_spoofed
+    - no_per_message_auth
+    negative:
+    - replay_rejected
+    - sender_verified
+    - nonces_enforced
+  followups:
+  - replay_message
+  - forge_sender
+  - tamper_target
+  test: 'Capture a legitimate WS action message; replay it later and as the other
+    owned account. Forge sender/target fields.
 
+    '
+  impact_hint: Medium-High — action forgery.
+  preconditions:
+  - ws_endpoint
+  - observed_messages
+  required_state: []
+  hypothesis_generator: 'When signals [''ws://'', ''wss://'', ''socket'', ''message'']
+    are observed, hypothesize: WebSocket message replay / forgery.'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: replay_accepted; sender_spoofed; no_per_message_auth
+  positive_oracle: replay_accepted
+  negative_evidence:
+  - replay_rejected
+  - sender_verified
+  - nonces_enforced
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: replay_message; forge_sender
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.6
 - id: WS-05
   name: Cross-site WebSocket hijacking (missing Origin check)
   klass: websocket
-  requires: [ws_endpoint]
-  signals: ["ws://", "wss://", "origin", "socket"]
+  requires:
+  - ws_endpoint
+  signals:
+  - ws://
+  - wss://
+  - origin
+  - socket
   questions:
-    - "Is the Origin header validated on the WS handshake?"
-    - "Can an attacker's page open an authenticated socket using the victim's cookies?"
-    - "Does the socket rely on cookie auth?"
+  - Is the Origin header validated on the WS handshake?
+  - Can an attacker's page open an authenticated socket using the victim's cookies?
+  - Does the socket rely on cookie auth?
   evidence:
-    positive: [origin_not_checked, cross_site_socket_opened, cookie_auth_reused]
-    negative: [origin_validated, token_not_cookie, csrf_style_blocked]
-  followups: [cross_site_handshake, test_origin_variants]
-  test: >
-    From a cross-origin page context, attempt the WS handshake with victim cookies (lab only, owned accounts). Try Origin spoofing variants.
-  impact_hint: High — CSWSH, equivalent to CSRF on real-time actions.
-# appended 2026-09-27 — knowledge ingestion round 1
+    positive:
+    - origin_not_checked
+    - cross_site_socket_opened
+    - cookie_auth_reused
+    negative:
+    - origin_validated
+    - token_not_cookie
+    - csrf_style_blocked
+  followups:
+  - cross_site_handshake
+  - test_origin_variants
+  test: 'From a cross-origin page context, attempt the WS handshake with victim cookies
+    (lab only, owned accounts). Try Origin spoofing variants.
 
+    '
+  impact_hint: High — CSWSH, equivalent to CSRF on real-time actions.
+  preconditions:
+  - ws_endpoint
+  required_state: []
+  hypothesis_generator: 'When signals [''ws://'', ''wss://'', ''origin'', ''socket'']
+    are observed, hypothesize: Cross-site WebSocket hijacking (missing Origin check).'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: origin_not_checked; cross_site_socket_opened; cookie_auth_reused
+  positive_oracle: origin_not_checked
+  negative_evidence:
+  - origin_validated
+  - token_not_cookie
+  - csrf_style_blocked
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: cross_site_handshake; test_origin_variants
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.6
 - id: WS-06
   name: CSWSH confirmation standard (101 is not a finding)
   klass: websocket
-  requires: [ws_endpoint, owned_test_account]
-  signals: ["Origin", "101", "websocket", "wss://", "hijack"]
+  requires:
+  - ws_endpoint
+  - owned_test_account
+  signals:
+  - Origin
+  - '101'
+  - websocket
+  - wss://
+  - hijack
   questions:
-    - "Did attacker-origin JS actually RECEIVE the victim's data?"
-    - "Is there a per-connection token in the handshake URL/subprotocol/first frame?"
-    - "Was the received data verified as the OTHER account's (marker/PII)?"
+  - Did attacker-origin JS actually RECEIVE the victim's data?
+  - Is there a per-connection token in the handshake URL/subprotocol/first frame?
+  - Was the received data verified as the OTHER account's (marker/PII)?
   evidence:
-    positive: [victim_data_received_cross_origin, marker_exfiltrated_oast]
-    negative: [handshake_accepted_no_data, per_connection_token_required, origin_rejected_at_message_layer]
-  followups: [two_account_marker_test, oast_exfil_proof, check_handshake_token]
-  test: >
-    Host a PoC page on an attacker origin while victim account B is logged in.
-    The bug is confirmed ONLY if attacker JS receives B's data (plant a unique
-    marker in B's account) and exfils it to a collaborator/OAST listener.
-    A bare 101 from Origin: evil.com is NOT a finding — many servers upgrade
-    then send nothing. A per-connection token in the handshake kills
-    cross-site exploitability; downgrade. Grounded: 2025-2026 CSWSH methodology
-    (murrtada/kenxploitz FP-killer guides).
-  impact_hint: High — but only when confirmed to the victim-data standard.
+    positive:
+    - victim_data_received_cross_origin
+    - marker_exfiltrated_oast
+    negative:
+    - handshake_accepted_no_data
+    - per_connection_token_required
+    - origin_rejected_at_message_layer
+  followups:
+  - two_account_marker_test
+  - oast_exfil_proof
+  - check_handshake_token
+  test: 'Host a PoC page on an attacker origin while victim account B is logged in.
+    The bug is confirmed ONLY if attacker JS receives B''s data (plant a unique marker
+    in B''s account) and exfils it to a collaborator/OAST listener. A bare 101 from
+    Origin: evil.com is NOT a finding — many servers upgrade then send nothing. A
+    per-connection token in the handshake kills cross-site exploitability; downgrade.
+    Grounded: 2025-2026 CSWSH methodology (murrtada/kenxploitz FP-killer guides).
 
+    '
+  impact_hint: High — but only when confirmed to the victim-data standard.
+  preconditions:
+  - ws_endpoint
+  - owned_test_account
+  required_state: []
+  hypothesis_generator: 'When signals [''Origin'', ''101'', ''websocket'', ''wss://'']
+    are observed, hypothesize: CSWSH confirmation standard (101 is not a finding).'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: victim_data_received_cross_origin; marker_exfiltrated_oast
+  positive_oracle: victim_data_received_cross_origin
+  negative_evidence:
+  - handshake_accepted_no_data
+  - per_connection_token_required
+  - origin_rejected_at_message_layer
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: two_account_marker_test; oast_exfil_proof
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.6
 - id: WS-07
   name: WebSocket frame layer bypasses HTTP WAF and rate limits
   klass: websocket
-  requires: [ws_endpoint, http_observation]
-  signals: ["wss://", "websocket", "waf", "rate", "frame"]
+  requires:
+  - ws_endpoint
+  - http_observation
+  signals:
+  - wss://
+  - websocket
+  - waf
+  - rate
+  - frame
   questions:
-    - "Do WAF rules and rate limits inspect WebSocket frames or only HTTP?"
-    - "Does the reconnection path re-validate authentication?"
+  - Do WAF rules and rate limits inspect WebSocket frames or only HTTP?
+  - Does the reconnection path re-validate authentication?
   evidence:
-    positive: [blocked_http_payload_accepted_in_frame, flood_unthrottled]
-    negative: [frame_layer_inspected, per_message_limits_enforced]
-  followups: [replay_blocked_payloads_in_frames, test_reconnect_auth]
-  test: >
-    Take a payload the WAF blocks over HTTP and deliver it inside a WS JSON
-    frame to the same backend logic; also test message flooding and whether
-    reconnect re-validates auth. Owned accounts, low volume. Grounded:
-    2025-2026 WS testing checklists (frames bypass HTTP-level controls).
+    positive:
+    - blocked_http_payload_accepted_in_frame
+    - flood_unthrottled
+    negative:
+    - frame_layer_inspected
+    - per_message_limits_enforced
+  followups:
+  - replay_blocked_payloads_in_frames
+  - test_reconnect_auth
+  test: 'Take a payload the WAF blocks over HTTP and deliver it inside a WS JSON frame
+    to the same backend logic; also test message flooding and whether reconnect re-validates
+    auth. Owned accounts, low volume. Grounded: 2025-2026 WS testing checklists (frames
+    bypass HTTP-level controls).
+
+    '
   impact_hint: Medium-High — the WAF everyone trusts doesn't see this traffic.
+  preconditions:
+  - ws_endpoint
+  - http_observation
+  required_state: []
+  hypothesis_generator: 'When signals [''wss://'', ''websocket'', ''waf'', ''rate'']
+    are observed, hypothesize: WebSocket frame layer bypasses HTTP WAF and rate limits.'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: blocked_http_payload_accepted_in_frame; flood_unthrottled
+  positive_oracle: blocked_http_payload_accepted_in_frame
+  negative_evidence:
+  - frame_layer_inspected
+  - per_message_limits_enforced
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: replay_blocked_payloads_in_frames; test_reconnect_auth
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.6

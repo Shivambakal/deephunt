@@ -18,11 +18,30 @@ DIMENSIONS = [
     ("user-a-vs-b", "same request as two different owned users"),
     ("role-vs-role", "same request as two different owned roles"),
     ("auth-vs-anon", "same request authenticated vs unauthenticated"),
+    ("tenant-vs-tenant", "same request under two different owned tenants"),
+    ("state-vs-state", "same object in two different lifecycle states"),
+    ("method-vs-method", "same endpoint via two different HTTP methods"),
+    ("version-vs-version", "same operation on API v1 vs v2"),
+    ("client-vs-client", "same request from two client types (web vs api)"),
     ("before-vs-after", "same object before and after a state change"),
-    ("v1-vs-v2", "same operation on API v1 vs v2"),
     ("object-x-vs-y", "same operation on own object vs other-owned object"),
     ("request-vs-modified", "request A vs A with one field mutated"),
 ]
+
+
+def make_pair(dimension: str, base_request: dict,
+              control: dict, test: dict) -> dict:
+    """Structured control/test pair: only ONE variable differs between
+    control and test; everything else is pinned to base_request. Never
+    transmits — the executor runs the pair."""
+    return {
+        "dimension": dimension,
+        "base": dict(base_request),
+        "control": dict(control),
+        "test": dict(test),
+        "single_variable": True,
+        "decides": f"{dimension}: any security-relevant difference",
+    }
 
 # noise patterns that must NEVER count as a finding
 NOISE = re.compile(

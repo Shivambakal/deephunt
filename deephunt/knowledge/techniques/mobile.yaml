@@ -1,88 +1,268 @@
 # DEEPHUNT technique cards — mobile domain
-# Enriched: requires/signals/questions/evidence/followups per card.
-# Source of truth for kb.load_techniques(). 5 cards.
+# Schema v2 (§26): preconditions/required_state/hypothesis_generator/
+# request_strategy/mutation_strategy/expected_signal/positive_oracle/
+# negative_evidence/false_positive_rules/followup_experiment/
+# regression_test/difficulty_estimate. 5 cards.
 
 - id: MOB-01
   name: Deep link / universal link hijacking
   klass: mobile
-  requires: [mobile_app_surface]
-  signals: ["deeplink", "intent://", "myapp://", "applinks", "universal"]
+  requires:
+  - mobile_app_surface
+  signals:
+  - deeplink
+  - intent://
+  - myapp://
+  - applinks
+  - universal
   questions:
-    - "Which deep links carry auth tokens or actions?"
-    - "Can a malicious link trigger a sensitive action without confirmation?"
-    - "Are link parameters validated before use?"
+  - Which deep links carry auth tokens or actions?
+  - Can a malicious link trigger a sensitive action without confirmation?
+  - Are link parameters validated before use?
   evidence:
-    positive: [token_in_deeplink, action_without_confirm, param_not_validated]
-    negative: [no_sensitive_deeplinks, confirm_before_action, params_validated]
-  followups: [craft_malicious_link, test_token_leak, fuzz_link_params]
-  test: >
-    Enumerate deep link schemes (manifest/assetlinks). Craft links with tokens and actions; observe handling. Check for token leakage via referrer.
-  impact_hint: Medium-High — account takeover via link.
+    positive:
+    - token_in_deeplink
+    - action_without_confirm
+    - param_not_validated
+    negative:
+    - no_sensitive_deeplinks
+    - confirm_before_action
+    - params_validated
+  followups:
+  - craft_malicious_link
+  - test_token_leak
+  - fuzz_link_params
+  test: 'Enumerate deep link schemes (manifest/assetlinks). Craft links with tokens
+    and actions; observe handling. Check for token leakage via referrer.
 
+    '
+  impact_hint: Medium-High — account takeover via link.
+  preconditions:
+  - mobile_app_surface
+  required_state: []
+  hypothesis_generator: 'When signals [''deeplink'', ''intent://'', ''myapp://'',
+    ''applinks''] are observed, hypothesize: Deep link / universal link hijacking.'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: token_in_deeplink; action_without_confirm; param_not_validated
+  positive_oracle: token_in_deeplink
+  negative_evidence:
+  - no_sensitive_deeplinks
+  - confirm_before_action
+  - params_validated
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: craft_malicious_link; test_token_leak
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.6
 - id: MOB-02
   name: Insecure local storage of secrets
   klass: mobile
-  requires: [mobile_app_surface]
-  signals: ["sharedpreferences", "keystore", "sqlite", "storage", "token"]
+  requires:
+  - mobile_app_surface
+  signals:
+  - sharedpreferences
+  - keystore
+  - sqlite
+  - storage
+  - token
   questions:
-    - "Are tokens/keys stored in plaintext prefs or files?"
-    - "Is the platform keystore actually used?"
-    - "What survives app uninstall / backup?"
+  - Are tokens/keys stored in plaintext prefs or files?
+  - Is the platform keystore actually used?
+  - What survives app uninstall / backup?
   evidence:
-    positive: [plaintext_token_storage, backup_includes_secrets, world_readable]
-    negative: [keystore_used, encrypted_storage, backup_excluded]
-  followups: [inspect_app_storage, check_backup_rules, test_rooted_access]
-  test: >
-    On an owned test device: inspect app sandbox storage for tokens/keys in plaintext. Check backup manifests and file permissions.
-  impact_hint: Medium — local attacker / malware extraction.
+    positive:
+    - plaintext_token_storage
+    - backup_includes_secrets
+    - world_readable
+    negative:
+    - keystore_used
+    - encrypted_storage
+    - backup_excluded
+  followups:
+  - inspect_app_storage
+  - check_backup_rules
+  - test_rooted_access
+  test: 'On an owned test device: inspect app sandbox storage for tokens/keys in plaintext.
+    Check backup manifests and file permissions.
 
+    '
+  impact_hint: Medium — local attacker / malware extraction.
+  preconditions:
+  - mobile_app_surface
+  required_state: []
+  hypothesis_generator: 'When signals [''sharedpreferences'', ''keystore'', ''sqlite'',
+    ''storage''] are observed, hypothesize: Insecure local storage of secrets.'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: plaintext_token_storage; backup_includes_secrets; world_readable
+  positive_oracle: plaintext_token_storage
+  negative_evidence:
+  - keystore_used
+  - encrypted_storage
+  - backup_excluded
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: inspect_app_storage; check_backup_rules
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.45
 - id: MOB-03
   name: Missing certificate pinning enables MITM
   klass: mobile
-  requires: [mobile_app_surface]
-  signals: ["https", "certificate", "pinning", "tls", "api"]
+  requires:
+  - mobile_app_surface
+  signals:
+  - https
+  - certificate
+  - pinning
+  - tls
+  - api
   questions:
-    - "Does the app pin its API certificate?"
-    - "Can a lab proxy with a custom CA intercept API traffic?"
-    - "Are tokens visible in intercepted traffic?"
+  - Does the app pin its API certificate?
+  - Can a lab proxy with a custom CA intercept API traffic?
+  - Are tokens visible in intercepted traffic?
   evidence:
-    positive: [no_pinning, traffic_interceptable, token_visible]
-    negative: [pinning_enforced, intercept_blocked]
-  followups: [proxy_with_custom_ca, inspect_token_exposure]
-  test: >
-    Route owned test device traffic through a lab proxy with installed CA. Observe whether API calls succeed and what secrets are visible.
-  impact_hint: Medium — network attacker credential theft.
+    positive:
+    - no_pinning
+    - traffic_interceptable
+    - token_visible
+    negative:
+    - pinning_enforced
+    - intercept_blocked
+  followups:
+  - proxy_with_custom_ca
+  - inspect_token_exposure
+  test: 'Route owned test device traffic through a lab proxy with installed CA. Observe
+    whether API calls succeed and what secrets are visible.
 
+    '
+  impact_hint: Medium — network attacker credential theft.
+  preconditions:
+  - mobile_app_surface
+  required_state: []
+  hypothesis_generator: 'When signals [''https'', ''certificate'', ''pinning'', ''tls'']
+    are observed, hypothesize: Missing certificate pinning enables MITM.'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: no_pinning; traffic_interceptable; token_visible
+  positive_oracle: no_pinning
+  negative_evidence:
+  - pinning_enforced
+  - intercept_blocked
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: proxy_with_custom_ca; inspect_token_exposure
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.45
 - id: MOB-04
   name: Exported component / intent spoofing
   klass: mobile
-  requires: [mobile_app_surface]
-  signals: ["exported", "intent", "activity", "broadcast", "deeplink"]
+  requires:
+  - mobile_app_surface
+  signals:
+  - exported
+  - intent
+  - activity
+  - broadcast
+  - deeplink
   questions:
-    - "Which activities/services are exported?"
-    - "Can another app invoke them with crafted extras?"
-    - "Do exported components re-check authorization?"
+  - Which activities/services are exported?
+  - Can another app invoke them with crafted extras?
+  - Do exported components re-check authorization?
   evidence:
-    positive: [exported_sensitive_component, intent_extras_trusted, no_recheck]
-    negative: [not_exported, extras_validated, authz_rechecked]
-  followups: [enumerate_exported, craft_intent, test_extras_trust]
-  test: >
-    Parse the manifest for exported components. Send crafted intents with extras from a second lab app; observe privileged actions.
-  impact_hint: Medium-High — local privilege escalation.
+    positive:
+    - exported_sensitive_component
+    - intent_extras_trusted
+    - no_recheck
+    negative:
+    - not_exported
+    - extras_validated
+    - authz_rechecked
+  followups:
+  - enumerate_exported
+  - craft_intent
+  - test_extras_trust
+  test: 'Parse the manifest for exported components. Send crafted intents with extras
+    from a second lab app; observe privileged actions.
 
+    '
+  impact_hint: Medium-High — local privilege escalation.
+  preconditions:
+  - mobile_app_surface
+  required_state: []
+  hypothesis_generator: 'When signals [''exported'', ''intent'', ''activity'', ''broadcast'']
+    are observed, hypothesize: Exported component / intent spoofing.'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: exported_sensitive_component; intent_extras_trusted; no_recheck
+  positive_oracle: exported_sensitive_component
+  negative_evidence:
+  - not_exported
+  - extras_validated
+  - authz_rechecked
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: enumerate_exported; craft_intent
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.6
 - id: MOB-05
   name: Biometric auth fallback bypass
   klass: mobile
-  requires: [mobile_app_surface]
-  signals: ["biometric", "fingerprint", "faceid", "fallback", "pin"]
+  requires:
+  - mobile_app_surface
+  signals:
+  - biometric
+  - fingerprint
+  - faceid
+  - fallback
+  - pin
   questions:
-    - "What happens when biometrics fail or are unavailable?"
-    - "Is the fallback (PIN/pattern) weaker and brute-forceable?"
-    - "Is biometric success verified server-side for sensitive actions?"
+  - What happens when biometrics fail or are unavailable?
+  - Is the fallback (PIN/pattern) weaker and brute-forceable?
+  - Is biometric success verified server-side for sensitive actions?
   evidence:
-    positive: [weak_fallback, fallback_bruteforceable, client_only_check]
-    negative: [strong_fallback, fallback_rate_limited, server_verified]
-  followups: [trigger_fallback, bruteforce_fallback, bypass_biometric]
-  test: >
-    Force biometric failure; examine fallback strength and rate limiting. Check whether sensitive actions re-verify server-side.
+    positive:
+    - weak_fallback
+    - fallback_bruteforceable
+    - client_only_check
+    negative:
+    - strong_fallback
+    - fallback_rate_limited
+    - server_verified
+  followups:
+  - trigger_fallback
+  - bruteforce_fallback
+  - bypass_biometric
+  test: 'Force biometric failure; examine fallback strength and rate limiting. Check
+    whether sensitive actions re-verify server-side.
+
+    '
   impact_hint: Medium — local device attacker.
+  preconditions:
+  - mobile_app_surface
+  required_state: []
+  hypothesis_generator: 'When signals [''biometric'', ''fingerprint'', ''faceid'',
+    ''fallback''] are observed, hypothesize: Biometric auth fallback bypass.'
+  request_strategy: control/test differential pair across identities or states
+  mutation_strategy: semantic mutation of the key parameter
+  expected_signal: weak_fallback; fallback_bruteforceable; client_only_check
+  positive_oracle: weak_fallback
+  negative_evidence:
+  - strong_fallback
+  - fallback_rate_limited
+  - server_verified
+  false_positive_rules:
+  - 'candidate is not a finding: requires evidence contract satisfaction'
+  - kill the benign alternative explicitly before promotion
+  - an invalid control (owner denied) poisons the comparison — re-baseline
+  followup_experiment: trigger_fallback; bruteforce_fallback
+  regression_test: replay control/test pair; expect oracle HELD
+  difficulty_estimate: 0.45

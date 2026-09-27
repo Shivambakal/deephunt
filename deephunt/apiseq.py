@@ -27,6 +27,20 @@ import re
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Optional, Tuple
 
+try:
+    from object_pool import ObjectPool as _PersistentObjectPool
+except ImportError:  # standalone use without the persistent pool
+    class _PersistentObjectPool:  # type: ignore
+        def __init__(self, target="session"):
+            pass
+
+        def observe(self, value, param_name="", context="", **kw):
+            return {}
+
+        def get_for(self, param_name="", kind_hint="",
+                    exclude_sensitive=True, state=""):
+            return None
+
 # Field-name patterns that denote dynamic object identity, with match weight.
 ID_PATTERNS = [
     (re.compile(r"^id$"), 1.0),
@@ -154,20 +168,21 @@ def plan_random_walk(specs: List[RequestSpec], max_len: int = 4,
     return walks
 
 
-class ObjectPool:
-    """Memoizes dynamic objects produced during a sequence, in creation order."""
+class ObjectPool(_PersistentObjectPool):
+    """Memoizes dynamic objects produced during a sequence, in creation order.
 
-    def __init__(self):
-        self.by_type: Dict[str, List[str]] = {}
+    Subclasses the persistent object pool (object_pool.ObjectPool): observed
+    values are tracked with kind/owner/state/lifecycle and persisted
+    per-target; get() resolves producer->consumer dependencies from it.
+    """
+
+    def __init__(self, target: str = "session"):
+        super().__init__(target)
         self.order: List[Tuple[str, str]] = []
 
     def add(self, field: str, value: str):
-        self.by_type.setdefault(field.lower(), []).append(value)
+        self.observe(value, param_name=field, context="apiseq.sequence")
         self.order.append((field, value))
-
-    def get(self, field: str) -> Optional[str]:
-        vals = self.by_type.get(field.lower())
-        return vals[-1] if vals else None
 
 
 def render_sequence(seq: List[str], specs: Dict[str, RequestSpec],

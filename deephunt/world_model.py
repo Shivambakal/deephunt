@@ -99,17 +99,17 @@ class WorldModel:
 
     def _derive_invariants(self):
         defaults = [
-            "Only the owner role may modify an owned object.",
-            "Authentication state must not leak across trust boundaries.",
-            "An object readable by role R must not be enumerable by role < R.",
-            "State transitions require the authority the transition claims.",
+            ("INV-OWN", "Only the owner role may modify an owned object.",
+             "ownership_must_match_actor"),
+            ("INV-AUTH", "Authentication state must not leak across trust boundaries.",
+             "auth_boundary"),
+            ("INV-ENUM", "An object readable by role R must not be enumerable by role < R.",
+             "ownership_must_match_actor"),
+            ("INV-STATE", "State transitions require the authority the transition claims.",
+             "state_transition"),
         ]
-        have = {i["statement"] for i in self.model["invariants"]}
-        for d in defaults:
-            if d not in have:
-                self.model["invariants"].append({"statement": d, "must_hold": True})
-                self.model["beliefs"].setdefault(d, {"confidence": 0.5,
-                                                     "supporting": 0, "contradicting": 0})
+        for iid, stmt, oracle_id in defaults:
+            self.add_invariant(stmt, invariant_id=iid, scope=oracle_id)
 
     # ---------- dynamic update (the active learning loop feeds this) ----------
     def update_from_observation(self, text, source="experiment"):
@@ -227,6 +227,101 @@ class WorldModel:
             self.model["anomalies"].append(text[:300])
             return True
         return False
+
+    # ---------- §4 structured entities (2.x upgrade, additive) ----------
+    @staticmethod
+    def _scrub(value):
+        """Never store raw secrets. Credential-shaped values are dropped."""
+        import re as _re
+        v = str(value or "")
+        if _re.search(r"(?i)(password|passwd|secret|private[_-]?key|api[_-]?key\s*[:=])",
+                      v) or v.startswith("-----BEGIN") or \
+           _re.match(r"^eyJ[A-Za-z0-9_-]+\.eyJ", v):
+            return "[REDACTED]"
+        return v[:200]
+
+    def add_endpoint(self, method, path, params=None, auth_state="unknown",
+                     content_type="", operation_id=""):
+        eps = self.model.setdefault("endpoints_struct", [])
+        key = (method.upper(), path)
+        for e in eps:
+            if (e["method"], e["path"]) == key:
+                for p in params or []:
+                    if p not in e["params"]:
+                        e["params"].append(p)
+                return e
+        e = {"method": method.upper(), "path": path,
+             "params": list(params or []), "auth_state": auth_state,
+             "content_type": content_type, "operation_id": operation_id}
+        eps.append(e)
+        return e
+
+    def add_identity(self, name, kind="user", privilege_level=1, roles=None,
+                     token_class=""):
+        name = self._scrub(name)
+        ids = self.model["identities"]
+        for i in ids:
+            if i["name"] == name:
+                i["privilege_level"] = max(i.get("privilege_level", 1),
+                                           privilege_level)
+                return i
+        i = {"name": name, "kind": kind, "privilege_level": privilege_level,
+             "roles": roles or [], "token_class": self._scrub(token_class)}
+        ids.append(i)
+        return i
+
+    def set_object_lifecycle(self, name, states, current=""):
+        for o in self.model["objects"]:
+            if o["name"] == name:
+                o["lifecycle"] = {"states": list(states),
+                                  "current": current or (states[0] if states else "")}
+                return o
+        o = {"name": name, "owner_role": "unknown", "readers": [], "writers": [],
+             "lifecycle": {"states": list(states),
+                           "current": current or (states[0] if states else "")}}
+        self.model["objects"].append(o)
+        return o
+
+    def transition_object(self, name, to_state, actor=""):
+        for o in self.model["objects"]:
+            if o["name"] == name:
+                lc = o.setdefault("lifecycle", {"states": [], "current": ""})
+                frm = lc.get("current", "")
+                lc["current"] = to_state
+                self.model["transitions"].append(
+                    {"object": name, "frm_state": frm, "to_state": to_state,
+                     "actor": self._scrub(actor)})
+                return True
+        return False
+
+    def add_trust_boundary(self, name, frm, to, mechanism="unknown"):
+        tbs = self.model["trust_boundaries"]
+        for t in tbs:
+            if isinstance(t, dict) and t.get("name") == name:
+                return t
+        t = {"name": name, "from": frm, "to": to, "mechanism": mechanism}
+        # migrate legacy string entries
+        self.model["trust_boundaries"] = [x for x in tbs if isinstance(x, dict)]
+        self.model["trust_boundaries"].append(t)
+        return t
+
+    def add_invariant(self, statement, invariant_id="", must_hold=True,
+                      scope=""):
+        invs = self.model["invariants"]
+        iid = invariant_id or f"INV-{len(invs) + 1:03d}"
+        for i in invs:
+            if isinstance(i, dict) and (i.get("id") == iid or
+                                        i.get("statement") == statement):
+                return i
+        inv = {"id": iid, "statement": statement, "must_hold": must_hold,
+               "scope": scope}
+        invs.append(inv)
+        self.model["beliefs"].setdefault(
+            statement, {"confidence": 0.5, "supporting": 0, "contradicting": 0})
+        return inv
+
+    def structured_invariants(self):
+        return [i for i in self.model["invariants"] if isinstance(i, dict)]
 
     # ---------- queries ----------
     def open_questions(self):

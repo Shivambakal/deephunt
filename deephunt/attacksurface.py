@@ -47,6 +47,17 @@ from ai_attacks import integrate as ai_integrate  # noqa: E402
 import learn as learn_mem  # noqa: E402
 import learn_updates  # noqa: E402
 from eventbus import EventBus  # noqa: E402
+# --- 2.x loop modules (blueprint §34) ---
+import identity_matrix  # noqa: E402
+import object_pool as object_pool_mod  # noqa: E402
+import oracle as oracle_mod  # noqa: E402
+import verifier as verifier_mod  # noqa: E402
+import difficulty as difficulty_mod  # noqa: E402
+import regression as regression_mod  # noqa: E402
+import intel_compiler  # noqa: E402
+import learning as causal_mod  # noqa: E402
+import report as report_mod  # noqa: E402
+import differential as differential_mod  # noqa: E402
 
 
 def _ts():
@@ -139,6 +150,28 @@ def stage_reasoning(session, target, tech_knowledge, ti, mem):
     return out
 
 
+def stage_intel_compile(session, target, tech_knowledge, ti, max_hypotheses=12):
+    """ATTACKSURFACE -> target-specific hypotheses (blueprint §25).
+    Relevant intel only — KEV becomes preconditions, never CVE dumps."""
+    try:
+        import kb
+        cards = kb.load_techniques()
+    except Exception:
+        cards = []
+    try:
+        compiled = intel_compiler.compile(
+            target, tech_knowledge, ti.technologies(), cards=cards,
+            max_hypotheses=max_hypotheses)
+    except Exception as e:
+        stage_log(session, "intel-compile", f"compiler error: {e}")
+        return {"hypotheses": [], "intel_chips_considered": 0,
+                "intel_chips_dropped_as_noise": 0}
+    stage_log(session, "intel-compile",
+              f"{compiled['intel_chips_considered']} intel chips -> "
+              f"{len(compiled['hypotheses'])} target-specific hypotheses")
+    return compiled
+
+
 def stage_world_model(target, ti, session):
     wm = WorldModel(target)
     findings = [{"tool": "target_intel", "title": t,
@@ -172,8 +205,10 @@ def stage_hypotheses(session, seeds, plan_items, agraph, mem, max_new):
     return fused
 
 
-def stage_plan(session, profile, mem, max_tests=5, ai_surfaces=None):
-    """Order live hypotheses by EIG; propose the top-N through the gate.
+def stage_plan(session, profile, mem, max_tests=5, ai_surfaces=None,
+               wm=None, lessons=None):
+    """Order live hypotheses by difficulty UTILITY (EIG feeds the info-gain
+    term); propose the top-N through the gate as differential pairs.
 
     AI-attack hypotheses (source ai_attacks:*) are expanded into concrete
     test cases by the ai_attacks planners before proposal; every case still
@@ -182,9 +217,29 @@ def stage_plan(session, profile, mem, max_tests=5, ai_surfaces=None):
     live = [h for h in session.state["hypotheses"] if h["status"] == "live"]
     seeds = [{"statement": h["statement"],
               "reasoning": h.get("investigator_test", ""),
-              "family": "hypothesis", "score": h.get("score", 3)}
+              "family": "hypothesis", "score": h.get("score", 3),
+              "technique_id": h.get("technique_id", ""),
+              "severity": h.get("severity", "medium"),
+              "oracle": h.get("oracle", "")}
              for h in live]
-    planned = exp_planner.plan(seeds, mem)[:max_tests]
+    eig_ranked = exp_planner.plan(seeds, mem)
+    # difficulty re-rank: EIG -> info_gain term of the UTILITY formula
+    info_gains = {id(s): min(1.0, s.get("_eig", 2.0) / 6.0) for s in eig_ranked}
+    costs = {id(s): s.get("_cost", 2) / 5.0 for s in eig_ranked}
+    risks = {id(s): s.get("_risk", 2) / 5.0 for s in eig_ranked}
+    try:
+        planned = difficulty_mod.rank(
+            seeds, memory=mem, lessons=lessons, info_gains=info_gains,
+            costs=costs, risks=risks)[:max_tests]
+    except Exception:
+        planned = eig_ranked[:max_tests]
+    # identity-matrix cells: authz hypotheses become differential pairs
+    matrix_cells = []
+    if wm is not None:
+        try:
+            matrix_cells = identity_matrix.generate(wm, min_priority="high")[:max_tests]
+        except Exception:
+            matrix_cells = []
     proposed = []
     scope = profile.get("scope_hosts") or []
     auth_basis = profile.get("auth_basis") or f"profile:{profile.get('name')}"
@@ -225,10 +280,22 @@ def stage_plan(session, profile, mem, max_tests=5, ai_surfaces=None):
         h = next((x for x in live if x["statement"] == s["statement"]), None)
         if not h:
             continue
+        # express as a differential pair when the matrix has a matching cell
+        pair = None
+        stmt_low = s["statement"].lower()
+        for cell in matrix_cells:
+            if cell["object"] in s["statement"] or "authoriz" in stmt_low \
+                    or "idor" in stmt_low or "bola" in stmt_low:
+                pair = identity_matrix.to_differential(cell)
+                break
+        expected = (f"discriminating signal for: {h['statement'][:120]}"
+                    + (f" | pair={pair['dimension']} "
+                       f"control={pair['control']['identity']} "
+                       f"test={pair['test']['identity']}" if pair else ""))
         try:
             t = session.propose_test(
                 hypothesis_id=h["id"],
-                expected_observation=f"discriminating signal for: {h['statement'][:120]}",
+                expected_observation=expected,
                 reason=h.get("investigator_test", "")[:240] or "pipeline-planned",
                 scope_hosts=scope, auth_basis=auth_basis,
                 success_criteria="observation matches the predicted vulnerable behavior",
@@ -238,9 +305,11 @@ def stage_plan(session, profile, mem, max_tests=5, ai_surfaces=None):
             session.observe(f"[pipeline:plan] gate refused {h['id']}: {e}",
                             kind="stage:plan")
     stage_log(session, "experiment-plan",
-              f"{len(planned)} planned, {len(proposed)} proposed through gate")
+              f"{len(planned)} difficulty-ranked, {len(proposed)} proposed "
+              f"through gate ({len(matrix_cells)} matrix cells)")
     return {"planned": planned, "proposed": proposed,
-            "scope": scope, "auth_basis": auth_basis}
+            "scope": scope, "auth_basis": auth_basis,
+            "matrix_cells": matrix_cells}
 
 
 def stage_authorized_testing(session, plan, profile, execute):
@@ -295,12 +364,79 @@ def stage_observation(session, wm, ti, bus):
     return {"observations": len(fresh), "relations": n}
 
 
+def stage_independent_verify(session, target):
+    """INDEPENDENT verifier (blueprint §13): structurally separate from
+    discovery — attempts to FALSIFY each unconfirmed finding with a
+    different reasoning path. Runs after compete_finding()."""
+    checked, verified, rejected, need_more = 0, 0, 0, 0
+    for idx, finding in enumerate(session.state.get("unconfirmed_findings", [])):
+        if finding.get("status") not in ("awaiting-calibration", "awaiting-disproof"):
+            continue
+        try:
+            session.compete_finding(idx)
+        except Exception:
+            pass
+        try:
+            rep = verifier_mod.verify_for_compete(finding)
+        except Exception as e:
+            session.observe(f"[pipeline:verify] verifier error: {e}",
+                            kind="stage:verify")
+            continue
+        checked += 1
+        finding["independent_verification"] = {
+            "verdict": rep.verdict, "notes": rep.falsification_notes,
+            "confidence": rep.confidence}
+        if rep.verdict == verifier_mod.VERIFIED:
+            verified += 1
+        elif rep.verdict == verifier_mod.REJECTED:
+            rejected += 1
+            finding["status"] = "rejected-by-verifier"
+        else:
+            need_more += 1
+        session.observe(f"[pipeline:verify] '{finding.get('claim', '')[:60]}...' -> "
+                        f"{rep.verdict}", kind="stage:verify")
+    stage_log(session, "independent-verify",
+              f"{checked} checked: {verified} verified, {rejected} rejected, "
+              f"{need_more} need-more-evidence")
+    return {"checked": checked, "verified": verified, "rejected": rejected,
+            "need_more": need_more}
+
+
 def stage_learn(session, wm, target):
     summary = learn_updates.apply(session, wm, target)
+    # causal layer: record trials so difficulty's historical-success term learns
+    causal = causal_mod.CausalStore(target)
+    causal_global = causal_mod.CausalStore("_global")
+    trials = 0
+    for h in session.state.get("hypotheses", []):
+        if h.get("status") in ("confirmed", "rejected", "inconclusive") \
+                and not h.get("_causal_recorded"):
+            outcome = {"confirmed": "confirmed", "rejected": "rejected"}.get(
+                h["status"], "inconclusive")
+            reason = h.get("why_failed", "")[:40] if outcome == "rejected" else ""
+            for store in (causal, causal_global):
+                store.record_trial(h.get("technique_id", "unknown"),
+                                   target, outcome, failure_reason=reason,
+                                   hypothesis=h.get("statement", ""))
+            h["_causal_recorded"] = True
+            trials += 1
+    # regression: every confirmed finding becomes a permanent test
+    regressions = []
+    for f in session.state.get("confirmed_findings", []):
+        if isinstance(f, dict) and not f.get("_regression_id"):
+            try:
+                spec = regression_mod.from_finding(f, target)
+                f["_regression_id"] = spec["id"]
+                regressions.append(spec["id"])
+            except Exception:
+                pass
     stage_log(session, "learn-update",
               f"processed={summary['processed']} proposals={len(summary['proposals'])} "
               f"negatives={summary['negative_examples']} "
-              f"belief_deltas={len(summary['belief_deltas'])}")
+              f"belief_deltas={len(summary['belief_deltas'])} "
+              f"causal_trials={trials} regressions={len(regressions)}")
+    summary["causal_trials"] = trials
+    summary["regressions"] = regressions
     return summary
 
 
@@ -335,36 +471,49 @@ def run_pipeline(target, dossier_path=None, passive_only=True, execute=False,
             "techs": list(tech_knowledge.keys())}
         # REASONING
         seeds = stage_reasoning(session, target, tech_knowledge, ti, mem)
+        # INTEL COMPILE (§25): relevant intel -> target-specific hypotheses
+        compiled = stage_intel_compile(session, target, tech_knowledge, ti,
+                                       max_hypotheses=max_hypotheses)
+        report["stages"].setdefault(tag, {})["intel_compile"] = {
+            "chips": compiled["intel_chips_considered"],
+            "hypotheses": len(compiled["hypotheses"])}
         # AI-ATTACK PLANNING (additive; propose-only)
         ai = stage_ai_attacks(session, target, ti)
         seeds["seed_hypotheses"] = list(seeds.get("seed_hypotheses", [])) \
-            + ai["seeds"]
+            + ai["seeds"] + compiled["hypotheses"]
         report["stages"].setdefault(tag, {})["ai_attacks"] = {
             "surfaces": len(ai["surfaces"]), "seeds": len(ai["seeds"])}
         # WORLD MODEL
         wm = stage_world_model(target, ti, session)
+        # causal lessons feed difficulty's historical-success term
+        lessons = causal_mod.CausalStore(target)
         # ATTACK/TRUST GRAPH
         agraph = stage_attack_graph(session, wm, ti)
         # HYPOTHESIS ENGINE
         fused = stage_hypotheses(session, seeds, plan_items,
                                  agraph, mem, max_hypotheses)
-        # EXPERIMENT PLANNER (+ gate proposals)
+        # EXPERIMENT PLANNER — difficulty-ranked, differential pairs
         plan = stage_plan(session, profile, mem, max_tests,
-                          ai_surfaces=ai["surfaces"])
+                          ai_surfaces=ai["surfaces"], wm=wm, lessons=lessons)
         # AUTHORIZED TESTING (gated; propose-only unless --execute)
         tested = stage_authorized_testing(session, plan, profile, execute)
+        # INDEPENDENT VERIFY (§13) — falsify, don't confirm
+        verified = stage_independent_verify(session, target)
         # OBSERVATION
         obs = stage_observation(session, wm, ti, bus)
-        # LEARN + UPDATE
+        # LEARN + UPDATE (incl. causal trials + regression tests)
         learned = stage_learn(session, wm, target)
         report["stages"][tag] = {
             "seeds": len(seeds["seed_hypotheses"]),
             "hypotheses_registered": len(fused["registered"]),
             "tests_proposed": len(plan["proposed"]),
             "tests_run": len(tested),
+            "verified": verified["verified"],
+            "verifier_rejected": verified["rejected"],
             "observations": obs["observations"],
             "learn": learned["processed"],
             "proposals": len(learned["proposals"]),
+            "regressions": len(learned.get("regressions", [])),
         }
         # LOOP-BACK: suspicious change? re-intel. Else stop if nothing new.
         diff = ti.diff_since(old_snapshot)
