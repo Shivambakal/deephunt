@@ -42,6 +42,48 @@
    "klass": "ai-llm",
    "impact": "Medium-High."
   },
+  "AI-06": {
+   "type": "technique",
+   "name": "RAG retrieval ignores ACLs (cross-tenant memory bleed)",
+   "klass": "ai-llm",
+   "impact": "High \u2014 cross-tenant data disclosure via the assistant."
+  },
+  "AI-07": {
+   "type": "technique",
+   "name": "Excessive agency \u2014 over-permissioned tools, no server-side authz",
+   "klass": "ai-llm",
+   "impact": "Critical \u2014 the model becomes a confused deputy with privileges."
+  },
+  "AI-08": {
+   "type": "technique",
+   "name": "ASCII/unicode smuggling in tool outputs and retrieved content",
+   "klass": "ai-llm",
+   "impact": "Medium-High \u2014 invisible indirect injection."
+  },
+  "AI-09": {
+   "type": "technique",
+   "name": "Unbounded consumption / denial of wallet",
+   "klass": "ai-llm",
+   "impact": "Medium \u2014 financial DoS; programs vary on acceptance."
+  },
+  "AI-10": {
+   "type": "technique",
+   "name": "Stored / second-order prompt injection via agent memory",
+   "klass": "ai-llm",
+   "impact": "High \u2014 delayed, persistent, harder to attribute."
+  },
+  "AI-11": {
+   "type": "technique",
+   "name": "Agent tool-chaining to SSRF on internal metadata (confused deputy)",
+   "klass": "ai-llm",
+   "impact": "Critical \u2014 cloud credential theft via the assistant."
+  },
+  "AI-12": {
+   "type": "technique",
+   "name": "Model extraction via query oracle",
+   "klass": "ai-llm",
+   "impact": "Medium \u2014 IP theft; scope-sensitive."
+  },
   "API-01": {
    "type": "technique",
    "name": "Excessive data exposure / mass assignment",
@@ -114,6 +156,12 @@
    "klass": "api",
    "impact": "High."
   },
+  "API-04": {
+   "type": "technique",
+   "name": "GraphQL-over-WebSocket bypasses HTTP-layer limits",
+   "klass": "api",
+   "impact": "Medium-High \u2014 defense exists on one transport only."
+  },
   "AUTHN-01": {
    "type": "technique",
    "name": "OTP/rate-limit bypass via response manipulation",
@@ -176,6 +224,42 @@
    "klass": "session",
    "impact": "Medium-High."
   },
+  "AUTHN-03": {
+   "type": "technique",
+   "name": "Password reset email array injection (reset link to attacker)",
+   "klass": "authentication",
+   "impact": "Critical \u2014 full ATO knowing only the victim's email."
+  },
+  "OAUTH-03": {
+   "type": "technique",
+   "name": "PKCE downgrade \u2014 strip code_challenge or accept plain",
+   "klass": "authentication",
+   "impact": "High \u2014 enables authorization-code interception attacks."
+  },
+  "OAUTH-04": {
+   "type": "technique",
+   "name": "Authorization code replay race (single-use violation)",
+   "klass": "authentication",
+   "impact": "High \u2014 code interception becomes token minting."
+  },
+  "OAUTH-05": {
+   "type": "technique",
+   "name": "oauth2-proxy skip_auth_routes query-parameter bypass",
+   "klass": "authentication",
+   "impact": "High \u2014 authentication bypass at the edge."
+  },
+  "OAUTH-06": {
+   "type": "technique",
+   "name": "Implicit-flow identity/token mismatch (client-supplied email trusted)",
+   "klass": "authentication",
+   "impact": "Critical \u2014 ATO with only the victim's (often public) email."
+  },
+  "SAML-01": {
+   "type": "technique",
+   "name": "SAML parser differential (ruby-saml class)",
+   "klass": "authentication",
+   "impact": "Critical \u2014 authentication bypass."
+  },
   "IDOR-01": {
    "type": "technique",
    "name": "BOLA on numeric/UUID object IDs",
@@ -219,6 +303,12 @@
    "name": "Data export / bulk download authorization gaps",
    "klass": "authorization",
    "impact": "High."
+  },
+  "IDOR-03": {
+   "type": "technique",
+   "name": "Cross-tenant object creation via tenant/cluster ID parameter (write-side IDOR)",
+   "klass": "authorization",
+   "impact": "High \u2014 cross-tenant write = data planting + privilege escalation path."
   },
   "RACE-01": {
    "type": "technique",
@@ -304,6 +394,18 @@
    "klass": "business-logic",
    "impact": "Medium-High \u2014 price manipulation."
   },
+  "RACE-03": {
+   "type": "technique",
+   "name": "2FA/OTP verification race (parallel attempts all stay valid)",
+   "klass": "race",
+   "impact": "High \u2014 MFA bypass without touching the victim."
+  },
+  "BLO-05": {
+   "type": "technique",
+   "name": "Email change without re-authentication (account takeover primitive)",
+   "klass": "business-logic",
+   "impact": "High \u2014 email change + reset = full takeover chain."
+  },
   "SUBTO-01": {
    "type": "technique",
    "name": "Subdomain takeover via dangling CNAME",
@@ -383,6 +485,18 @@
    "name": "Persisted query / allowlist bypass",
    "klass": "graphql",
    "impact": "Medium \u2014 restriction bypass."
+  },
+  "GQL-05": {
+   "type": "technique",
+   "name": "GraphQL subscription cross-user channel hijack",
+   "klass": "graphql",
+   "impact": "High \u2014 real-time interception of another user's private events."
+  },
+  "GQL-06": {
+   "type": "technique",
+   "name": "Schema enumeration despite disabled introspection (field suggestions)",
+   "klass": "graphql",
+   "impact": "Medium \u2014 unlocks hidden-mutation authz testing."
   },
   "HW-01": {
    "type": "technique",
@@ -732,6 +846,48 @@
    "klass": "injection",
    "impact": "Medium."
   },
+  "SMUG-02": {
+   "type": "technique",
+   "name": "H2.CL / H2.TE request smuggling via HTTP/2 downgrade",
+   "klass": "smuggling",
+   "impact": "High \u2014 desync primitive enabling capture/poisoning chains."
+  },
+  "SMUG-03": {
+   "type": "technique",
+   "name": "Request tunnelling via :path CRLF injection (no connection reuse)",
+   "klass": "smuggling",
+   "impact": "High \u2014 works where classic CL.TE/TE.CL does not."
+  },
+  "SMUG-04": {
+   "type": "technique",
+   "name": "Smuggling-to-cache-poisoning chain (persistent mass impact)",
+   "klass": "smuggling",
+   "impact": "Critical \u2014 persistent, mass-impact, self-propagating."
+  },
+  "CACHE-03": {
+   "type": "technique",
+   "name": "Cache deception via smuggled authenticated request (API-key theft)",
+   "klass": "cache",
+   "impact": "Critical \u2014 unauthenticated theft of authenticated users' secrets."
+  },
+  "PROTO-02": {
+   "type": "technique",
+   "name": "Server-side prototype pollution to RCE (gadget chain)",
+   "klass": "injection",
+   "impact": "Critical when a gadget fires; noise when it is oracle-only."
+  },
+  "PROTO-03": {
+   "type": "technique",
+   "name": "Client-side prototype pollution to DOM XSS (gadget read)",
+   "klass": "injection",
+   "impact": "High \u2014 stored-pollution XSS without a stored-XSS endpoint."
+  },
+  "REDIR-02": {
+   "type": "technique",
+   "name": "Open redirect on OAuth-whitelisted domain to code/token theft",
+   "klass": "open-redirect",
+   "impact": "Critical \u2014 converts a Low (open redirect) into ATO."
+  },
   "WS-01": {
    "type": "technique",
    "name": "WebSocket authorization gaps (missing origin/token checks)",
@@ -769,6 +925,18 @@
    "name": "Cross-site WebSocket hijacking (missing Origin check)",
    "klass": "websocket",
    "impact": "High \u2014 CSWSH, equivalent to CSRF on real-time actions."
+  },
+  "WS-06": {
+   "type": "technique",
+   "name": "CSWSH confirmation standard (101 is not a finding)",
+   "klass": "websocket",
+   "impact": "High \u2014 but only when confirmed to the victim-data standard."
+  },
+  "WS-07": {
+   "type": "technique",
+   "name": "WebSocket frame layer bypasses HTTP WAF and rate limits",
+   "klass": "websocket",
+   "impact": "Medium-High \u2014 the WAF everyone trusts doesn't see this traffic."
   }
  },
  "edges": [
@@ -896,6 +1064,181 @@
    "CWE-1428",
    "enables",
    "AI-05"
+  ],
+  [
+   "AI-06",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-06",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-06"
+  ],
+  [
+   "AI-06",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-06"
+  ],
+  [
+   "AI-07",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-07",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-07"
+  ],
+  [
+   "AI-07",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-07"
+  ],
+  [
+   "AI-08",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-08",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-08"
+  ],
+  [
+   "AI-08",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-08"
+  ],
+  [
+   "AI-09",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-09",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-09"
+  ],
+  [
+   "AI-09",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-09"
+  ],
+  [
+   "AI-10",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-10",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-10"
+  ],
+  [
+   "AI-10",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-10"
+  ],
+  [
+   "AI-11",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-11",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-11"
+  ],
+  [
+   "AI-11",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-11"
+  ],
+  [
+   "AI-12",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "AI-12",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "AI-12"
+  ],
+  [
+   "AI-12",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "AI-12"
   ],
   [
    "API-01",
@@ -1048,6 +1391,31 @@
    "API-03"
   ],
   [
+   "API-04",
+   "in_class",
+   "class:api"
+  ],
+  [
+   "API-04",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "API-04"
+  ],
+  [
+   "API-04",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "API-04"
+  ],
+  [
    "AUTHN-01",
    "in_class",
    "class:authentication"
@@ -1273,6 +1641,216 @@
    "SESS-02"
   ],
   [
+   "AUTHN-03",
+   "in_class",
+   "class:authentication"
+  ],
+  [
+   "AUTHN-03",
+   "exploits_weakness",
+   "CWE-287"
+  ],
+  [
+   "CWE-287",
+   "enables",
+   "AUTHN-03"
+  ],
+  [
+   "AUTHN-03",
+   "exploits_weakness",
+   "CWE-307"
+  ],
+  [
+   "CWE-307",
+   "enables",
+   "AUTHN-03"
+  ],
+  [
+   "AUTHN-03",
+   "exploits_weakness",
+   "CWE-613"
+  ],
+  [
+   "CWE-613",
+   "enables",
+   "AUTHN-03"
+  ],
+  [
+   "OAUTH-03",
+   "in_class",
+   "class:authentication"
+  ],
+  [
+   "OAUTH-03",
+   "exploits_weakness",
+   "CWE-287"
+  ],
+  [
+   "CWE-287",
+   "enables",
+   "OAUTH-03"
+  ],
+  [
+   "OAUTH-03",
+   "exploits_weakness",
+   "CWE-307"
+  ],
+  [
+   "CWE-307",
+   "enables",
+   "OAUTH-03"
+  ],
+  [
+   "OAUTH-03",
+   "exploits_weakness",
+   "CWE-613"
+  ],
+  [
+   "CWE-613",
+   "enables",
+   "OAUTH-03"
+  ],
+  [
+   "OAUTH-04",
+   "in_class",
+   "class:authentication"
+  ],
+  [
+   "OAUTH-04",
+   "exploits_weakness",
+   "CWE-287"
+  ],
+  [
+   "CWE-287",
+   "enables",
+   "OAUTH-04"
+  ],
+  [
+   "OAUTH-04",
+   "exploits_weakness",
+   "CWE-307"
+  ],
+  [
+   "CWE-307",
+   "enables",
+   "OAUTH-04"
+  ],
+  [
+   "OAUTH-04",
+   "exploits_weakness",
+   "CWE-613"
+  ],
+  [
+   "CWE-613",
+   "enables",
+   "OAUTH-04"
+  ],
+  [
+   "OAUTH-05",
+   "in_class",
+   "class:authentication"
+  ],
+  [
+   "OAUTH-05",
+   "exploits_weakness",
+   "CWE-287"
+  ],
+  [
+   "CWE-287",
+   "enables",
+   "OAUTH-05"
+  ],
+  [
+   "OAUTH-05",
+   "exploits_weakness",
+   "CWE-307"
+  ],
+  [
+   "CWE-307",
+   "enables",
+   "OAUTH-05"
+  ],
+  [
+   "OAUTH-05",
+   "exploits_weakness",
+   "CWE-613"
+  ],
+  [
+   "CWE-613",
+   "enables",
+   "OAUTH-05"
+  ],
+  [
+   "OAUTH-06",
+   "in_class",
+   "class:authentication"
+  ],
+  [
+   "OAUTH-06",
+   "exploits_weakness",
+   "CWE-287"
+  ],
+  [
+   "CWE-287",
+   "enables",
+   "OAUTH-06"
+  ],
+  [
+   "OAUTH-06",
+   "exploits_weakness",
+   "CWE-307"
+  ],
+  [
+   "CWE-307",
+   "enables",
+   "OAUTH-06"
+  ],
+  [
+   "OAUTH-06",
+   "exploits_weakness",
+   "CWE-613"
+  ],
+  [
+   "CWE-613",
+   "enables",
+   "OAUTH-06"
+  ],
+  [
+   "SAML-01",
+   "in_class",
+   "class:authentication"
+  ],
+  [
+   "SAML-01",
+   "exploits_weakness",
+   "CWE-287"
+  ],
+  [
+   "CWE-287",
+   "enables",
+   "SAML-01"
+  ],
+  [
+   "SAML-01",
+   "exploits_weakness",
+   "CWE-307"
+  ],
+  [
+   "CWE-307",
+   "enables",
+   "SAML-01"
+  ],
+  [
+   "SAML-01",
+   "exploits_weakness",
+   "CWE-613"
+  ],
+  [
+   "CWE-613",
+   "enables",
+   "SAML-01"
+  ],
+  [
    "IDOR-01",
    "in_class",
    "class:authorization"
@@ -1481,6 +2059,41 @@
    "CWE-862",
    "enables",
    "EXPORT-01"
+  ],
+  [
+   "IDOR-03",
+   "in_class",
+   "class:authorization"
+  ],
+  [
+   "IDOR-03",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "IDOR-03"
+  ],
+  [
+   "IDOR-03",
+   "exploits_weakness",
+   "CWE-285"
+  ],
+  [
+   "CWE-285",
+   "enables",
+   "IDOR-03"
+  ],
+  [
+   "IDOR-03",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "IDOR-03"
   ],
   [
    "RACE-01",
@@ -1703,6 +2316,46 @@
    "LOGIC-03"
   ],
   [
+   "RACE-03",
+   "in_class",
+   "class:race"
+  ],
+  [
+   "RACE-03",
+   "exploits_weakness",
+   "CWE-362"
+  ],
+  [
+   "CWE-362",
+   "enables",
+   "RACE-03"
+  ],
+  [
+   "BLO-05",
+   "in_class",
+   "class:business-logic"
+  ],
+  [
+   "BLO-05",
+   "exploits_weakness",
+   "CWE-840"
+  ],
+  [
+   "CWE-840",
+   "enables",
+   "BLO-05"
+  ],
+  [
+   "BLO-05",
+   "exploits_weakness",
+   "CWE-841"
+  ],
+  [
+   "CWE-841",
+   "enables",
+   "BLO-05"
+  ],
+  [
    "SUBTO-01",
    "in_class",
    "class:cloud"
@@ -1891,6 +2544,56 @@
    "CWE-862",
    "enables",
    "GQL-03"
+  ],
+  [
+   "GQL-05",
+   "in_class",
+   "class:graphql"
+  ],
+  [
+   "GQL-05",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "GQL-05"
+  ],
+  [
+   "GQL-05",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "GQL-05"
+  ],
+  [
+   "GQL-06",
+   "in_class",
+   "class:graphql"
+  ],
+  [
+   "GQL-06",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "GQL-06"
+  ],
+  [
+   "GQL-06",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "GQL-06"
   ],
   [
    "HW-01",
@@ -2703,6 +3406,171 @@
    "WAF-01"
   ],
   [
+   "SMUG-02",
+   "in_class",
+   "class:smuggling"
+  ],
+  [
+   "SMUG-02",
+   "exploits_weakness",
+   "CWE-444"
+  ],
+  [
+   "CWE-444",
+   "enables",
+   "SMUG-02"
+  ],
+  [
+   "SMUG-03",
+   "in_class",
+   "class:smuggling"
+  ],
+  [
+   "SMUG-03",
+   "exploits_weakness",
+   "CWE-444"
+  ],
+  [
+   "CWE-444",
+   "enables",
+   "SMUG-03"
+  ],
+  [
+   "SMUG-04",
+   "in_class",
+   "class:smuggling"
+  ],
+  [
+   "SMUG-04",
+   "exploits_weakness",
+   "CWE-444"
+  ],
+  [
+   "CWE-444",
+   "enables",
+   "SMUG-04"
+  ],
+  [
+   "CACHE-03",
+   "in_class",
+   "class:cache"
+  ],
+  [
+   "CACHE-03",
+   "exploits_weakness",
+   "CWE-524"
+  ],
+  [
+   "CWE-524",
+   "enables",
+   "CACHE-03"
+  ],
+  [
+   "PROTO-02",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "PROTO-02",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "PROTO-02"
+  ],
+  [
+   "PROTO-02",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "PROTO-02"
+  ],
+  [
+   "PROTO-02",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "PROTO-02"
+  ],
+  [
+   "PROTO-02",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "PROTO-02"
+  ],
+  [
+   "PROTO-03",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "PROTO-03",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "PROTO-03"
+  ],
+  [
+   "PROTO-03",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "PROTO-03"
+  ],
+  [
+   "PROTO-03",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "PROTO-03"
+  ],
+  [
+   "PROTO-03",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "PROTO-03"
+  ],
+  [
+   "REDIR-02",
+   "in_class",
+   "class:open-redirect"
+  ],
+  [
+   "REDIR-02",
+   "exploits_weakness",
+   "CWE-601"
+  ],
+  [
+   "CWE-601",
+   "enables",
+   "REDIR-02"
+  ],
+  [
    "WS-01",
    "in_class",
    "class:websocket"
@@ -2776,10 +3644,40 @@
    "CWE-1385",
    "enables",
    "WS-05"
+  ],
+  [
+   "WS-06",
+   "in_class",
+   "class:websocket"
+  ],
+  [
+   "WS-06",
+   "exploits_weakness",
+   "CWE-1385"
+  ],
+  [
+   "CWE-1385",
+   "enables",
+   "WS-06"
+  ],
+  [
+   "WS-07",
+   "in_class",
+   "class:websocket"
+  ],
+  [
+   "WS-07",
+   "exploits_weakness",
+   "CWE-1385"
+  ],
+  [
+   "CWE-1385",
+   "enables",
+   "WS-07"
   ]
  ],
  "stats": {
-  "techniques": 89,
+  "techniques": 117,
   "weaknesses": 32,
   "classes": 27
  }

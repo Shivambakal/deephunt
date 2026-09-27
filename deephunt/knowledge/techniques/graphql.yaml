@@ -69,3 +69,43 @@
   test: >
     If persisted queries are advertised, try sending arbitrary queries and hash-collision variants. Enumerate which operations the allowlist permits.
   impact_hint: Medium — restriction bypass.
+# appended 2026-09-27 — knowledge ingestion round 1
+
+- id: GQL-05
+  name: GraphQL subscription cross-user channel hijack
+  klass: graphql
+  requires: [graphql_endpoint, authenticated_identity]
+  signals: ["subscription", "channelId", "messageAdded", "wss://", "graphql"]
+  questions:
+    - "Are subscriptions scoped to the subscriber's identity?"
+    - "What happens when channelId belongs to another user?"
+  evidence:
+    positive: [foreign_channel_events_received, realtime_pii_leaked]
+    negative: [subscription_scoped_to_caller, foreign_channel_rejected]
+  followups: [test_channel_ids, check_subscription_authz]
+  test: >
+    Open the GraphQL WS subscription with an owned low-priv account and
+    subscribe to another owned account's channel:
+    subscription { messageAdded(channelId: "OTHER_USERS_CHANNEL") { content } }.
+    Receiving the other account's real-time events = broken subscription authz.
+    Grounded: 2025-2026 methodology corpus; pairs with WS-05.
+  impact_hint: High — real-time interception of another user's private events.
+
+- id: GQL-06
+  name: Schema enumeration despite disabled introspection (field suggestions)
+  klass: graphql
+  requires: [graphql_endpoint, introspection_or_schema]
+  signals: ["Did you mean", "__schema", "introspection", "graphql"]
+  questions:
+    - "Introspection is off — but do error messages still suggest field names?"
+    - "Can the schema be rebuilt from suggestions + brute force?"
+  evidence:
+    positive: [suggestions_leak_field_names, schema_reconstructed]
+    negative: [generic_errors_only, no_suggestions]
+  followups: [probe_unknown_fields, bruteforce_field_names, map_mutations]
+  test: >
+    Send { unknownFieldXYZ } and read the error. If it replies
+    "Did you mean: [realField]?", the schema is enumerable despite disabled
+    introspection — walk the alphabet to reconstruct types, then hunt hidden
+    mutations (GQL-04). Grounded: 2025-2026 GraphQL methodology corpus.
+  impact_hint: Medium — unlocks hidden-mutation authz testing.

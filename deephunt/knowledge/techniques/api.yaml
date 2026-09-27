@@ -107,3 +107,24 @@
   test: >
     Replay every v1 authz test against newer API versions. Vendors fix instances, not classes — new versions repeat old bugs.
   impact_hint: High.
+# appended 2026-09-27 — knowledge ingestion round 1
+
+- id: API-04
+  name: GraphQL-over-WebSocket bypasses HTTP-layer limits
+  klass: api
+  requires: [graphql_endpoint, ws_endpoint]
+  signals: ["wss://", "graphql", "introspection", "complexity"]
+  questions:
+    - "Do the complexity/rate limits on /graphql also apply on the WS transport?"
+    - "Is introspection reachable via WS when blocked over HTTP?"
+  evidence:
+    positive: [introspection_via_ws_succeeds, complexity_bypassed_on_ws]
+    negative: [limits_shared_across_transports, ws_introspection_blocked]
+  followups: [test_ws_introspection, compare_transport_limits]
+  test: >
+    If the app exposes GraphQL over WebSocket (subscriptions), replay the
+    introspection query and a complex/deep query over the WS transport with an
+    owned account. Limits enforced only on the HTTP transport are a bypass.
+    Grounded: 2025-2026 cheatsheet corpus (WS endpoint, no auth key,
+    introspection reachable, complexity limits bypassed).
+  impact_hint: Medium-High — defense exists on one transport only.

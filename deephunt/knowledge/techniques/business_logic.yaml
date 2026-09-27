@@ -175,3 +175,42 @@
   test: >
     Set qty to -1, 0, 99999999, 0.5 on cart/order update. Observe totals, inventory, and any credit/refund flows.
   impact_hint: Medium-High — price manipulation.
+# appended 2026-09-27 — knowledge ingestion round 1
+
+- id: RACE-03
+  name: 2FA/OTP verification race (parallel attempts all stay valid)
+  klass: race
+  requires: [http_observation, owned_test_account]
+  signals: ["2fa", "otp", "verify", "mfa", "code"]
+  questions:
+    - "Does the first verification attempt invalidate the code/challenge?"
+    - "Do parallel verify requests all return success?"
+  evidence:
+    positive: [parallel_verifies_all_succeed, code_reusable_under_race]
+    negative: [first_verify_consumes_code, concurrent_attempts_rejected]
+  followups: [parallel_verify_test, check_code_single_use]
+  test: >
+    With an owned account at the 2FA step, fire the verify request 3-5x in
+    parallel with the same (or different) codes. If all stay valid / multiple
+    succeed, the check is not atomic — MFA bypass via race. Grounded: 2025-2026
+    chain tables (race on 2FA cancel/verify links -> MFA bypass).
+  impact_hint: High — MFA bypass without touching the victim.
+
+- id: BLO-05
+  name: Email change without re-authentication (account takeover primitive)
+  klass: business-logic
+  requires: [http_observation, owned_test_account]
+  signals: ["email", "change", "settings", "profile", "verify"]
+  questions:
+    - "Can the account email be changed without password re-entry or verification?"
+    - "Does the new email take effect before confirmation?"
+  evidence:
+    positive: [email_changed_no_reauth, takeover_via_reset_to_new_email]
+    negative: [reauth_required, verification_before_switch]
+  followups: [test_email_change_flow, chain_to_password_reset]
+  test: >
+    Change the owned account's email without re-entering the password; check
+    whether the switch is immediate and whether a reset to the new address
+    yields control. Grounded: HackerOne #1250037 vs Stripe ($3,000) — email/
+    personal-data change on the account; classic ATO primitive.
+  impact_hint: High — email change + reset = full takeover chain.

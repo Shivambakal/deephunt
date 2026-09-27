@@ -106,3 +106,26 @@
   test: >
     Trigger exports as low-priv owned user; check whether the job includes other users'/tenants' data or is enumerable by job ID.
   impact_hint: High.
+# appended 2026-09-27 — knowledge ingestion round 1
+
+- id: IDOR-03
+  name: Cross-tenant object creation via tenant/cluster ID parameter (write-side IDOR)
+  klass: authorization
+  requires: [authenticated_identity, object_identifier]
+  signals: ["clusterID", "cluster_id", "tenant", "workspace", "org_id", "/api/contents"]
+  questions:
+    - "Who owns the tenant/cluster identifier in this request?"
+    - "Is the identifier validated against the caller's membership?"
+    - "Can a low-priv user CREATE objects under a foreign tenant, not just read?"
+  evidence:
+    positive: [object_created_under_foreign_tenant, foreign_cluster_writable]
+    negative: [tenant_membership_checked, foreign_id_rejected]
+  followups: [compare_identities, test_write_side_idor, enumerate_tenant_ids]
+  test: >
+    With two owned accounts in different tenants/clusters, capture a create
+    request (folder, file, notebook) and swap the tenant/cluster identifier to
+    the other account's. Success = object lands in the victim's scope.
+    Write-side IDOR is rarer and higher-impact than read-side. Grounded:
+    HackerOne #3353057 vs SingleStore (Jul 2026) — clusterID swap in
+    POST /public/notebooks/api/contents/ created folders in other users' clusters.
+  impact_hint: High — cross-tenant write = data planting + privilege escalation path.

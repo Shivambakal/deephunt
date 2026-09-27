@@ -83,7 +83,7 @@ def test_target_model():
 # ---------- 2. technique dir loading ----------
 def test_technique_loading():
     cards = kb.load_techniques()
-    check("cards_count_89", len(cards) == 89, f"got {len(cards)}")
+    check("cards_count_117", len(cards) == 117, f"got {len(cards)}")
     ids = [c["id"] for c in cards]
     check("cards_unique_ids", len(set(ids)) == len(ids))
     required = ("id", "name", "klass", "requires", "signals", "questions",
@@ -100,13 +100,19 @@ def test_technique_loading():
     for must in ("IDOR-01", "AUTHZ-01", "JWT-01", "GQL-04", "OAUTH-02",
                  "SSRF-03", "CACHE-02", "WS-02", "AI-04", "AI-05"):
         check(f"card_preserved_{must}", kb.get_card(must) is not None)
-    # new cards present
-    for must in ("BLO-02", "WS-05", "MOB-01", "CLD-02", "GQL-03"):
+    # new cards present (round 1 enrichment + 2026-09-27 ingestion)
+    for must in ("BLO-02", "WS-05", "MOB-01", "CLD-02", "GQL-03",
+                 "AUTHN-03", "OAUTH-03", "OAUTH-04", "OAUTH-05", "OAUTH-06",
+                 "SAML-01", "IDOR-03", "GQL-05", "GQL-06", "API-04",
+                 "WS-06", "WS-07", "SMUG-02", "SMUG-03", "SMUG-04",
+                 "CACHE-03", "PROTO-02", "PROTO-03", "REDIR-02",
+                 "AI-06", "AI-07", "AI-08", "AI-09", "AI-10", "AI-11", "AI-12",
+                 "RACE-03", "BLO-05"):
         check(f"card_new_{must}", kb.get_card(must) is not None)
     # train.py consumer still works
     import train
     tcards = train.load_techniques()
-    check("train_loads_89", len(tcards) == 89, f"got {len(tcards)}")
+    check("train_loads_117", len(tcards) == 117, f"got {len(tcards)}")
     seeds = train.recommend(
         [{"title": "/api/orders/{id}", "detail": "user_id param order invoice", "evidence": ""}],
         {"tech_terms": [], "vuln_classes": []}, {"rejected": [], "seen": []}, limit=5)

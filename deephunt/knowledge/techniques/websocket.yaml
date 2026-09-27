@@ -86,3 +86,46 @@
   test: >
     From a cross-origin page context, attempt the WS handshake with victim cookies (lab only, owned accounts). Try Origin spoofing variants.
   impact_hint: High — CSWSH, equivalent to CSRF on real-time actions.
+# appended 2026-09-27 — knowledge ingestion round 1
+
+- id: WS-06
+  name: CSWSH confirmation standard (101 is not a finding)
+  klass: websocket
+  requires: [ws_endpoint, owned_test_account]
+  signals: ["Origin", "101", "websocket", "wss://", "hijack"]
+  questions:
+    - "Did attacker-origin JS actually RECEIVE the victim's data?"
+    - "Is there a per-connection token in the handshake URL/subprotocol/first frame?"
+    - "Was the received data verified as the OTHER account's (marker/PII)?"
+  evidence:
+    positive: [victim_data_received_cross_origin, marker_exfiltrated_oast]
+    negative: [handshake_accepted_no_data, per_connection_token_required, origin_rejected_at_message_layer]
+  followups: [two_account_marker_test, oast_exfil_proof, check_handshake_token]
+  test: >
+    Host a PoC page on an attacker origin while victim account B is logged in.
+    The bug is confirmed ONLY if attacker JS receives B's data (plant a unique
+    marker in B's account) and exfils it to a collaborator/OAST listener.
+    A bare 101 from Origin: evil.com is NOT a finding — many servers upgrade
+    then send nothing. A per-connection token in the handshake kills
+    cross-site exploitability; downgrade. Grounded: 2025-2026 CSWSH methodology
+    (murrtada/kenxploitz FP-killer guides).
+  impact_hint: High — but only when confirmed to the victim-data standard.
+
+- id: WS-07
+  name: WebSocket frame layer bypasses HTTP WAF and rate limits
+  klass: websocket
+  requires: [ws_endpoint, http_observation]
+  signals: ["wss://", "websocket", "waf", "rate", "frame"]
+  questions:
+    - "Do WAF rules and rate limits inspect WebSocket frames or only HTTP?"
+    - "Does the reconnection path re-validate authentication?"
+  evidence:
+    positive: [blocked_http_payload_accepted_in_frame, flood_unthrottled]
+    negative: [frame_layer_inspected, per_message_limits_enforced]
+  followups: [replay_blocked_payloads_in_frames, test_reconnect_auth]
+  test: >
+    Take a payload the WAF blocks over HTTP and deliver it inside a WS JSON
+    frame to the same backend logic; also test message flooding and whether
+    reconnect re-validates auth. Owned accounts, low volume. Grounded:
+    2025-2026 WS testing checklists (frames bypass HTTP-level controls).
+  impact_hint: Medium-High — the WAF everyone trusts doesn't see this traffic.

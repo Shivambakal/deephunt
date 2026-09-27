@@ -33,3 +33,20 @@
   for_hypothesis: "GraphQL field lacks authorization"
   procedure: "As low-priv user, query sensitive fields individually; compare against high-priv response."
   oracle: "Field returns data for low-priv = gap. Null/denied = control."
+
+- id: DS-09
+  for_hypothesis: "PKCE is sent but not enforced"
+  procedure: "Replay the authorize request with code_challenge removed, then with code_challenge_method=plain. Attempt token exchange without a verifier."
+  oracle: "Flow completes without challenge = decorative PKCE (OAUTH-03). Rejected = enforced."
+- id: DS-10
+  for_hypothesis: "rate limit counts requests, not operations"
+  procedure: "Send one GraphQL request with N aliased OTP/login mutations. Compare against N separate requests: does the limiter see 1 or N?"
+  oracle: "Single request bypasses the limit = batching amplification (AP-10). Low volume only."
+- id: DS-11
+  for_hypothesis: "WebSocket handshake acceptance equals hijackability"
+  procedure: "Two owned accounts. Plant a unique marker in B. From attacker-origin page with B's session, attempt handshake and channel subscribe; exfil any received data to collaborator."
+  oracle: "B's marker exfiltrated = confirmed CSWSH. Bare 101 with no data = NOT a finding (WS-06)."
+- id: DS-12
+  for_hypothesis: "prototype pollution reaches a dangerous sink"
+  procedure: "Step 1: confirm the oracle ({__proto__:{canary}} reflects). Step 2: hunt gadgets — grep JS/server code for sinks reading defaults (child_process opts, template options, innerHTML assignments). Step 3: pollute the exact key the gadget reads."
+  oracle: "Gadget fires = real impact (PROTO-02/03). Oracle-only = P3/P4 noise; report honestly. Clean up pollution after."

@@ -122,3 +122,123 @@
   test: >
     Check cookie Domain scope: a session cookie scoped to the apex is sent to all subdomains, including less-trusted ones. Test fixation and cross-subdomain replay.
   impact_hint: Medium-High.
+# appended 2026-09-27 — knowledge ingestion round 1 (grounded in 2025-2026 sources)
+
+- id: AUTHN-03
+  name: Password reset email array injection (reset link to attacker)
+  klass: authentication
+  requires: [http_observation, owned_test_account]
+  signals: ["forgot", "reset", "password", "user[email]", "application/x-www-form-urlencoded"]
+  questions:
+    - "Does the reset endpoint accept a different Content-Type than the form sends?"
+    - "Is the email parameter parsed as a scalar or as a list?"
+    - "Where does the reset token actually get delivered?"
+  evidence:
+    positive: [reset_link_received_by_attacker, token_delivered_to_foreign_address]
+    negative: [single_recipient_enforced, array_rejected_with_error]
+  followups: [test_content_type_conversion, verify_token_delivery, check_token_binding]
+  test: >
+    Submit the forgot-password form, intercept, and convert the body to JSON
+    (Burp Content-Type Converter). Replace "user[email]":"victim@x" with
+    "user": {"email": ["victim@x","attacker@x"]}. If the reset link arrives in
+    the ATTACKER-owned mailbox, it is account takeover with zero victim
+    interaction. Grounded: HackerOne #2293343 vs GitLab, $35,000, critical.
+  impact_hint: Critical — full ATO knowing only the victim's email.
+
+- id: OAUTH-03
+  name: PKCE downgrade — strip code_challenge or accept plain
+  klass: authentication
+  requires: [http_observation, owned_test_account]
+  signals: ["code_challenge", "code_verifier", "pkce", "authorize", "oauth"]
+  questions:
+    - "Does the client send PKCE because the server enforces it, or merely supports it?"
+    - "What happens when code_challenge is removed from the authorize request?"
+    - "Is code_challenge_method=plain accepted?"
+  evidence:
+    positive: [code_exchanged_without_challenge, plain_method_accepted]
+    negative: [missing_challenge_rejected, plain_method_rejected]
+  followups: [test_challenge_strip, test_plain_method, check_code_binding]
+  test: >
+    Run the authorize flow, then replay it with code_challenge and
+    code_challenge_method removed. If the flow completes and the code exchanges
+    for tokens, PKCE is decorative. Also try code_challenge_method=plain with
+    verifier equal to challenge. Grounded: CVE in @cloudflare/workers-oauth-provider
+    <0.0.5 (May 2025) — missing server-side check allowed PKCE strip.
+  impact_hint: High — enables authorization-code interception attacks.
+
+- id: OAUTH-04
+  name: Authorization code replay race (single-use violation)
+  klass: authentication
+  requires: [http_observation, owned_test_account]
+  signals: ["code", "token", "exchange", "authorize", "oauth"]
+  questions:
+    - "Is the authorization code invalidated after first use?"
+    - "Do parallel exchanges with different code_verifiers all succeed?"
+  evidence:
+    positive: [code_exchanged_twice, parallel_exchanges_succeed]
+    negative: [second_exchange_rejected, code_single_use_enforced]
+  followups: [race_code_exchange, check_verifier_binding]
+  test: >
+    Capture one authorization code, then fire 2-3 token-exchange requests in
+    parallel (Burp "send group in parallel" / Turbo Intruder), each with a
+    different code_verifier. If more than one returns tokens, codes are not
+    single-use (RFC 6749 S4.1.2 violation). Grounded: 2025 finding, $8,500 bounty.
+  impact_hint: High — code interception becomes token minting.
+
+- id: OAUTH-05
+  name: oauth2-proxy skip_auth_routes query-parameter bypass
+  klass: authentication
+  requires: [http_observation, endpoint_inventory]
+  signals: ["oauth2-proxy", "skip_auth_routes", "X-Auth-Request-User", "Server: nginx"]
+  questions:
+    - "Is there a reverse-proxy auth layer in front of the app?"
+    - "Does any query parameter alter the proxy's auth decision?"
+  evidence:
+    positive: [protected_route_reached_unauthenticated, auth_headers_spoofed]
+    negative: [proxy_enforces_on_all_routes, unknown_params_ignored]
+  followups: [fingerprint_proxy, test_skip_params, test_header_injection]
+  test: >
+    Fingerprint via Server/X-Auth-Request-* headers. Against oauth2-proxy,
+    test CVE-2025-54576: the skip_auth_routes query parameter bypass. Try
+    ?skip_auth_routes=... variants on a protected route and compare
+    authenticated vs unauthenticated responses. Never touch real user data.
+  impact_hint: High — authentication bypass at the edge.
+
+- id: OAUTH-06
+  name: Implicit-flow identity/token mismatch (client-supplied email trusted)
+  klass: authentication
+  requires: [http_observation, owned_test_account]
+  signals: ["implicit", "response_type=token", "id_token", "email", "#access_token"]
+  questions:
+    - "Does the server verify the email belongs to the presented token?"
+    - "Is the token validated server-side via the provider's /me endpoint?"
+  evidence:
+    positive: [session_created_for_foreign_email, attacker_token_accepted]
+    negative: [token_email_verified_serverside, mismatch_rejected]
+  followups: [swap_email_param, check_provider_verification]
+  test: >
+    Complete the implicit flow with YOUR token, but substitute the VICTIM's
+    email in the callback/profile payload. If a session is created for the
+    victim's account, the server trusts the client-supplied identity without
+    checking it against the token. Grounded: PortSwigger OAuth lab writeup.
+    Migrate targets should use code+PKCE; flag implicit flow as the smell.
+  impact_hint: Critical — ATO with only the victim's (often public) email.
+
+- id: SAML-01
+  name: SAML parser differential (ruby-saml class)
+  klass: authentication
+  requires: [http_observation, owned_test_account]
+  signals: ["saml", "SAMLResponse", "ruby-saml", "/saml/sso"]
+  questions:
+    - "Which SAML library parses the response, and is it patched?"
+    - "Do two parsers (validator vs consumer) disagree on the XML?"
+  evidence:
+    positive: [forged_assertion_accepted, signature_bypassed]
+    negative: [library_patched, strict_parsing_enforced]
+  followups: [fingerprint_saml_lib, test_signature_wrapping, check_cert_validation]
+  test: >
+    Identify the SAML SP and library version. Test CVE-2025-25291/25292-class
+    parser differentials in ruby-saml: signature-wrapping and XML parsing
+    disagreements that let a forged assertion validate. Owned IdP/SP only;
+    forging assertions against a real IdP is out of scope.
+  impact_hint: Critical — authentication bypass.

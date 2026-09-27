@@ -404,3 +404,146 @@
   test: >
     When a payload is blocked, try encoding layers (double URL, unicode, HTML entities) and HTTP method/content-type swaps. A bypass proves filter-only defense.
   impact_hint: Medium.
+# appended 2026-09-27 — knowledge ingestion round 1
+
+- id: SMUG-02
+  name: H2.CL / H2.TE request smuggling via HTTP/2 downgrade
+  klass: smuggling
+  requires: [http_observation, endpoint_inventory]
+  signals: ["h2", "http/2", "downgrade", "content-length", "transfer-encoding"]
+  questions:
+    - "Does the front-end downgrade HTTP/2 to HTTP/1.1 for the backend?"
+    - "Do H2.CL and H2.TE desyncs survive the downgrade?"
+  evidence:
+    positive: [desync_confirmed_on_h2_frontend, smuggled_prefix_executed]
+    negative: [h2_end_to_end, downgrade_sanitizes_lengths]
+  followups: [test_h2_cl, test_h2_te, check_downgrade_path]
+  test: >
+    Against an HTTP/2 front-end, send H2.CL (Content-Length honored by FE,
+    ignored by BE) and H2.TE variants with a smuggled prefix; use differential
+    timing (never poison other users). Grounded: PortSwigger "HTTP/2: The Sequel
+    is Always Worse" research — these desyncs hit real CDNs/gateways.
+  impact_hint: High — desync primitive enabling capture/poisoning chains.
+
+- id: SMUG-03
+  name: Request tunnelling via :path CRLF injection (no connection reuse)
+  klass: smuggling
+  requires: [http_observation, endpoint_inventory]
+  signals: [":path", "h2", "tunnel", "crlf", "downgrade"]
+  questions:
+    - "Can CRLF be injected via the :path pseudo-header or H2 header names?"
+    - "Does the front-end reuse backend connections, or is tunnelling the path?"
+  evidence:
+    positive: [tunnelled_request_executed, response_queue_poisoned]
+    negative: [headers_sanitized_on_downgrade, no_crlf_reflection]
+  followups: [test_path_crlf, test_header_name_crlf, try_head_tunnel]
+  test: >
+    Set :path to "/?x=1 HTTP/1.1\r\nFoo: bar" over H2 and observe whether the
+    injected headers survive downgrade. Where the FE opens a fresh backend
+    connection per request, use HEAD-based request tunnelling instead of
+    classic smuggling. Grounded: PortSwigger advanced request-smuggling labs
+    (H2 request splitting via CRLF, request tunnelling).
+  impact_hint: High — works where classic CL.TE/TE.CL does not.
+
+- id: SMUG-04
+  name: Smuggling-to-cache-poisoning chain (persistent mass impact)
+  klass: smuggling
+  requires: [http_observation, endpoint_inventory]
+  signals: ["cache", "smuggl", "poison", "cdn", "static"]
+  questions:
+    - "Is there a cache between the desync point and the victim?"
+    - "Can the smuggled response be pinned to a cacheable URL?"
+  evidence:
+    positive: [cache_serves_smuggled_response, victims_redirected]
+    negative: [no_cache_layer, cache_key_includes_attacker_input_safely]
+  followups: [map_cache_keys, glue_to_static_url, verify_cross_session]
+  test: >
+    Smuggle a malicious response (e.g. redirect with attacker Host) glued onto
+    a request for a STATIC cacheable resource (/static/include.js). The cache
+    stores the attacker's response against the clean URL — every later visitor
+    gets it with zero further attacker action. Grounded: PortSwigger research;
+    consistently the highest-bounty smuggling outcome; chain valued $15K-$40K.
+  impact_hint: Critical — persistent, mass-impact, self-propagating.
+
+- id: CACHE-03
+  name: Cache deception via smuggled authenticated request (API-key theft)
+  klass: cache
+  requires: [http_observation, owned_test_account]
+  signals: ["cache", "my-account", "api key", "deception", "tracking.js"]
+  questions:
+    - "Which authenticated pages lack anti-caching headers?"
+    - "Can a smuggled request make the victim's session render into a cached static URL?"
+  evidence:
+    positive: [victim_pii_served_from_cache, api_key_in_cached_response]
+    negative: [authenticated_pages_not_cached, cache_varies_on_session]
+  followups: [map_cacheable_statics, smuggle_account_request, verify_cross_account]
+  test: >
+    Smuggle GET /my-account (with the victim's session riding the desync'd
+    connection) so the backend renders the victim's page into a response the
+    cache stores under a static URL (e.g. /tracking.js). Retrieve the victim's
+    API key from the cache with an unauthenticated request. Two owned accounts
+    required. Grounded: PortSwigger web-cache-deception-via-smuggling lab.
+  impact_hint: Critical — unauthenticated theft of authenticated users' secrets.
+
+- id: PROTO-02
+  name: Server-side prototype pollution to RCE (gadget chain)
+  klass: injection
+  requires: [http_observation, owned_test_account]
+  signals: ["__proto__", "merge", "lodash", "Object.assign", "node"]
+  questions:
+    - "Does any endpoint deep-merge attacker JSON into an object?"
+    - "Which downstream gadget reads a pollutable default (child_process opts, template opts)?"
+    - "Is this an oracle-only hit, or does a gadget demonstrably fire?"
+  evidence:
+    positive: [gadget_triggered, rce_or_privilege_change_demonstrated]
+    negative: [no_gadget_found, merge_sanitizes_proto]
+  followups: [confirm_oracle, hunt_gadgets, test_child_process_sink]
+  test: >
+    Confirm the oracle first: POST {"__proto__":{"status":555}} and check a
+    later response reflects it. Then hunt gadgets: pollute opts.shell /
+    NODE_OPTIONS toward child_process, or outputFunctionName/sourceURL toward
+    EJS/lodash templates. Report the SEVERITY honestly: oracle-only = P3-P4
+    noise; oracle + isAdmin flip = P2; oracle + RCE = P1. Clean up after
+    yourself — pollution persists for the Node process lifetime. Grounded:
+    2025-2026 SSPP severity guides (Heyes methodology; guan4tou2 severity scale).
+  impact_hint: Critical when a gadget fires; noise when it is oracle-only.
+
+- id: PROTO-03
+  name: Client-side prototype pollution to DOM XSS (gadget read)
+  klass: injection
+  requires: [http_observation]
+  signals: ["__proto__", "innerHTML", "document.write", "eval", "gadget"]
+  questions:
+    - "Is attacker JSON merged client-side into config objects?"
+    - "Does any sink read a property the gadget never sets (opts.errorTemplate)?"
+  evidence:
+    positive: [xss_fires_from_polluted_property, gadget_read_confirmed]
+    negative: [no_sink_reads_polluted_keys, merge_safe]
+  followups: [grep_sinks_in_js, craft_gadget_payload, verify_in_owned_browser]
+  test: >
+    Pollute via ?__proto__[x]=test (qs-style) or JSON body; in DevTools confirm
+    ({}).x === "test". Then grep the JS for sinks reading possibly-undefined
+    properties (el.innerHTML = opts.errorTemplate) and pollute that exact key
+    with an XSS payload. Grounded: 2025-2026 client-side PP writeups
+    (PP alone = Medium, PP+XSS = High).
+  impact_hint: High — stored-pollution XSS without a stored-XSS endpoint.
+
+- id: REDIR-02
+  name: Open redirect on OAuth-whitelisted domain to code/token theft
+  klass: open-redirect
+  requires: [http_observation, owned_test_account]
+  signals: ["redirect_uri", "whitelist", "open redirect", "oauth", "callback"]
+  questions:
+    - "Is redirect_uri correctly restricted — and is that whitelisted domain itself clean?"
+    - "Does any open redirect live on the whitelisted domain?"
+  evidence:
+    positive: [code_delivered_to_attacker_via_redirect, whitelisted_domain_redirects_out]
+    negative: [whitelisted_domain_has_no_redirect, exact_match_enforced]
+  followups: [audit_whitelisted_domain, chain_redirect_to_oauth]
+  test: >
+    Even with a correct redirect_uri allowlist, audit the ALLOWLISTED domain
+    for open redirects. One redirect on the trusted domain turns the OAuth
+    flow into code/token theft for any user clicking the crafted login link.
+    Grounded: 2025-2026 chain tables — this is "often the highest-paying chain
+    in the OAuth skill", $5K-$15K range.
+  impact_hint: Critical — converts a Low (open redirect) into ATO.

@@ -56,3 +56,24 @@
   why_it_works: "Security is added to v2; v1 stays reachable."
   detection_clue: "/v1, /legacy, /old, .json suffixes, old mobile API versions."
   related_techniques: ["API-01", "API-02", "AUTHZ-02"]
+
+- id: AP-09
+  name: "Downgrade dance"
+  shape: "The secure path exists (v2, PKCE/S256, challenge-required). A legacy path (v1, plain PKCE, no-challenge) is still accepted by the server."
+  why_it_works: "Security was added to the new flow; the old flow was never removed or tightened."
+  detection_clue: "Any security parameter the client sends: strip it, weaken it, replay the flow."
+  related_techniques: ["OAUTH-03", "OAUTH-04", "API-03", "RACE-02"]
+
+- id: AP-10
+  name: "Batching amplification"
+  shape: "A per-request control (rate limit, cost, validation) is defeated by packing N operations into one request the server counts once."
+  why_it_works: "Controls were built for one-operation-per-request assumptions."
+  detection_clue: "Batch endpoints, GraphQL aliases, array parameters — count operations server-side vs client-side."
+  related_techniques: ["GQL-02", "RATE-01", "RATE-02", "API-04"]
+
+- id: AP-11
+  name: "Chain multiplier"
+  shape: "Two or three weak-alone findings (open redirect + OAuth, smuggling + cache, PP oracle + gadget) compose into a critical with 5-10x the bounty."
+  why_it_works: "Each primitive is reviewed alone and triaged down; nobody prices the composition."
+  detection_clue: "After any confirmed weak primitive, ask: what trusted surface does this touch? (OAuth allowlist, cache, session, tenant.)"
+  related_techniques: ["REDIR-02", "SMUG-04", "CACHE-03", "PROTO-02", "IDOR-03"]

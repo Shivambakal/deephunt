@@ -103,3 +103,134 @@
   root_cause: "Authorization checked at the query root, not per field."
   detection_clue: "Introspection + per-field probing as a second identity."
   why_scanners_missed_it: "Scanners replay observed queries; they don't invent unrequested fields."
+
+# appended 2026-09-27 — knowledge ingestion round 1 (grounded in real disclosed reports)
+
+- id: CASE-10
+  application_type: "DevOps platform password recovery"
+  architecture: "Rails app + forgot-password form + mailer"
+  initial_observation: "Forgot-password form posts user[email] as form-encoded."
+  attacker_assumption: "The server reads a single scalar email."
+  unexpected_behavior: "Converting the body to JSON and sending user.email as [victim, attacker] delivered the SAME reset link to both mailboxes."
+  chain_of_events: ["Attacker intercepts forgot-password POST", "Converts Content-Type to application/json", "Sends email as array [victim, attacker]", "Both inboxes receive the valid reset link", "Attacker resets victim password — zero victim interaction"]
+  root_cause: "Framework type coercion: JSON array parsed where scalar expected; mailer iterated all addresses."
+  impact: "Full account takeover knowing only the victim's email. $35,000 bounty."
+  detection_clue: "Any form endpoint: try a Content-Type the client never sends (form→JSON) and array-typed values."
+  why_scanners_missed_it: "Scanners replay the observed form; they don't convert Content-Type or mutate scalar params into arrays."
+  source: "HackerOne #2293343 (GitLab, disclosed)."
+
+- id: CASE-11
+  application_type: "Multi-tenant data platform notebooks"
+  architecture: "SaaS with per-user clusters, REST API"
+  initial_observation: "Notebook folder creation POST includes a clusterID parameter."
+  attacker_assumption: "clusterID is just a routing hint; the server checks ownership."
+  unexpected_behavior: "Swapping clusterID to another user's cluster created the folder there — no membership check."
+  chain_of_events: ["Attacker creates notebook API request with own clusterID", "Replaces clusterID with victim's (enumerated) cluster", "POST /public/notebooks/api/contents/ returns 201", "Folder exists in victim's cluster"]
+  root_cause: "Create endpoint trusted the client-supplied tenant identifier with no ownership validation."
+  impact: "Cross-tenant write: data planting, resource abuse, escalation path."
+  detection_clue: "Every create call carrying a tenant/cluster/org id: swap it with a second owned identity's id."
+  why_scanners_missed_it: "Single-identity scanners can't see a second tenant; write-side IDOR needs two accounts and write semantics."
+  source: "HackerOne #3353057 (SingleStore, Jul 2026)."
+
+- id: CASE-12
+  application_type: "MCP/OAuth provider library"
+  architecture: "workers-oauth-provider SDK (<0.0.5) + Cloudflare Workers"
+  initial_observation: "Client sends code_challenge in the authorize request."
+  attacker_assumption: "The server requires and validates the challenge."
+  unexpected_behavior: "Removing code_challenge from the authorize request changed nothing — the flow completed and the code exchanged for tokens."
+  chain_of_events: ["Authorize with PKCE", "Replay authorize without code_challenge", "Server accepts; issues code", "Exchange code without verifier", "Tokens issued"]
+  root_cause: "Missing server-side check that PKCE was actually used; client-side support ≠ server-side enforcement."
+  impact: "Authorization-code interception becomes viable again."
+  detection_clue: "PKCE present in traffic is evidence of nothing — always test the strip."
+  why_scanners_missed_it: "Scanners check for PKCE presence, not for PKCE enforcement."
+  source: "CVE in @cloudflare/workers-oauth-provider (May 2025)."
+
+- id: CASE-13
+  application_type: "OAuth authorization server"
+  architecture: "Authorization server + token endpoint"
+  initial_observation: "Authorization codes are single-use per RFC 6749 S4.1.2."
+  attacker_assumption: "First exchange invalidates the code."
+  unexpected_behavior: "Firing three token exchanges in parallel, each with a DIFFERENT code_verifier, all returned tokens."
+  chain_of_events: ["Capture one authorization code", "Parallel exchange x3 with different verifiers", "All three succeed", "Code is effectively multi-use"]
+  root_cause: "Code invalidation was not atomic with the first exchange."
+  impact: "Code interception = token minting. $8,500 bounty."
+  detection_clue: "Single-use claims are guilty until proven: always race the redemption."
+  why_scanners_missed_it: "Scanners send one request at a time; single-use violations only appear under concurrency."
+  source: "2025 OAuth finding (chain table, bobriva)."
+
+- id: CASE-14
+  application_type: "Code hosting platform internal repos"
+  architecture: "Web app + WebSocket real-time channel"
+  initial_observation: "WebSocket endpoint accepts cross-origin handshake (101 from evil Origin)."
+  attacker_assumption: "101 means the socket is hijackable."
+  unexpected_behavior: "The socket upgraded — but only after pairing the handshake with a session-validated channel did private repo events arrive; the confirmation required a victim account marker."
+  chain_of_events: ["PoC page on attacker origin", "Victim session rides cookies", "Handshake 101 accepted", "Channel subscription without per-connection token", "Victim's private repo events received cross-origin", "Marker exfiltrated to collaborator"]
+  root_cause: "Missing Origin check AND missing per-connection authorization on the channel."
+  impact: "Cross-site leak of private repository data. $2,000 bounty."
+  detection_clue: "101 is a door, not a finding — prove victim data crosses it with a planted marker."
+  why_scanners_missed_it: "No scanner runs a two-account cross-origin proof with a planted marker and exfil oracle."
+  source: "HackerOne #1537568 (GitLab CSWSH, $2,000)."
+
+- id: CASE-15
+  application_type: "Team chat platform real-time API"
+  architecture: "WebSocket gateway + auth layer"
+  initial_observation: "WebSocket connects after login with a token."
+  attacker_assumption: "The gateway re-validates the token on every sensitive action."
+  unexpected_behavior: "Crafted frames reached admin-only real-time methods with a low-priv token — the gateway checked auth at connect time only."
+  chain_of_events: ["Connect WS as low-priv user", "Send frame for privileged realtime method", "Gateway forwards without re-check", "Privileged action executes"]
+  root_cause: "Authorization at handshake time only; message-layer authorization missing."
+  impact: "Privilege escalation over the real-time channel. $4,500 bounty."
+  why_scanners_missed_it: "Scanners test HTTP; the WebSocket frame layer is invisible to them."
+  source: "HackerOne #1368429 (Slack WS auth bypass, $4,500)."
+
+- id: CASE-16
+  application_type: "Community platform admin settings"
+  architecture: "WebSocket channel for guild/server settings"
+  initial_observation: "Admin settings load over a WebSocket channel scoped by server ID."
+  attacker_assumption: "The channel checks the subscriber's role."
+  unexpected_behavior: "Subscribing with another server's ID returned that server's admin settings — no role check on the channel."
+  chain_of_events: ["Low-priv user opens WS channel for own server", "Swaps server ID to target", "Receives target's admin settings", "Modifies privileged fields"]
+  root_cause: "Channel subscription took the ID at face value; authorization lived in the HTTP UI only."
+  impact: "Cross-server admin access. $3,200 bounty."
+  detection_clue: "Every channel-scoped ID in a WS message is an IDOR candidate — test with two owned identities."
+  why_scanners_missed_it: "Scanners don't subscribe to foreign channels with a second identity."
+  source: "HackerOne #1719872 (Discord WS IDOR, $3,200)."
+
+- id: CASE-17
+  application_type: "OAuth client using implicit flow"
+  architecture: "SPA + OAuth provider, response_type=token"
+  initial_observation: "Login returns an access token plus the user's email in the callback."
+  attacker_assumption: "The email comes from the validated token."
+  unexpected_behavior: "Substituting the VICTIM's email while presenting the ATTACKER's own valid token created a session for the victim."
+  chain_of_events: ["Attacker completes OAuth for own account", "Intercepts callback; replaces email with victim's", "Server creates session bound to victim's email", "Attacker is logged in as victim"]
+  root_cause: "Server trusted the client-supplied email without verifying it against the token via the provider."
+  impact: "Account takeover with only the victim's (often public) email."
+  detection_clue: "Implicit flow + email in callback = swap test immediately."
+  why_scanners_missed_it: "Requires semantic understanding that identity must be bound to the token, not the request."
+  source: "PortSwigger Web Security Academy OAuth lab writeup."
+
+- id: CASE-18
+  application_type: "Crowdsourced testing platform user profiles"
+  architecture: "REST API for user editing"
+  initial_observation: "Edit-user endpoint takes an id parameter."
+  attacker_assumption: "id is ignored or bound to the session."
+  unexpected_behavior: "Passing another user's id returned THEIR profile including email — and accepted edits."
+  chain_of_events: ["Attacker opens profile edit", "Intercepts; changes id to victim's", "Response contains victim's email + fields", "Edits persist to victim's profile"]
+  root_cause: "Object identifier taken from the request with no ownership check."
+  impact: "PII disclosure + profile tampering on other users."
+  detection_clue: "The id param in an edit endpoint is the single highest-yield swap in web testing."
+  why_scanners_missed_it: "Scanners fuzz values; they don't swap in a second owned identity's object id."
+  source: "HackerOne #915114 (Automattic/Crowdsignal, Jan 2026)."
+
+- id: CASE-19
+  application_type: "OAuth deployment with correct redirect_uri allowlist"
+  architecture: "OAuth server + whitelisted client domain"
+  initial_observation: "redirect_uri is correctly restricted to the client's domain — no bypass."
+  attacker_assumption: "Correct allowlist = OAuth flow is safe."
+  unexpected_behavior: "The ALLOWLISTED domain itself hosted an open redirect; the crafted login link bounced the code to the attacker."
+  chain_of_events: ["Audit whitelisted domain for open redirects", "Find ?next= open redirect on trusted domain", "Craft authorize URL: redirect_uri=trusted-domain + next=evil", "Victim clicks; code lands on trusted domain; redirect fires", "Attacker captures code"]
+  root_cause: "Allowlist correctness was verified, but the allowlisted surface was not audited."
+  impact: "Full OAuth account takeover. Chain valued $5K-$15K."
+  detection_clue: "When redirect_uri resists bypass, pivot: audit the whitelisted domain itself."
+  why_scanners_missed_it: "Scanners test the parameter, not the trustworthiness of the allowed value."
+  source: "2025-2026 OAuth chain tables (bobriva)."
