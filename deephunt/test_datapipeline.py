@@ -83,7 +83,7 @@ def test_target_model():
 # ---------- 2. technique dir loading ----------
 def test_technique_loading():
     cards = kb.load_techniques()
-    check("cards_count_117", len(cards) == 117, f"got {len(cards)}")
+    check("cards_count_129", len(cards) == 129, f"got {len(cards)}")
     ids = [c["id"] for c in cards]
     check("cards_unique_ids", len(set(ids)) == len(ids))
     required = ("id", "name", "klass", "requires", "signals", "questions",
@@ -109,10 +109,15 @@ def test_technique_loading():
                  "AI-06", "AI-07", "AI-08", "AI-09", "AI-10", "AI-11", "AI-12",
                  "RACE-03", "BLO-05"):
         check(f"card_new_{must}", kb.get_card(must) is not None)
+    # survey-2026 cards (2026-09-27 open-source survey)
+    for must in ("AUTHB-01", "JWT-02", "HPP-01", "API-05", "API-06",
+                 "GQL-07", "SEMGREP-01", "EV-01", "SEQ-01", "SEQ-02",
+                 "SEQ-03", "PAYLOAD-01"):
+        check(f"card_survey_{must}", kb.get_card(must) is not None)
     # train.py consumer still works
     import train
     tcards = train.load_techniques()
-    check("train_loads_117", len(tcards) == 117, f"got {len(tcards)}")
+    check("train_loads_129", len(tcards) == 129, f"got {len(tcards)}")
     seeds = train.recommend(
         [{"title": "/api/orders/{id}", "detail": "user_id param order invoice", "evidence": ""}],
         {"tech_terms": [], "vuln_classes": []}, {"rejected": [], "seen": []}, limit=5)

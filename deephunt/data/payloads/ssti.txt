@@ -1,0 +1,16 @@
+# SSTI polyglots — hand-curated per-engine detection strings (DETECT only).
+# A hit = engine identified; exploitation needs per-engine follow-up.
+${7*7}
+{{7*7}}
+#{7*7}
+<%= 7*7 %>
+${{7*7}}
+*{7*7}
+{{7*'7'}}
+${7*'7'}
+{{config}}
+${config}
+<%= config %>
+#{config}
+{{self}}
+${self.__class__}

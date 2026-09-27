@@ -1,0 +1,248 @@
+# DEEPHUNT technique cards — from the 2026-09-27 open-source survey.
+# Each card encodes a concept studied from public research (HackTricks,
+# OWASP WSTG, RESTler, XBOW's public pattern, BBOT's event model, Semgrep,
+# PayloadsAllTheThings) re-expressed as DEEPHUNT-native techniques.
+# Source of truth for kb.load_techniques(). 12 cards.
+
+- id: AUTHB-01
+  name: Systematic 403/401 bypass battery
+  klass: authorization
+  requires: [authenticated_identity, forbidden_endpoint]
+  signals: ["403", "401", "forbidden", "unauthorized", "/admin"]
+  questions:
+    - "Is the 403 enforced at the edge (WAF/CDN) or by the app — do they agree?"
+    - "Does any header, method, or path variant change the decision?"
+    - "Is the bypass differential (content/status delta) or a true grant?"
+  evidence:
+    positive: [bypass_variant_grants_access, differential_content_on_variant]
+    negative: [all_variants_still_403, bypass_only_cosmetic]
+  evidence_contract: [baseline_403_recorded, bypass_response_differs, control_still_403]
+  followups: [run_authz_403_corpus, compare_as_second_identity]
+  test: >
+    Record the 403 baseline (status, body hash, length). Replay from
+    data/payloads/authz-403.txt: path variants, method swaps, override headers,
+    IP-spoof headers, Googlebot UA. A grant is only real if the second owned
+    identity still gets 403 on the plain path (control).
+  impact_hint: High — broken function-level authz.
+
+- id: JWT-02
+  name: JWT algorithm-confusion and key-spoof battery
+  klass: authentication
+  requires: [jwt_token, token_issuer_endpoint]
+  signals: ["jwt", "eyJ", "alg", "kid", "jku", "x5u"]
+  questions:
+    - "Which alg values does the verifier accept — including none?"
+    - "Is kid trusted as a key path or SQL value?"
+    - "Are jku/x5u honored from attacker-controlled URLs?"
+    - "Does dropping exp still verify?"
+  evidence:
+    positive: [alg_none_accepted, rs256_hs256_confusion, kid_injection, exp_not_enforced]
+    negative: [alg_whitelist_enforced, kid_sanitized, exp_required]
+  evidence_contract: [baseline_token_verified, forged_token_accepted, control_rejected]
+  followups: [run_jwt_corpus, offline_weak_secret_check]
+  test: >
+    Work the jwt corpus battery against a captured token from an owned account:
+    alg=none, empty signature, RS256->HS256 with the public key, kid path
+    traversal, jku/x5u to an owned URL, missing exp, role-claim edit. Weak-secret
+    cracking is OFFLINE only — never online brute-force.
+  impact_hint: Critical — account takeover.
+
+- id: HPP-01
+  name: HTTP parameter pollution differential
+  klass: injection
+  requires: [http_observation, parameter_endpoint]
+  signals: ["?", "&", "param", "filter", "sort"]
+  questions:
+    - "Does the backend see the first, last, or merged value of a duplicate param?"
+    - "Do query-string, body, and cookie params merge — in what precedence?"
+    - "Can a duplicate param smuggle a different semantic past a WAF?"
+  evidence:
+    positive: [duplicate_param_changes_behavior, precedence_mismatch_across_layers]
+    negative: [duplicates_rejected_or_ignored, consistent_precedence]
+  followups: [probe_all_param_sources, test_waf_bypass_via_dup]
+  test: >
+    Send single vs duplicated params (a=1&a=2, a[]=1&a[]=2, query+body split,
+    cookie+query split) from data/payloads/hpp.txt. Diff responses. If behavior
+    changes, determine which occurrence wins and whether security controls saw
+    the same value.
+  impact_hint: Medium — filter/WAF bypass enabler.
+
+- id: API-05
+  name: OpenAPI/Swagger spec discovery
+  klass: recon
+  requires: [base_url]
+  signals: ["swagger", "openapi", "api-docs", "/docs"]
+  questions:
+    - "Is a machine-readable spec exposed (swagger.json, v3/api-docs, /docs)?"
+    - "Does the spec list internal-only routes or stale versions?"
+    - "Which operations lack a security: requirement?"
+  evidence:
+    positive: [spec_found, internal_routes_listed, operations_without_security]
+    negative: [no_spec_paths, spec_requires_auth]
+  followups: [ingest_spec_into_target_model, plan_sequences_from_spec]
+  test: >
+    Probe well-known spec paths (deephunt.apiprobe.discover_specs). A found spec
+    is a full attack map: extract paths/methods/params with
+    extract_endpoints_from_spec and feed them to the API sequence planner.
+  impact_hint: Medium — reconnaissance multiplier.
+
+- id: API-06
+  name: RESTler-style stateful API sequencing
+  klass: api
+  requires: [openapi_or_observed_grammar, authenticated_identity]
+  signals: ["openapi", "swagger", "crud", "rest"]
+  questions:
+    - "Which requests produce IDs that later requests consume?"
+    - "Can a bounded multi-request sequence reach a state a single request cannot?"
+    - "Does deleting an object invalidate dependent operations?"
+  evidence:
+    positive: [producer_consumer_chain_works, sequence_reaches_new_state, use_after_delete_error]
+    negative: [no_dependencies_found, sequences_add_nothing]
+  followups: [build_object_pool, run_feedback_pruning]
+  test: >
+    Build a request grammar from the spec or observed traffic, infer
+    producer/consumer dependencies (deephunt.apiseq), plan bounded BFS sequences
+    excluding destructive methods by default, keep dynamic object pools, prune on
+    4xx/5xx feedback, and run the use-after-delete checker. All execution goes
+    through the enforced test loop.
+  impact_hint: High — stateful logic bugs are the least-fuzzed surface.
+
+- id: GQL-07
+  name: GraphQL introspection fallback ladder
+  klass: graphql
+  requires: [graphql_endpoint_candidate]
+  signals: ["/graphql", "/gql", "query {", "__schema"]
+  questions:
+    - "Does POST introspection work — and if blocked, does GET?"
+    - "Does a __type probe bypass a naive __schema block?"
+    - "Do error messages leak field suggestions (did-you-mean)?"
+  evidence:
+    positive: [introspection_via_fallback, schema_reconstructed_from_errors]
+    negative: [introspection_fully_disabled, no_error_leakage]
+  followups: [harvest_suggestions, test_field_authz]
+  test: >
+    Try POST introspection, then GET, then __type(name:"Query") — each bypasses
+    a different naive block (deephunt.apiprobe.probe_graphql). On failure,
+    harvest field-suggestion errors to reconstruct the schema. Introspection
+    itself is recon; findings still need per-field authz evidence contracts.
+  impact_hint: Medium — schema exposure feeds field-level authz tests.
+
+- id: SEMGREP-01
+  name: Semgrep JS ruleset for client-side recon
+  klass: recon
+  requires: [extracted_js_bundle]
+  signals: [".js", "bundle", "webpack", "chunk"]
+  questions:
+    - "Which rules fire on the target's real bundle — and which are noise?"
+    - "Do taint findings (IDOR fetch, token leak, DOM XSS) map to live endpoints?"
+    - "Are client-side role gates the only thing hiding admin routes?"
+  evidence:
+    positive: [rule_hit_maps_to_live_endpoint, client_secret_in_bundle]
+    negative: [all_hits_benign, bundle_obfuscated_beyond_rules]
+  followups: [triage_hits_into_hypotheses, confirm_with_evidence_contract]
+  test: >
+    Run intel/semgrep-rules/deephunt-bounty.yaml over extracted client JS when
+    the semgrep binary is installed (adapters stay optional until then). Triage
+    hits into hypotheses: IDOR-prone fetch, token leaks, GraphQL interpolation,
+    prototype pollution, DOM XSS, client role gates, missing postMessage origin
+    checks, Math.random tokens, hardcoded secrets, SSRF proxy hints.
+  impact_hint: Medium — turns static JS into a prioritized hypothesis list.
+
+- id: EV-01
+  name: Evidence contracts with canary calibration
+  klass: methodology
+  requires: [candidate_finding]
+  signals: ["finding", "evidence", "confirm", "validate"]
+  questions:
+    - "What is the minimum artifact set that makes this finding undeniable?"
+    - "Does the contract still validate a known-good canary and reject a known-bad one?"
+    - "Was the control (negative) case actually run?"
+  evidence:
+    positive: [contract_validates, canaries_green]
+    negative: [contract_too_lax, canary_red]
+  followups: [add_contract_to_card, gate_report_on_contract]
+  test: >
+    Every technique card may declare evidence_contract: a list of required
+    artifacts (deephunt.evidence). A finding is confirmable only when all
+    artifacts are present. Calibrate with Canary cases: a known-good evidence
+    set must validate, a known-bad set must fail. Unknown technique IDs are
+    rejected — no silent confirmations.
+  impact_hint: High — XBOW-pattern deterministic confirmation; kills false positives.
+
+- id: SEQ-01
+  name: Producer/consumer dependency inference
+  klass: api
+  requires: [request_grammar]
+  signals: ["id", "uuid", "slug", "token", "{id}"]
+  questions:
+    - "Which response fields (id, uuid, slug, token) feed which request parameters?"
+    - "Are dependencies name-matched, type-matched, or observed?"
+    - "Which requests are producers vs pure consumers?"
+  evidence:
+    positive: [dependency_graph_built, pool_values_reused]
+    negative: [no_dependencies_inferred, all_params_static]
+  followups: [plan_sequences, render_from_pool]
+  test: >
+    Infer producer/consumer links by parameter-name overlap and ID/UUID/slug
+    shape matching (deephunt.apiseq.infer_dependencies). Dynamic object pools
+    hold values produced during a sequence; consumers render from the pool.
+  impact_hint: Medium — enables stateful testing without hand-written scripts.
+
+- id: SEQ-02
+  name: Bounded multi-request sequence planning
+  klass: api
+  requires: [dependency_graph, authenticated_identity]
+  signals: ["sequence", "workflow", "crud"]
+  questions:
+    - "What is the shortest sequence that creates, uses, and deletes an object?"
+    - "Does BFS-fast or bounded random-walk find deeper states?"
+    - "Are destructive methods excluded unless explicitly authorized?"
+  evidence:
+    positive: [sequence_executes_cleanly, deeper_state_reached]
+    negative: [planner_stalls, destructive_only_paths]
+  followups: [run_bfs_fast, run_random_walk]
+  test: >
+    Plan bounded sequences with bfs_fast_sequences and random_walk_sequences
+    (deephunt.apiseq): max depth, max sequences, destructive methods excluded by
+    default. Render each request from the object pool. Execution stays behind
+    the enforced test loop.
+  impact_hint: Medium — systematic state coverage.
+
+- id: SEQ-03
+  name: Feedback pruning and use-after-delete checkers
+  klass: api
+  requires: [executing_sequence]
+  signals: ["4xx", "5xx", "delete", "stale"]
+  questions:
+    - "Does a 4xx/5xx response prune the rest of the sequence?"
+    - "Does using a deleted object ID reveal broken state handling?"
+    - "Does cross-identity replay of a sequence step leak data (BOLA)?"
+  evidence:
+    positive: [pruning_reduces_noise, use_after_delete_anomaly, bola_via_sequence]
+    negative: [clean_state_handling, no_cross_identity_leak]
+  followups: [log_pruned_branches, file_finding_with_contract]
+  test: >
+    Prune sequences on error feedback; run the use-after-delete checker and the
+    cross-identity (BOLA) replay checker from deephunt.apiseq. Checker hits
+    become hypotheses that still need evidence contracts (EV-01) before
+    confirmation.
+  impact_hint: High — checkers convert sequences into findings.
+
+- id: PAYLOAD-01
+  name: Curated payload corpus with provenance
+  klass: methodology
+  requires: [hypothesis_needing_probes]
+  signals: ["payload", "fuzz", "wordlist", "corpus"]
+  questions:
+    - "Is this payload vendored (with source) or hand-curated?"
+    - "Is it a detect, bypass, or exploit payload — and is exploit authorized?"
+    - "Does the hypothesis need 10 probes or 10,000?"
+  evidence:
+    positive: [payload_triggered_differential, corpus_class_matched]
+    negative: [no_differential_across_corpus]
+  followups: [narrow_to_detect_payloads, escalate_with_contract]
+  test: >
+    Use deephunt.payloads: 11 classes, 4,409 entries (6 vendored from
+    PayloadsAllTheThings/MIT, 5 hand-curated). Prefer small high-signal detect
+    sets first; never blind-fire. Every send still passes the enforced test loop.
+  impact_hint: Medium — stops re-deriving payloads per target.

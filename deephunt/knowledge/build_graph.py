@@ -59,6 +59,8 @@ CLASS_CWE = {
     "cloud": ["CWE-200"],
     "supply-chain": ["CWE-829"],
     "fuzzing": ["CWE-119", "CWE-787"],
+    "recon": ["CWE-200"],
+    "methodology": ["CWE-1059"],
 }
 
 CWE_NAMES = {
@@ -79,6 +81,7 @@ CWE_NAMES = {
     "CWE-444": "HTTP Request Smuggling", "CWE-1385": "Missing Origin Validation in WebSockets",
     "CWE-362": "Race Condition", "CWE-312": "Cleartext Storage of Sensitive Info",
     "CWE-200": "Exposure of Sensitive Information", "CWE-829": "Inclusion of Functionality from Untrusted Source",
+    "CWE-1059": "Incomplete Comparison",
     "CWE-119": "Buffer Errors", "CWE-787": "Out-of-bounds Write",
 }
 

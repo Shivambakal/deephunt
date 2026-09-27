@@ -616,6 +616,110 @@
    "klass": "mobile",
    "impact": "Medium \u2014 local device attacker."
   },
+  "AUTHB-01": {
+   "type": "technique",
+   "name": "Systematic 403/401 bypass battery",
+   "klass": "authorization",
+   "impact": "High \u2014 broken function-level authz."
+  },
+  "JWT-02": {
+   "type": "technique",
+   "name": "JWT algorithm-confusion and key-spoof battery",
+   "klass": "authentication",
+   "impact": "Critical \u2014 account takeover."
+  },
+  "HPP-01": {
+   "type": "technique",
+   "name": "HTTP parameter pollution differential",
+   "klass": "injection",
+   "impact": "Medium \u2014 filter/WAF bypass enabler."
+  },
+  "class:injection": {
+   "type": "class",
+   "name": "injection"
+  },
+  "CWE-78": {
+   "type": "weakness",
+   "name": "OS Command Injection"
+  },
+  "CWE-79": {
+   "type": "weakness",
+   "name": "Cross-site Scripting"
+  },
+  "CWE-89": {
+   "type": "weakness",
+   "name": "SQL Injection"
+  },
+  "CWE-94": {
+   "type": "weakness",
+   "name": "Code Injection"
+  },
+  "API-05": {
+   "type": "technique",
+   "name": "OpenAPI/Swagger spec discovery",
+   "klass": "recon",
+   "impact": "Medium \u2014 reconnaissance multiplier."
+  },
+  "class:recon": {
+   "type": "class",
+   "name": "recon"
+  },
+  "API-06": {
+   "type": "technique",
+   "name": "RESTler-style stateful API sequencing",
+   "klass": "api",
+   "impact": "High \u2014 stateful logic bugs are the least-fuzzed surface."
+  },
+  "GQL-07": {
+   "type": "technique",
+   "name": "GraphQL introspection fallback ladder",
+   "klass": "graphql",
+   "impact": "Medium \u2014 schema exposure feeds field-level authz tests."
+  },
+  "SEMGREP-01": {
+   "type": "technique",
+   "name": "Semgrep JS ruleset for client-side recon",
+   "klass": "recon",
+   "impact": "Medium \u2014 turns static JS into a prioritized hypothesis list."
+  },
+  "EV-01": {
+   "type": "technique",
+   "name": "Evidence contracts with canary calibration",
+   "klass": "methodology",
+   "impact": "High \u2014 XBOW-pattern deterministic confirmation; kills false positives."
+  },
+  "class:methodology": {
+   "type": "class",
+   "name": "methodology"
+  },
+  "CWE-1059": {
+   "type": "weakness",
+   "name": "Incomplete Comparison"
+  },
+  "SEQ-01": {
+   "type": "technique",
+   "name": "Producer/consumer dependency inference",
+   "klass": "api",
+   "impact": "Medium \u2014 enables stateful testing without hand-written scripts."
+  },
+  "SEQ-02": {
+   "type": "technique",
+   "name": "Bounded multi-request sequence planning",
+   "klass": "api",
+   "impact": "Medium \u2014 systematic state coverage."
+  },
+  "SEQ-03": {
+   "type": "technique",
+   "name": "Feedback pruning and use-after-delete checkers",
+   "klass": "api",
+   "impact": "High \u2014 checkers convert sequences into findings."
+  },
+  "PAYLOAD-01": {
+   "type": "technique",
+   "name": "Curated payload corpus with provenance",
+   "klass": "methodology",
+   "impact": "Medium \u2014 stops re-deriving payloads per target."
+  },
   "JWT-01": {
    "type": "technique",
    "name": "JWT alg confusion / none / weak secret",
@@ -660,10 +764,6 @@
    "type": "class",
    "name": "xss"
   },
-  "CWE-79": {
-   "type": "weakness",
-   "name": "Cross-site Scripting"
-  },
   "XSS-02": {
    "type": "technique",
    "name": "Reflected/DOM XSS via query params and hash fragments",
@@ -675,22 +775,6 @@
    "name": "SQL injection in sort/filter/search parameters",
    "klass": "injection",
    "impact": "Critical."
-  },
-  "class:injection": {
-   "type": "class",
-   "name": "injection"
-  },
-  "CWE-78": {
-   "type": "weakness",
-   "name": "OS Command Injection"
-  },
-  "CWE-89": {
-   "type": "weakness",
-   "name": "SQL Injection"
-  },
-  "CWE-94": {
-   "type": "weakness",
-   "name": "Code Injection"
   },
   "SSTI-01": {
    "type": "technique",
@@ -2831,6 +2915,306 @@
    "MOB-05"
   ],
   [
+   "AUTHB-01",
+   "in_class",
+   "class:authorization"
+  ],
+  [
+   "AUTHB-01",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "AUTHB-01"
+  ],
+  [
+   "AUTHB-01",
+   "exploits_weakness",
+   "CWE-285"
+  ],
+  [
+   "CWE-285",
+   "enables",
+   "AUTHB-01"
+  ],
+  [
+   "AUTHB-01",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "AUTHB-01"
+  ],
+  [
+   "JWT-02",
+   "in_class",
+   "class:authentication"
+  ],
+  [
+   "JWT-02",
+   "exploits_weakness",
+   "CWE-287"
+  ],
+  [
+   "CWE-287",
+   "enables",
+   "JWT-02"
+  ],
+  [
+   "JWT-02",
+   "exploits_weakness",
+   "CWE-307"
+  ],
+  [
+   "CWE-307",
+   "enables",
+   "JWT-02"
+  ],
+  [
+   "JWT-02",
+   "exploits_weakness",
+   "CWE-613"
+  ],
+  [
+   "CWE-613",
+   "enables",
+   "JWT-02"
+  ],
+  [
+   "HPP-01",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "HPP-01",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "HPP-01"
+  ],
+  [
+   "HPP-01",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "HPP-01"
+  ],
+  [
+   "HPP-01",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "HPP-01"
+  ],
+  [
+   "HPP-01",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "HPP-01"
+  ],
+  [
+   "API-05",
+   "in_class",
+   "class:recon"
+  ],
+  [
+   "API-05",
+   "exploits_weakness",
+   "CWE-200"
+  ],
+  [
+   "CWE-200",
+   "enables",
+   "API-05"
+  ],
+  [
+   "API-06",
+   "in_class",
+   "class:api"
+  ],
+  [
+   "API-06",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "API-06"
+  ],
+  [
+   "API-06",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "API-06"
+  ],
+  [
+   "GQL-07",
+   "in_class",
+   "class:graphql"
+  ],
+  [
+   "GQL-07",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "GQL-07"
+  ],
+  [
+   "GQL-07",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "GQL-07"
+  ],
+  [
+   "SEMGREP-01",
+   "in_class",
+   "class:recon"
+  ],
+  [
+   "SEMGREP-01",
+   "exploits_weakness",
+   "CWE-200"
+  ],
+  [
+   "CWE-200",
+   "enables",
+   "SEMGREP-01"
+  ],
+  [
+   "EV-01",
+   "in_class",
+   "class:methodology"
+  ],
+  [
+   "EV-01",
+   "exploits_weakness",
+   "CWE-1059"
+  ],
+  [
+   "CWE-1059",
+   "enables",
+   "EV-01"
+  ],
+  [
+   "SEQ-01",
+   "in_class",
+   "class:api"
+  ],
+  [
+   "SEQ-01",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "SEQ-01"
+  ],
+  [
+   "SEQ-01",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "SEQ-01"
+  ],
+  [
+   "SEQ-02",
+   "in_class",
+   "class:api"
+  ],
+  [
+   "SEQ-02",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "SEQ-02"
+  ],
+  [
+   "SEQ-02",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "SEQ-02"
+  ],
+  [
+   "SEQ-03",
+   "in_class",
+   "class:api"
+  ],
+  [
+   "SEQ-03",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "SEQ-03"
+  ],
+  [
+   "SEQ-03",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "SEQ-03"
+  ],
+  [
+   "PAYLOAD-01",
+   "in_class",
+   "class:methodology"
+  ],
+  [
+   "PAYLOAD-01",
+   "exploits_weakness",
+   "CWE-1059"
+  ],
+  [
+   "CWE-1059",
+   "enables",
+   "PAYLOAD-01"
+  ],
+  [
    "JWT-01",
    "in_class",
    "class:crypto"
@@ -3677,8 +4061,8 @@
   ]
  ],
  "stats": {
-  "techniques": 117,
-  "weaknesses": 32,
-  "classes": 27
+  "techniques": 129,
+  "weaknesses": 33,
+  "classes": 29
  }
 }

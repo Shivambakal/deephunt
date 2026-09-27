@@ -1,3 +1,6 @@
+# MERGED — generated from knowledge/techniques/*.yaml
+# Do not edit by hand; edit the domain files and re-run.
+
 - id: AI-01
   name: Indirect prompt injection across a share/collaboration boundary
   klass: ai-llm
@@ -26,9 +29,9 @@
   followups:
   - map_content_flows
   - test_tool_boundaries
-  test: 'Attacker plants instructions in shared content; victim queries the AI in
-    their own context (owned accounts, canary in victim''s private data). Success
-    = canary disclosure or unauthorized action. Control = benign content.
+  test: 'Attacker plants instructions in shared content; victim queries the AI in their own context (owned
+    accounts, canary in victim''s private data). Success = canary disclosure or unauthorized action. Control
+    = benign content.
 
     '
   impact_hint: High — Tier-1 in AI bounty tiers.
@@ -60,8 +63,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'Ask the assistant to reveal its instructions (owned session). Many programs
-    explicitly exclude this — check the test plan FIRST; often out of scope.
+  test: 'Ask the assistant to reveal its instructions (owned session). Many programs explicitly exclude
+    this — check the test plan FIRST; often out of scope.
 
     '
   impact_hint: Low (usually excluded).
@@ -94,9 +97,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'Inject instructions that trigger the assistant''s tools (email send, file
-    share, calendar) in the victim''s session. Prove the unauthorized action with
-    owned accounts only.
+  test: 'Inject instructions that trigger the assistant''s tools (email send, file share, calendar) in
+    the victim''s session. Prove the unauthorized action with owned accounts only.
 
     '
   impact_hint: Critical.
@@ -131,9 +133,9 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'Plant a benign instruction in content the victim''s AI will ingest (shared
-    doc, page, file). Observe whether the AI''s output to the victim reflects the
-    planted instruction. Use canary tokens; never exfiltrate real data.
+  test: 'Plant a benign instruction in content the victim''s AI will ingest (shared doc, page, file).
+    Observe whether the AI''s output to the victim reflects the planted instruction. Use canary tokens;
+    never exfiltrate real data.
 
     '
   impact_hint: High — AI trust-boundary breaks are the current frontier.
@@ -166,9 +168,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'Get the AI to emit markdown/HTML/URLs. Check whether the frontend renders
-    it unsanitized (stored XSS via model output) or follows tool calls the model was
-    tricked into making.
+  test: 'Get the AI to emit markdown/HTML/URLs. Check whether the frontend renders it unsanitized (stored
+    XSS via model output) or follows tool calls the model was tricked into making.
 
     '
   impact_hint: Medium-High.
@@ -199,10 +200,9 @@
   - seed_canary_documents
   - cross_account_query
   - inspect_chunk_metadata
-  test: 'With two owned accounts, plant a canary string in A''s private documents,
-    then ask B''s assistant questions that should retrieve it. If B''s answers contain
-    A''s canary, retrieval ignores ACLs. Grounded: OWASP LLM08 (2025, new) — Vector
-    and Embedding Weaknesses; LLMVault "Retrieval Without Borders".
+  test: 'With two owned accounts, plant a canary string in A''s private documents, then ask B''s assistant
+    questions that should retrieve it. If B''s answers contain A''s canary, retrieval ignores ACLs. Grounded:
+    OWASP LLM08 (2025, new) — Vector and Embedding Weaknesses; LLMVault "Retrieval Without Borders".
 
     '
   impact_hint: High — cross-tenant data disclosure via the assistant.
@@ -233,10 +233,9 @@
   - enumerate_tools
   - test_privileged_tools
   - check_tool_scoping
-  test: 'Enumerate the agent''s tools (function schemas, MCP manifests), then ask
-    it to invoke a tool beyond your owned account''s privilege (admin action, other-user
-    data). If the tool executes, agency exceeds authorization. Grounded: OWASP LLM06
-    (2025, expanded for agentic AI) — "Keys to the Kingdom".
+  test: 'Enumerate the agent''s tools (function schemas, MCP manifests), then ask it to invoke a tool
+    beyond your owned account''s privilege (admin action, other-user data). If the tool executes, agency
+    exceeds authorization. Grounded: OWASP LLM06 (2025, expanded for agentic AI) — "Keys to the Kingdom".
 
     '
   impact_hint: Critical — the model becomes a confused deputy with privileges.
@@ -264,10 +263,9 @@
   followups:
   - test_zero_width_chars
   - inspect_tool_output_sanitization
-  test: 'Embed zero-width/invisible unicode instructions in content the model will
-    read (tool outputs, retrieved docs) and check whether the model obeys them. Grounded:
-    OWASP LLM01/AGENT04 (2026 Agentic Top 10 — Context Manipulation); vamp-llm-probe
-    ASCII-smuggling test class.
+  test: 'Embed zero-width/invisible unicode instructions in content the model will read (tool outputs,
+    retrieved docs) and check whether the model obeys them. Grounded: OWASP LLM01/AGENT04 (2026 Agentic
+    Top 10 — Context Manipulation); vamp-llm-probe ASCII-smuggling test class.
 
     '
   impact_hint: Medium-High — invisible indirect injection.
@@ -298,9 +296,9 @@
   - test_token_caps
   - test_tool_loops
   - estimate_cost
-  test: 'Probe for missing max_tokens, recursive tool calls, and per-account spend
-    caps using tiny controlled requests — estimate, never realize, cost abuse. Grounded:
-    OWASP LLM10 (2025, expanded) — "Denial of Wallet".
+  test: 'Probe for missing max_tokens, recursive tool calls, and per-account spend caps using tiny controlled
+    requests — estimate, never realize, cost abuse. Grounded: OWASP LLM10 (2025, expanded) — "Denial of
+    Wallet".
 
     '
   impact_hint: Medium — financial DoS; programs vary on acceptance.
@@ -329,10 +327,9 @@
   followups:
   - poison_memory_then_recall
   - test_cross_session
-  test: 'Get the agent to store attacker instructions in its persistent memory/notes
-    ("remember that..."), then start a fresh session and trigger recall. If the stored
-    instruction executes, it is second-order injection. Grounded: LLMVault advanced
-    tier "The Note Keeper" (stored injection).
+  test: 'Get the agent to store attacker instructions in its persistent memory/notes ("remember that..."),
+    then start a fresh session and trigger recall. If the stored instruction executes, it is second-order
+    injection. Grounded: LLMVault advanced tier "The Note Keeper" (stored injection).
 
     '
   impact_hint: High — delayed, persistent, harder to attribute.
@@ -363,10 +360,10 @@
   - test_fetch_tool
   - try_metadata_address
   - check_egress_controls
-  test: 'Ask the agent to fetch a collaborator URL you control (proves URL control),
-    then a link-local metadata address. If internal content returns inside tool output,
-    the agent is an SSRF proxy. Owned accounts only; use your own collaborator. Grounded:
-    LLMVault "Confused Deputy" (agent tool-chaining SSRF); OWASP LLM06.
+  test: 'Ask the agent to fetch a collaborator URL you control (proves URL control), then a link-local
+    metadata address. If internal content returns inside tool output, the agent is an SSRF proxy. Owned
+    accounts only; use your own collaborator. Grounded: LLMVault "Confused Deputy" (agent tool-chaining
+    SSRF); OWASP LLM06.
 
     '
   impact_hint: Critical — cloud credential theft via the assistant.
@@ -394,10 +391,9 @@
   followups:
   - check_logprob_exposure
   - test_extraction_oracle
-  test: 'Check whether the completions API exposes logprobs/token probabilities; those
-    enable query-based model extraction. Passive check first — active extraction is
-    expensive and often out of scope; confirm policy before running volume. Grounded:
-    LLMVault "The Oracle" (query-based extraction).
+  test: 'Check whether the completions API exposes logprobs/token probabilities; those enable query-based
+    model extraction. Passive check first — active extraction is expensive and often out of scope; confirm
+    policy before running volume. Grounded: LLMVault "The Oracle" (query-based extraction).
 
     '
   impact_hint: Medium — IP theft; scope-sensitive.
@@ -429,9 +425,8 @@
   - fuzz_parameters
   - compare_api_versions
   - probe_rate_limits
-  test: 'Diff the API response against what the UI shows (owned account) — look for
-    emails, hashes, tokens, internal flags. Try mass-assignment: add {"role":"admin","is_verified":true}
-    to update calls.
+  test: 'Diff the API response against what the UI shows (owned account) — look for emails, hashes, tokens,
+    internal flags. Try mass-assignment: add {"role":"admin","is_verified":true} to update calls.
 
     '
   impact_hint: Medium-High.
@@ -465,8 +460,8 @@
   - fuzz_parameters
   - compare_api_versions
   - probe_rate_limits
-  test: 'Test username/email existence oracles without auth, at human pace. Prove
-    with two owned accounts (exists vs not).
+  test: 'Test username/email existence oracles without auth, at human pace. Prove with two owned accounts
+    (exists vs not).
 
     '
   impact_hint: Medium.
@@ -496,8 +491,8 @@
   followups:
   - probe_rate_limits
   - spoof_client_ip
-  test: 'Human-paced checks for absent throttles on SMS/email/send endpoints (owned
-    account, tiny volumes). Report cost-abuse potential, don''t realize it.
+  test: 'Human-paced checks for absent throttles on SMS/email/send endpoints (owned account, tiny volumes).
+    Report cost-abuse potential, don''t realize it.
 
     '
   impact_hint: Medium.
@@ -532,9 +527,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'For parser endpoints in authorized scope: generate structured malformed inputs
-    (truncated, oversized, type-confused) at low rate. Watch for 500s, hangs, or differential
-    behavior indicating unhandled paths.
+  test: 'For parser endpoints in authorized scope: generate structured malformed inputs (truncated, oversized,
+    type-confused) at low rate. Watch for 500s, hangs, or differential behavior indicating unhandled paths.
 
     '
   impact_hint: Medium — crashes hint at memory-safety issues.
@@ -568,8 +562,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'After hitting 429, rotate IP header (X-Forwarded-For), session, and endpoint
-    casing. If the counter resets, the limit is cosmetic.
+  test: 'After hitting 429, rotate IP header (X-Forwarded-For), session, and endpoint casing. If the counter
+    resets, the limit is cosmetic.
 
     '
   impact_hint: Medium — enables credential stuffing/brute force.
@@ -601,8 +595,8 @@
   - fuzz_parameters
   - compare_api_versions
   - probe_rate_limits
-  test: 'Replay every v1 authz test against newer API versions. Vendors fix instances,
-    not classes — new versions repeat old bugs.
+  test: 'Replay every v1 authz test against newer API versions. Vendors fix instances, not classes — new
+    versions repeat old bugs.
 
     '
   impact_hint: High.
@@ -630,10 +624,10 @@
   followups:
   - test_ws_introspection
   - compare_transport_limits
-  test: 'If the app exposes GraphQL over WebSocket (subscriptions), replay the introspection
-    query and a complex/deep query over the WS transport with an owned account. Limits
-    enforced only on the HTTP transport are a bypass. Grounded: 2025-2026 cheatsheet
-    corpus (WS endpoint, no auth key, introspection reachable, complexity limits bypassed).
+  test: 'If the app exposes GraphQL over WebSocket (subscriptions), replay the introspection query and
+    a complex/deep query over the WS transport with an owned account. Limits enforced only on the HTTP
+    transport are a bypass. Grounded: 2025-2026 cheatsheet corpus (WS endpoint, no auth key, introspection
+    reachable, complexity limits bypassed).
 
     '
   impact_hint: Medium-High — defense exists on one transport only.
@@ -664,9 +658,9 @@
   followups:
   - probe_rate_limit
   - inspect_error_oracle
-  test: 'Try: no rate limit (20 rapid codes), code reuse, leading-zero truncation,
-    response-tampering ({"success":true}), and null/empty code. Never brute-force
-    real accounts — owned test accounts only, low volume.
+  test: 'Try: no rate limit (20 rapid codes), code reuse, leading-zero truncation, response-tampering
+    ({"success":true}), and null/empty code. Never brute-force real accounts — owned test accounts only,
+    low volume.
 
     '
   impact_hint: High — account takeover.
@@ -697,9 +691,9 @@
   - replay_request
   - desync_state
   - inspect_error_oracle
-  test: 'Request reset with X-Forwarded-Host: attacker.com — check if the reset link
-    in the (owned) mailbox points at the attacker host. Also test token predictability
-    and whether the token is bound to the requester.
+  test: 'Request reset with X-Forwarded-Host: attacker.com — check if the reset link in the (owned) mailbox
+    points at the attacker host. Also test token predictability and whether the token is bound to the
+    requester.
 
     '
   impact_hint: High — account takeover.
@@ -729,8 +723,8 @@
   followups:
   - test_redirect_uri_variants
   - steal_code_via_redirector
-  test: 'Try open-redirect-ish redirect_uris (subdomain, path traversal, @-tricks),
-    missing state, code leakage via referer, and PKCE downgrade. Owned apps only.
+  test: 'Try open-redirect-ish redirect_uris (subdomain, path traversal, @-tricks), missing state, code
+    leakage via referer, and PKCE downgrade. Owned apps only.
 
     '
   impact_hint: High — token theft.
@@ -760,9 +754,8 @@
   followups:
   - fixate_session
   - test_logout_invalidation
-  test: 'Fixation: set pre-login session cookie, complete login as owned victim account,
-    check if the cookie stays valid. Also test logout invalidation and password-change
-    session handling.
+  test: 'Fixation: set pre-login session cookie, complete login as owned victim account, check if the
+    cookie stays valid. Also test logout invalidation and password-change session handling.
 
     '
   impact_hint: Medium-High.
@@ -794,8 +787,8 @@
   - replay_request
   - desync_state
   - inspect_error_oracle
-  test: 'Enroll 2FA on owned account; test recovery-code entropy/reuse, disabling
-    2FA without re-auth, and backup-code brute-force protections (low volume).
+  test: 'Enroll 2FA on owned account; test recovery-code entropy/reuse, disabling 2FA without re-auth,
+    and backup-code brute-force protections (low volume).
 
     '
   impact_hint: High.
@@ -828,8 +821,8 @@
   - replay_request
   - desync_state
   - inspect_error_oracle
-  test: 'Mutate redirect_uri (subdomain, path traversal, query smuggling), drop/replay
-    state, mix code across clients. Capture with an owned receiver only.
+  test: 'Mutate redirect_uri (subdomain, path traversal, query smuggling), drop/replay state, mix code
+    across clients. Capture with an owned receiver only.
 
     '
   impact_hint: High — account takeover adjacent.
@@ -862,9 +855,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'Check cookie Domain scope: a session cookie scoped to the apex is sent to
-    all subdomains, including less-trusted ones. Test fixation and cross-subdomain
-    replay.
+  test: 'Check cookie Domain scope: a session cookie scoped to the apex is sent to all subdomains, including
+    less-trusted ones. Test fixation and cross-subdomain replay.
 
     '
   impact_hint: Medium-High.
@@ -895,11 +887,10 @@
   - test_content_type_conversion
   - verify_token_delivery
   - check_token_binding
-  test: 'Submit the forgot-password form, intercept, and convert the body to JSON
-    (Burp Content-Type Converter). Replace "user[email]":"victim@x" with "user": {"email":
-    ["victim@x","attacker@x"]}. If the reset link arrives in the ATTACKER-owned mailbox,
-    it is account takeover with zero victim interaction. Grounded: HackerOne #2293343
-    vs GitLab, $35,000, critical.
+  test: 'Submit the forgot-password form, intercept, and convert the body to JSON (Burp Content-Type Converter).
+    Replace "user[email]":"victim@x" with "user": {"email": ["victim@x","attacker@x"]}. If the reset link
+    arrives in the ATTACKER-owned mailbox, it is account takeover with zero victim interaction. Grounded:
+    HackerOne #2293343 vs GitLab, $35,000, critical.
 
     '
   impact_hint: Critical — full ATO knowing only the victim's email.
@@ -930,11 +921,10 @@
   - test_challenge_strip
   - test_plain_method
   - check_code_binding
-  test: 'Run the authorize flow, then replay it with code_challenge and code_challenge_method
-    removed. If the flow completes and the code exchanges for tokens, PKCE is decorative.
-    Also try code_challenge_method=plain with verifier equal to challenge. Grounded:
-    CVE in @cloudflare/workers-oauth-provider <0.0.5 (May 2025) — missing server-side
-    check allowed PKCE strip.
+  test: 'Run the authorize flow, then replay it with code_challenge and code_challenge_method removed.
+    If the flow completes and the code exchanges for tokens, PKCE is decorative. Also try code_challenge_method=plain
+    with verifier equal to challenge. Grounded: CVE in @cloudflare/workers-oauth-provider <0.0.5 (May
+    2025) — missing server-side check allowed PKCE strip.
 
     '
   impact_hint: High — enables authorization-code interception attacks.
@@ -963,10 +953,9 @@
   followups:
   - race_code_exchange
   - check_verifier_binding
-  test: 'Capture one authorization code, then fire 2-3 token-exchange requests in
-    parallel (Burp "send group in parallel" / Turbo Intruder), each with a different
-    code_verifier. If more than one returns tokens, codes are not single-use (RFC
-    6749 S4.1.2 violation). Grounded: 2025 finding, $8,500 bounty.
+  test: 'Capture one authorization code, then fire 2-3 token-exchange requests in parallel (Burp "send
+    group in parallel" / Turbo Intruder), each with a different code_verifier. If more than one returns
+    tokens, codes are not single-use (RFC 6749 S4.1.2 violation). Grounded: 2025 finding, $8,500 bounty.
 
     '
   impact_hint: High — code interception becomes token minting.
@@ -995,10 +984,9 @@
   - fingerprint_proxy
   - test_skip_params
   - test_header_injection
-  test: 'Fingerprint via Server/X-Auth-Request-* headers. Against oauth2-proxy, test
-    CVE-2025-54576: the skip_auth_routes query parameter bypass. Try ?skip_auth_routes=...
-    variants on a protected route and compare authenticated vs unauthenticated responses.
-    Never touch real user data.
+  test: 'Fingerprint via Server/X-Auth-Request-* headers. Against oauth2-proxy, test CVE-2025-54576: the
+    skip_auth_routes query parameter bypass. Try ?skip_auth_routes=... variants on a protected route and
+    compare authenticated vs unauthenticated responses. Never touch real user data.
 
     '
   impact_hint: High — authentication bypass at the edge.
@@ -1027,11 +1015,10 @@
   followups:
   - swap_email_param
   - check_provider_verification
-  test: 'Complete the implicit flow with YOUR token, but substitute the VICTIM''s
-    email in the callback/profile payload. If a session is created for the victim''s
-    account, the server trusts the client-supplied identity without checking it against
-    the token. Grounded: PortSwigger OAuth lab writeup. Migrate targets should use
-    code+PKCE; flag implicit flow as the smell.
+  test: 'Complete the implicit flow with YOUR token, but substitute the VICTIM''s email in the callback/profile
+    payload. If a session is created for the victim''s account, the server trusts the client-supplied
+    identity without checking it against the token. Grounded: PortSwigger OAuth lab writeup. Migrate targets
+    should use code+PKCE; flag implicit flow as the smell.
 
     '
   impact_hint: Critical — ATO with only the victim's (often public) email.
@@ -1060,10 +1047,9 @@
   - fingerprint_saml_lib
   - test_signature_wrapping
   - check_cert_validation
-  test: 'Identify the SAML SP and library version. Test CVE-2025-25291/25292-class
-    parser differentials in ruby-saml: signature-wrapping and XML parsing disagreements
-    that let a forged assertion validate. Owned IdP/SP only; forging assertions against
-    a real IdP is out of scope.
+  test: 'Identify the SAML SP and library version. Test CVE-2025-25291/25292-class parser differentials
+    in ruby-saml: signature-wrapping and XML parsing disagreements that let a forged assertion validate.
+    Owned IdP/SP only; forging assertions against a real IdP is out of scope.
 
     '
   impact_hint: Critical — authentication bypass.
@@ -1084,8 +1070,7 @@
   questions:
   - Does the object ID in the URL decide authorization, or does the server check ownership?
   - What happens with another owned account's ID — 200 with their data, 403, or 404?
-  - Is the ID predictable (sequential) or random — and does randomness substitute
-    for a check?
+  - Is the ID predictable (sequential) or random — and does randomness substitute for a check?
   evidence:
     positive:
     - unauthorized_object_access
@@ -1099,10 +1084,9 @@
   - compare_identities
   - predict_adjacent_ids
   - try_method_override
-  test: 'Two owned accounts A/B. A creates object, captures its ID. B requests the
-    same ID directly (GET/PUT/DELETE). Compare: 200 with A''s data = broken object-level
-    authorization. Also try IDOR via POST body id, X-HTTP-Method override, and .json
-    suffix.
+  test: 'Two owned accounts A/B. A creates object, captures its ID. B requests the same ID directly (GET/PUT/DELETE).
+    Compare: 200 with A''s data = broken object-level authorization. Also try IDOR via POST body id, X-HTTP-Method
+    override, and .json suffix.
 
     '
   impact_hint: High — cross-account data disclosure, the most paid bounty class.
@@ -1135,8 +1119,8 @@
   - compare_identities
   - compare_objects
   - inspect_state_transition
-  test: 'Send ?user_id=VICTIM&user_id=ATTACKER and reversed. Backends that take the
-    first vs last param inconsistently may authorize as attacker but act on victim.
+  test: 'Send ?user_id=VICTIM&user_id=ATTACKER and reversed. Backends that take the first vs last param
+    inconsistently may authorize as attacker but act on victim.
 
     '
   impact_hint: Medium-High.
@@ -1155,8 +1139,7 @@
   - settings
   questions:
   - Is the privilege check in the UI only, or repeated on the API?
-  - What does the API return when a low-privilege token calls the privileged action
-    directly?
+  - What does the API return when a low-privilege token calls the privileged action directly?
   evidence:
     positive:
     - unauthorized_object_access
@@ -1169,9 +1152,9 @@
   followups:
   - replay_as_low_priv
   - tamper_role_param
-  test: 'Replay a privileged action as a low-privilege owned account by calling the
-    API directly (drop the UI gate). Watch for 200 vs 403. Try role param tampering
-    (role=user -> role=admin) on profile-update endpoints.
+  test: 'Replay a privileged action as a low-privilege owned account by calling the API directly (drop
+    the UI gate). Watch for 200 vs 403. Try role param tampering (role=user -> role=admin) on profile-update
+    endpoints.
 
     '
   impact_hint: High — privilege escalation.
@@ -1206,8 +1189,8 @@
   - compare_identities
   - compare_objects
   - inspect_state_transition
-  test: 'Request admin/debug paths directly as low-priv user. Many apps hide but don''t
-    protect /admin, /internal, /debug, /actuator, /.env, /server-status.
+  test: 'Request admin/debug paths directly as low-priv user. Many apps hide but don''t protect /admin,
+    /internal, /debug, /actuator, /.env, /server-status.
 
     '
   impact_hint: Medium-High.
@@ -1241,8 +1224,8 @@
   - compare_identities
   - compare_objects
   - inspect_state_transition
-  test: 'Reuse expired invites, tamper role in invite accept, self-invite to privileged
-    teams. Two owned accounts, one org.
+  test: 'Reuse expired invites, tamper role in invite accept, self-invite to privileged teams. Two owned
+    accounts, one org.
 
     '
   impact_hint: High.
@@ -1276,8 +1259,8 @@
   - compare_identities
   - compare_objects
   - inspect_state_transition
-  test: 'Trigger exports as low-priv owned user; check whether the job includes other
-    users''/tenants'' data or is enumerable by job ID.
+  test: 'Trigger exports as low-priv owned user; check whether the job includes other users''/tenants''
+    data or is enumerable by job ID.
 
     '
   impact_hint: High.
@@ -1309,12 +1292,11 @@
   - compare_identities
   - test_write_side_idor
   - enumerate_tenant_ids
-  test: 'With two owned accounts in different tenants/clusters, capture a create request
-    (folder, file, notebook) and swap the tenant/cluster identifier to the other account''s.
-    Success = object lands in the victim''s scope. Write-side IDOR is rarer and higher-impact
-    than read-side. Grounded: HackerOne #3353057 vs SingleStore (Jul 2026) — clusterID
-    swap in POST /public/notebooks/api/contents/ created folders in other users''
-    clusters.
+  test: 'With two owned accounts in different tenants/clusters, capture a create request (folder, file,
+    notebook) and swap the tenant/cluster identifier to the other account''s. Success = object lands in
+    the victim''s scope. Write-side IDOR is rarer and higher-impact than read-side. Grounded: HackerOne
+    #3353057 vs SingleStore (Jul 2026) — clusterID swap in POST /public/notebooks/api/contents/ created
+    folders in other users'' clusters.
 
     '
   impact_hint: High — cross-tenant write = data planting + privilege escalation path.
@@ -1346,9 +1328,8 @@
   followups:
   - parallelize_requests
   - measure_serialization
-  test: 'Fire 5-10 parallel requests for a redeem/spend action on owned accounts (single
-    short burst, not a flood). Compare final balance vs expected. Predict -> probe
-    -> prove with ledger math.
+  test: 'Fire 5-10 parallel requests for a redeem/spend action on owned accounts (single short burst,
+    not a flood). Compare final balance vs expected. Predict -> probe -> prove with ledger math.
 
     '
   impact_hint: High — financial.
@@ -1381,8 +1362,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'Overlap the revoke with in-flight requests: mint ticket/link, revoke, then
-    immediately redeem. Also overlap email-change with verification send.
+  test: 'Overlap the revoke with in-flight requests: mint ticket/link, revoke, then immediately redeem.
+    Also overlap email-change with verification send.
 
     '
   impact_hint: High.
@@ -1416,8 +1397,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'Tamper price/quantity client-side and in the API body (owned account, do
-    NOT complete real payment). Prove server trusts client math.
+  test: 'Tamper price/quantity client-side and in the API body (owned account, do NOT complete real payment).
+    Prove server trusts client math.
 
     '
   impact_hint: High — financial. (No real charges, ever.)
@@ -1450,8 +1431,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'Call later-step APIs without completing earlier steps (owned account). Many
-    flows gate in UI only.
+  test: 'Call later-step APIs without completing earlier steps (owned account). Many flows gate in UI
+    only.
 
     '
   impact_hint: Medium-High.
@@ -1486,9 +1467,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'State the invariant ("only X may do Y to Z"). Design the cheapest observation
-    that would violate it using owned identities. A violation is a logic flaw by construction,
-    not a payload guess.
+  test: 'State the invariant ("only X may do Y to Z"). Design the cheapest observation that would violate
+    it using owned identities. A violation is a logic flaw by construction, not a payload guess.
 
     '
   impact_hint: High — business-logic flaws pay well and resist scanners.
@@ -1522,9 +1502,9 @@
   followups:
   - map_full_workflow
   - test_adjacent_transitions
-  test: 'Map the intended state machine (cart->pay->fulfill). Attempt illegal transitions:
-    negative quantities, coupon stacking, race on limited inventory, refund>charge.
-    Compare against the documented flow; deviations are candidates.
+  test: 'Map the intended state machine (cart->pay->fulfill). Attempt illegal transitions: negative quantities,
+    coupon stacking, race on limited inventory, refund>charge. Compare against the documented flow; deviations
+    are candidates.
 
     '
   impact_hint: High — logic abuse is the least-scanned, best-paid class.
@@ -1557,9 +1537,8 @@
   - reuse_coupon
   - stack_codes
   - mutate_cart_after_apply
-  test: 'With owned accounts: apply a single-use coupon twice (replay, second account,
-    race). Stack multiple codes. Change cart contents after discount. Compare final
-    totals.
+  test: 'With owned accounts: apply a single-use coupon twice (replay, second account, race). Stack multiple
+    codes. Change cart contents after discount. Compare final totals.
 
     '
   impact_hint: Medium — revenue loss; often paid as business-logic.
@@ -1592,9 +1571,8 @@
   - tamper_price_param
   - switch_currency
   - race_price_change
-  test: 'Intercept checkout: modify price/amount/currency params. Try currency switch
-    mid-flow. Verify what the payment provider is actually charged (use test mode
-    / $0 SKUs).
+  test: 'Intercept checkout: modify price/amount/currency params. Try currency switch mid-flow. Verify
+    what the payment provider is actually charged (use test mode / $0 SKUs).
 
     '
   impact_hint: High — direct financial impact.
@@ -1626,8 +1604,8 @@
   - self_refer
   - farm_rewards
   - check_caps
-  test: 'Two owned accounts: A refers B, B signs up minimally. Check if A is credited.
-    Try loops of fresh accounts for farming.
+  test: 'Two owned accounts: A refers B, B signs up minimally. Check if A is credited. Try loops of fresh
+    accounts for farming.
 
     '
   impact_hint: Medium — scalable fraud.
@@ -1659,8 +1637,8 @@
   - negative_quantity
   - zero_quantity
   - fractional_quantity
-  test: 'Set qty to -1, 0, 99999999, 0.5 on cart/order update. Observe totals, inventory,
-    and any credit/refund flows.
+  test: 'Set qty to -1, 0, 99999999, 0.5 on cart/order update. Observe totals, inventory, and any credit/refund
+    flows.
 
     '
   impact_hint: Medium-High — price manipulation.
@@ -1689,10 +1667,9 @@
   followups:
   - parallel_verify_test
   - check_code_single_use
-  test: 'With an owned account at the 2FA step, fire the verify request 3-5x in parallel
-    with the same (or different) codes. If all stay valid / multiple succeed, the
-    check is not atomic — MFA bypass via race. Grounded: 2025-2026 chain tables (race
-    on 2FA cancel/verify links -> MFA bypass).
+  test: 'With an owned account at the 2FA step, fire the verify request 3-5x in parallel with the same
+    (or different) codes. If all stay valid / multiple succeed, the check is not atomic — MFA bypass via
+    race. Grounded: 2025-2026 chain tables (race on 2FA cancel/verify links -> MFA bypass).
 
     '
   impact_hint: High — MFA bypass without touching the victim.
@@ -1721,10 +1698,9 @@
   followups:
   - test_email_change_flow
   - chain_to_password_reset
-  test: 'Change the owned account''s email without re-entering the password; check
-    whether the switch is immediate and whether a reset to the new address yields
-    control. Grounded: HackerOne #1250037 vs Stripe ($3,000) — email/ personal-data
-    change on the account; classic ATO primitive.
+  test: 'Change the owned account''s email without re-entering the password; check whether the switch
+    is immediate and whether a reset to the new address yields control. Grounded: HackerOne #1250037 vs
+    Stripe ($3,000) — email/ personal-data change on the account; classic ATO primitive.
 
     '
   impact_hint: High — email change + reset = full takeover chain.
@@ -1755,9 +1731,8 @@
   followups:
   - verify_dangling
   - check_claimability
-  test: 'Passive: resolve CNAMEs of all subdomains, match against known dead-service
-    fingerprints. Claim ONLY with explicit program permission — otherwise report the
-    dangling record as-is.
+  test: 'Passive: resolve CNAMEs of all subdomains, match against known dead-service fingerprints. Claim
+    ONLY with explicit program permission — otherwise report the dangling record as-is.
 
     '
   impact_hint: High.
@@ -1790,8 +1765,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'Fingerprint JS library versions from passive sources; match against OSV/GitHub
-    advisories. Report only with a demonstrable exploit path in scope.
+  test: 'Fingerprint JS library versions from passive sources; match against OSV/GitHub advisories. Report
+    only with a demonstrable exploit path in scope.
 
     '
   impact_hint: Medium.
@@ -1823,8 +1798,8 @@
   - test_metadata_paths
   - try_imdsv2_bypass
   - enumerate_roles
-  test: 'Via any URL-fetch feature, request http://169.254.169.254/latest/meta-data/.
-    Try IMDSv2 token flow. Never exfiltrate real creds — lab/owned infra only.
+  test: 'Via any URL-fetch feature, request http://169.254.169.254/latest/meta-data/. Try IMDSv2 token
+    flow. Never exfiltrate real creds — lab/owned infra only.
 
     '
   impact_hint: Critical — cloud credential theft.
@@ -1855,8 +1830,8 @@
   - enumerate_buckets
   - test_anonymous_read
   - check_for_pii
-  test: 'Enumerate bucket names from JS/certs/errors; test anonymous LIST/GET. Report
-    exposure class, never download PII.
+  test: 'Enumerate bucket names from JS/certs/errors; test anonymous LIST/GET. Report exposure class,
+    never download PII.
 
     '
   impact_hint: High — data exposure.
@@ -1886,8 +1861,8 @@
   followups:
   - enumerate_iam
   - map_escalation_paths
-  test: 'On owned cloud accounts: enumerate the runtime role''s policies; map privilege-escalation
-    paths (iam:PassRole, etc.). Read-only enumeration.
+  test: 'On owned cloud accounts: enumerate the runtime role''s policies; map privilege-escalation paths
+    (iam:PassRole, etc.). Read-only enumeration.
 
     '
   impact_hint: High — cloud takeover.
@@ -1917,8 +1892,8 @@
   followups:
   - trigger_verbose_errors
   - check_debug_endpoints
-  test: 'Trigger verbose errors on serverless endpoints; check for env/secret leakage.
-    Inspect deployment configs for plaintext secrets.
+  test: 'Trigger verbose errors on serverless endpoints; check for env/secret leakage. Inspect deployment
+    configs for plaintext secrets.
 
     '
   impact_hint: High — secret disclosure.
@@ -1946,8 +1921,8 @@
   followups:
   - introspect_schema
   - test_field_as_second_user
-  test: 'Introspection query; if disabled, try field-suggestion error messages to
-    map the schema. Then test authz per sensitive field with two accounts.
+  test: 'Introspection query; if disabled, try field-suggestion error messages to map the schema. Then
+    test authz per sensitive field with two accounts.
 
     '
   impact_hint: High.
@@ -1980,8 +1955,8 @@
   - introspect_schema
   - test_field_as_second_user
   - try_batching
-  test: 'Introspect (if enabled), then replay each sensitive field/query as a low-priv
-    owned user. Field-level authz is frequently weaker than object-level.
+  test: 'Introspect (if enabled), then replay each sensitive field/query as a low-priv owned user. Field-level
+    authz is frequently weaker than object-level.
 
     '
   impact_hint: High.
@@ -2014,8 +1989,8 @@
   - try_batching
   - batch_login_attempts
   - test_depth_limit
-  test: 'Send batched login/OTP mutations in one request. Measure whether rate limits
-    apply per-batch or per-query. Low volume, owned accounts.
+  test: 'Send batched login/OTP mutations in one request. Measure whether rate limits apply per-batch
+    or per-query. Low volume, owned accounts.
 
     '
   impact_hint: Medium-High — auth brute-force bypass.
@@ -2046,8 +2021,8 @@
   - try_arbitrary_query
   - hash_bypass
   - enumerate_allowed
-  test: 'If persisted queries are advertised, try sending arbitrary queries and hash-collision
-    variants. Enumerate which operations the allowlist permits.
+  test: 'If persisted queries are advertised, try sending arbitrary queries and hash-collision variants.
+    Enumerate which operations the allowlist permits.
 
     '
   impact_hint: Medium — restriction bypass.
@@ -2076,10 +2051,10 @@
   followups:
   - test_channel_ids
   - check_subscription_authz
-  test: 'Open the GraphQL WS subscription with an owned low-priv account and subscribe
-    to another owned account''s channel: subscription { messageAdded(channelId: "OTHER_USERS_CHANNEL")
-    { content } }. Receiving the other account''s real-time events = broken subscription
-    authz. Grounded: 2025-2026 methodology corpus; pairs with WS-05.
+  test: 'Open the GraphQL WS subscription with an owned low-priv account and subscribe to another owned
+    account''s channel: subscription { messageAdded(channelId: "OTHER_USERS_CHANNEL") { content } }. Receiving
+    the other account''s real-time events = broken subscription authz. Grounded: 2025-2026 methodology
+    corpus; pairs with WS-05.
 
     '
   impact_hint: High — real-time interception of another user's private events.
@@ -2108,10 +2083,9 @@
   - probe_unknown_fields
   - bruteforce_field_names
   - map_mutations
-  test: 'Send { unknownFieldXYZ } and read the error. If it replies "Did you mean:
-    [realField]?", the schema is enumerable despite disabled introspection — walk
-    the alphabet to reconstruct types, then hunt hidden mutations (GQL-04). Grounded:
-    2025-2026 GraphQL methodology corpus.
+  test: 'Send { unknownFieldXYZ } and read the error. If it replies "Did you mean: [realField]?", the
+    schema is enumerable despite disabled introspection — walk the alphabet to reconstruct types, then
+    hunt hidden mutations (GQL-04). Grounded: 2025-2026 GraphQL methodology corpus.
 
     '
   impact_hint: Medium — unlocks hidden-mutation authz testing.
@@ -2144,10 +2118,9 @@
   - measure_side_channel
   - inspect_update_chain
   - check_debug_interfaces
-  test: 'LAB-ONLY: in an owned isolated lab, test cross-boundary speculative reads
-    (bounds-check bypass, BTB poisoning). On bounty targets: only report if a tenant-isolation
-    boundary demonstrably leaks (e.g. cloud metadata, shared CI runners) — never run
-    speculative probes against production.
+  test: 'LAB-ONLY: in an owned isolated lab, test cross-boundary speculative reads (bounds-check bypass,
+    BTB poisoning). On bounty targets: only report if a tenant-isolation boundary demonstrably leaks (e.g.
+    cloud metadata, shared CI runners) — never run speculative probes against production.
 
     '
   impact_hint: Critical in lab; bounty-scope only with demonstrated tenant leak.
@@ -2179,8 +2152,8 @@
   - measure_side_channel
   - inspect_update_chain
   - check_debug_interfaces
-  test: 'LAB-ONLY: owned hardware only. Flip bits in adjacent rows to escape sandboxes
-    or corrupt page tables. Never against shared/production infra.
+  test: 'LAB-ONLY: owned hardware only. Flip bits in adjacent rows to escape sandboxes or corrupt page
+    tables. Never against shared/production infra.
 
     '
   impact_hint: Critical (lab-only).
@@ -2214,8 +2187,8 @@
   - measure_side_channel
   - inspect_update_chain
   - check_debug_interfaces
-  test: 'For in-scope devices/services: check whether firmware/OTA updates verify
-    signatures (downgrade, unsigned image, rollback). Report per program rules.
+  test: 'For in-scope devices/services: check whether firmware/OTA updates verify signatures (downgrade,
+    unsigned image, rollback). Report per program rules.
 
     '
   impact_hint: High — persistent compromise.
@@ -2248,8 +2221,8 @@
   - measure_side_channel
   - inspect_update_chain
   - check_debug_interfaces
-  test: 'For in-scope hardware/IoT: probe for open debug consoles and default credentials.
-    LAB-ONLY for physical probing; report-only for bounty scope.
+  test: 'For in-scope hardware/IoT: probe for open debug consoles and default credentials. LAB-ONLY for
+    physical probing; report-only for bounty scope.
 
     '
   impact_hint: High — full device control.
@@ -2282,9 +2255,8 @@
   - measure_side_channel
   - inspect_update_chain
   - check_debug_interfaces
-  test: 'For in-scope infrastructure: test management interfaces for default creds
-    and unauthenticated RCE (e.g. historic IPMI flaws). One attempt per vector; never
-    brute-force.
+  test: 'For in-scope infrastructure: test management interfaces for default creds and unauthenticated
+    RCE (e.g. historic IPMI flaws). One attempt per vector; never brute-force.
 
     '
   impact_hint: Critical — out-of-band control.
@@ -2316,8 +2288,8 @@
   - measure_side_channel
   - inspect_update_chain
   - check_debug_interfaces
-  test: 'LAB-ONLY: owned devices with exposed PCIe/Thunderbolt — test IOMMU configuration
-    and DMA protections. Concept feeds cloud/VDI threat models.
+  test: 'LAB-ONLY: owned devices with exposed PCIe/Thunderbolt — test IOMMU configuration and DMA protections.
+    Concept feeds cloud/VDI threat models.
 
     '
   impact_hint: High (lab-only).
@@ -2349,8 +2321,8 @@
   - measure_side_channel
   - inspect_update_chain
   - check_debug_interfaces
-  test: 'For in-scope device fleets/MDM: check attestation gaps, unsealed secrets,
-    boot-policy bypasses. LAB-ONLY for physical TPM attacks.
+  test: 'For in-scope device fleets/MDM: check attestation gaps, unsealed secrets, boot-policy bypasses.
+    LAB-ONLY for physical TPM attacks.
 
     '
   impact_hint: High.
@@ -2383,8 +2355,8 @@
   - measure_side_channel
   - inspect_update_chain
   - check_debug_interfaces
-  test: 'Test string comparisons for timing oracles (login, token, HMAC) over the
-    network at low rate. Physical power analysis is LAB-ONLY.
+  test: 'Test string comparisons for timing oracles (login, token, HMAC) over the network at low rate.
+    Physical power analysis is LAB-ONLY.
 
     '
   impact_hint: Medium-High.
@@ -2415,8 +2387,8 @@
   - measure_side_channel
   - inspect_update_chain
   - check_debug_interfaces
-  test: 'LAB-ONLY, owned silicon: glitch boot/auth checks. Feeds the mental model
-    for TOCTOU and check-then-act races in software.
+  test: 'LAB-ONLY, owned silicon: glitch boot/auth checks. Feeds the mental model for TOCTOU and check-then-act
+    races in software.
 
     '
   impact_hint: Critical (lab-only).
@@ -2449,8 +2421,8 @@
   - measure_side_channel
   - inspect_update_chain
   - check_debug_interfaces
-  test: 'For in-scope software supply chain: verify signatures, reproducible builds,
-    unexpected network egress from components. Maps to SUPPLY-01.
+  test: 'For in-scope software supply chain: verify signatures, reproducible builds, unexpected network
+    egress from components. Maps to SUPPLY-01.
 
     '
   impact_hint: High.
@@ -2482,8 +2454,8 @@
   - measure_side_channel
   - inspect_update_chain
   - check_debug_interfaces
-  test: 'Study-only for bounty scope: map which in-scope devices expose coprocessor
-    interfaces (AMT/ME, PSP). Exploitation is LAB-ONLY.
+  test: 'Study-only for bounty scope: map which in-scope devices expose coprocessor interfaces (AMT/ME,
+    PSP). Exploitation is LAB-ONLY.
 
     '
   impact_hint: Critical (lab-only).
@@ -2516,8 +2488,8 @@
   - measure_side_channel
   - inspect_update_chain
   - check_debug_interfaces
-  test: 'For in-scope mobile/IoT apps: spoof GPS, mock sensors, replay biometric enrollment
-    flows with owned devices. Never affect other users.
+  test: 'For in-scope mobile/IoT apps: spoof GPS, mock sensors, replay biometric enrollment flows with
+    owned devices. Never affect other users.
 
     '
   impact_hint: Medium-High.
@@ -2549,8 +2521,8 @@
   - craft_malicious_link
   - test_token_leak
   - fuzz_link_params
-  test: 'Enumerate deep link schemes (manifest/assetlinks). Craft links with tokens
-    and actions; observe handling. Check for token leakage via referrer.
+  test: 'Enumerate deep link schemes (manifest/assetlinks). Craft links with tokens and actions; observe
+    handling. Check for token leakage via referrer.
 
     '
   impact_hint: Medium-High — account takeover via link.
@@ -2582,8 +2554,8 @@
   - inspect_app_storage
   - check_backup_rules
   - test_rooted_access
-  test: 'On an owned test device: inspect app sandbox storage for tokens/keys in plaintext.
-    Check backup manifests and file permissions.
+  test: 'On an owned test device: inspect app sandbox storage for tokens/keys in plaintext. Check backup
+    manifests and file permissions.
 
     '
   impact_hint: Medium — local attacker / malware extraction.
@@ -2613,8 +2585,8 @@
   followups:
   - proxy_with_custom_ca
   - inspect_token_exposure
-  test: 'Route owned test device traffic through a lab proxy with installed CA. Observe
-    whether API calls succeed and what secrets are visible.
+  test: 'Route owned test device traffic through a lab proxy with installed CA. Observe whether API calls
+    succeed and what secrets are visible.
 
     '
   impact_hint: Medium — network attacker credential theft.
@@ -2646,8 +2618,8 @@
   - enumerate_exported
   - craft_intent
   - test_extras_trust
-  test: 'Parse the manifest for exported components. Send crafted intents with extras
-    from a second lab app; observe privileged actions.
+  test: 'Parse the manifest for exported components. Send crafted intents with extras from a second lab
+    app; observe privileged actions.
 
     '
   impact_hint: Medium-High — local privilege escalation.
@@ -2679,11 +2651,396 @@
   - trigger_fallback
   - bruteforce_fallback
   - bypass_biometric
-  test: 'Force biometric failure; examine fallback strength and rate limiting. Check
-    whether sensitive actions re-verify server-side.
+  test: 'Force biometric failure; examine fallback strength and rate limiting. Check whether sensitive
+    actions re-verify server-side.
 
     '
   impact_hint: Medium — local device attacker.
+- id: AUTHB-01
+  name: Systematic 403/401 bypass battery
+  klass: authorization
+  requires:
+  - authenticated_identity
+  - forbidden_endpoint
+  signals:
+  - '403'
+  - '401'
+  - forbidden
+  - unauthorized
+  - /admin
+  questions:
+  - Is the 403 enforced at the edge (WAF/CDN) or by the app — do they agree?
+  - Does any header, method, or path variant change the decision?
+  - Is the bypass differential (content/status delta) or a true grant?
+  evidence:
+    positive:
+    - bypass_variant_grants_access
+    - differential_content_on_variant
+    negative:
+    - all_variants_still_403
+    - bypass_only_cosmetic
+  evidence_contract:
+  - baseline_403_recorded
+  - bypass_response_differs
+  - control_still_403
+  followups:
+  - run_authz_403_corpus
+  - compare_as_second_identity
+  test: 'Record the 403 baseline (status, body hash, length). Replay from data/payloads/authz-403.txt:
+    path variants, method swaps, override headers, IP-spoof headers, Googlebot UA. A grant is only real
+    if the second owned identity still gets 403 on the plain path (control).
+
+    '
+  impact_hint: High — broken function-level authz.
+- id: JWT-02
+  name: JWT algorithm-confusion and key-spoof battery
+  klass: authentication
+  requires:
+  - jwt_token
+  - token_issuer_endpoint
+  signals:
+  - jwt
+  - eyJ
+  - alg
+  - kid
+  - jku
+  - x5u
+  questions:
+  - Which alg values does the verifier accept — including none?
+  - Is kid trusted as a key path or SQL value?
+  - Are jku/x5u honored from attacker-controlled URLs?
+  - Does dropping exp still verify?
+  evidence:
+    positive:
+    - alg_none_accepted
+    - rs256_hs256_confusion
+    - kid_injection
+    - exp_not_enforced
+    negative:
+    - alg_whitelist_enforced
+    - kid_sanitized
+    - exp_required
+  evidence_contract:
+  - baseline_token_verified
+  - forged_token_accepted
+  - control_rejected
+  followups:
+  - run_jwt_corpus
+  - offline_weak_secret_check
+  test: 'Work the jwt corpus battery against a captured token from an owned account: alg=none, empty signature,
+    RS256->HS256 with the public key, kid path traversal, jku/x5u to an owned URL, missing exp, role-claim
+    edit. Weak-secret cracking is OFFLINE only — never online brute-force.
+
+    '
+  impact_hint: Critical — account takeover.
+- id: HPP-01
+  name: HTTP parameter pollution differential
+  klass: injection
+  requires:
+  - http_observation
+  - parameter_endpoint
+  signals:
+  - '?'
+  - '&'
+  - param
+  - filter
+  - sort
+  questions:
+  - Does the backend see the first, last, or merged value of a duplicate param?
+  - Do query-string, body, and cookie params merge — in what precedence?
+  - Can a duplicate param smuggle a different semantic past a WAF?
+  evidence:
+    positive:
+    - duplicate_param_changes_behavior
+    - precedence_mismatch_across_layers
+    negative:
+    - duplicates_rejected_or_ignored
+    - consistent_precedence
+  followups:
+  - probe_all_param_sources
+  - test_waf_bypass_via_dup
+  test: 'Send single vs duplicated params (a=1&a=2, a[]=1&a[]=2, query+body split, cookie+query split)
+    from data/payloads/hpp.txt. Diff responses. If behavior changes, determine which occurrence wins and
+    whether security controls saw the same value.
+
+    '
+  impact_hint: Medium — filter/WAF bypass enabler.
+- id: API-05
+  name: OpenAPI/Swagger spec discovery
+  klass: recon
+  requires:
+  - base_url
+  signals:
+  - swagger
+  - openapi
+  - api-docs
+  - /docs
+  questions:
+  - Is a machine-readable spec exposed (swagger.json, v3/api-docs, /docs)?
+  - Does the spec list internal-only routes or stale versions?
+  - 'Which operations lack a security: requirement?'
+  evidence:
+    positive:
+    - spec_found
+    - internal_routes_listed
+    - operations_without_security
+    negative:
+    - no_spec_paths
+    - spec_requires_auth
+  followups:
+  - ingest_spec_into_target_model
+  - plan_sequences_from_spec
+  test: 'Probe well-known spec paths (deephunt.apiprobe.discover_specs). A found spec is a full attack
+    map: extract paths/methods/params with extract_endpoints_from_spec and feed them to the API sequence
+    planner.
+
+    '
+  impact_hint: Medium — reconnaissance multiplier.
+- id: API-06
+  name: RESTler-style stateful API sequencing
+  klass: api
+  requires:
+  - openapi_or_observed_grammar
+  - authenticated_identity
+  signals:
+  - openapi
+  - swagger
+  - crud
+  - rest
+  questions:
+  - Which requests produce IDs that later requests consume?
+  - Can a bounded multi-request sequence reach a state a single request cannot?
+  - Does deleting an object invalidate dependent operations?
+  evidence:
+    positive:
+    - producer_consumer_chain_works
+    - sequence_reaches_new_state
+    - use_after_delete_error
+    negative:
+    - no_dependencies_found
+    - sequences_add_nothing
+  followups:
+  - build_object_pool
+  - run_feedback_pruning
+  test: 'Build a request grammar from the spec or observed traffic, infer producer/consumer dependencies
+    (deephunt.apiseq), plan bounded BFS sequences excluding destructive methods by default, keep dynamic
+    object pools, prune on 4xx/5xx feedback, and run the use-after-delete checker. All execution goes
+    through the enforced test loop.
+
+    '
+  impact_hint: High — stateful logic bugs are the least-fuzzed surface.
+- id: GQL-07
+  name: GraphQL introspection fallback ladder
+  klass: graphql
+  requires:
+  - graphql_endpoint_candidate
+  signals:
+  - /graphql
+  - /gql
+  - query {
+  - __schema
+  questions:
+  - Does POST introspection work — and if blocked, does GET?
+  - Does a __type probe bypass a naive __schema block?
+  - Do error messages leak field suggestions (did-you-mean)?
+  evidence:
+    positive:
+    - introspection_via_fallback
+    - schema_reconstructed_from_errors
+    negative:
+    - introspection_fully_disabled
+    - no_error_leakage
+  followups:
+  - harvest_suggestions
+  - test_field_authz
+  test: 'Try POST introspection, then GET, then __type(name:"Query") — each bypasses a different naive
+    block (deephunt.apiprobe.probe_graphql). On failure, harvest field-suggestion errors to reconstruct
+    the schema. Introspection itself is recon; findings still need per-field authz evidence contracts.
+
+    '
+  impact_hint: Medium — schema exposure feeds field-level authz tests.
+- id: SEMGREP-01
+  name: Semgrep JS ruleset for client-side recon
+  klass: recon
+  requires:
+  - extracted_js_bundle
+  signals:
+  - .js
+  - bundle
+  - webpack
+  - chunk
+  questions:
+  - Which rules fire on the target's real bundle — and which are noise?
+  - Do taint findings (IDOR fetch, token leak, DOM XSS) map to live endpoints?
+  - Are client-side role gates the only thing hiding admin routes?
+  evidence:
+    positive:
+    - rule_hit_maps_to_live_endpoint
+    - client_secret_in_bundle
+    negative:
+    - all_hits_benign
+    - bundle_obfuscated_beyond_rules
+  followups:
+  - triage_hits_into_hypotheses
+  - confirm_with_evidence_contract
+  test: 'Run intel/semgrep-rules/deephunt-bounty.yaml over extracted client JS when the semgrep binary
+    is installed (adapters stay optional until then). Triage hits into hypotheses: IDOR-prone fetch, token
+    leaks, GraphQL interpolation, prototype pollution, DOM XSS, client role gates, missing postMessage
+    origin checks, Math.random tokens, hardcoded secrets, SSRF proxy hints.
+
+    '
+  impact_hint: Medium — turns static JS into a prioritized hypothesis list.
+- id: EV-01
+  name: Evidence contracts with canary calibration
+  klass: methodology
+  requires:
+  - candidate_finding
+  signals:
+  - finding
+  - evidence
+  - confirm
+  - validate
+  questions:
+  - What is the minimum artifact set that makes this finding undeniable?
+  - Does the contract still validate a known-good canary and reject a known-bad one?
+  - Was the control (negative) case actually run?
+  evidence:
+    positive:
+    - contract_validates
+    - canaries_green
+    negative:
+    - contract_too_lax
+    - canary_red
+  followups:
+  - add_contract_to_card
+  - gate_report_on_contract
+  test: 'Every technique card may declare evidence_contract: a list of required artifacts (deephunt.evidence).
+    A finding is confirmable only when all artifacts are present. Calibrate with Canary cases: a known-good
+    evidence set must validate, a known-bad set must fail. Unknown technique IDs are rejected — no silent
+    confirmations.
+
+    '
+  impact_hint: High — XBOW-pattern deterministic confirmation; kills false positives.
+- id: SEQ-01
+  name: Producer/consumer dependency inference
+  klass: api
+  requires:
+  - request_grammar
+  signals:
+  - id
+  - uuid
+  - slug
+  - token
+  - '{id}'
+  questions:
+  - Which response fields (id, uuid, slug, token) feed which request parameters?
+  - Are dependencies name-matched, type-matched, or observed?
+  - Which requests are producers vs pure consumers?
+  evidence:
+    positive:
+    - dependency_graph_built
+    - pool_values_reused
+    negative:
+    - no_dependencies_inferred
+    - all_params_static
+  followups:
+  - plan_sequences
+  - render_from_pool
+  test: 'Infer producer/consumer links by parameter-name overlap and ID/UUID/slug shape matching (deephunt.apiseq.infer_dependencies).
+    Dynamic object pools hold values produced during a sequence; consumers render from the pool.
+
+    '
+  impact_hint: Medium — enables stateful testing without hand-written scripts.
+- id: SEQ-02
+  name: Bounded multi-request sequence planning
+  klass: api
+  requires:
+  - dependency_graph
+  - authenticated_identity
+  signals:
+  - sequence
+  - workflow
+  - crud
+  questions:
+  - What is the shortest sequence that creates, uses, and deletes an object?
+  - Does BFS-fast or bounded random-walk find deeper states?
+  - Are destructive methods excluded unless explicitly authorized?
+  evidence:
+    positive:
+    - sequence_executes_cleanly
+    - deeper_state_reached
+    negative:
+    - planner_stalls
+    - destructive_only_paths
+  followups:
+  - run_bfs_fast
+  - run_random_walk
+  test: 'Plan bounded sequences with bfs_fast_sequences and random_walk_sequences (deephunt.apiseq): max
+    depth, max sequences, destructive methods excluded by default. Render each request from the object
+    pool. Execution stays behind the enforced test loop.
+
+    '
+  impact_hint: Medium — systematic state coverage.
+- id: SEQ-03
+  name: Feedback pruning and use-after-delete checkers
+  klass: api
+  requires:
+  - executing_sequence
+  signals:
+  - 4xx
+  - 5xx
+  - delete
+  - stale
+  questions:
+  - Does a 4xx/5xx response prune the rest of the sequence?
+  - Does using a deleted object ID reveal broken state handling?
+  - Does cross-identity replay of a sequence step leak data (BOLA)?
+  evidence:
+    positive:
+    - pruning_reduces_noise
+    - use_after_delete_anomaly
+    - bola_via_sequence
+    negative:
+    - clean_state_handling
+    - no_cross_identity_leak
+  followups:
+  - log_pruned_branches
+  - file_finding_with_contract
+  test: 'Prune sequences on error feedback; run the use-after-delete checker and the cross-identity (BOLA)
+    replay checker from deephunt.apiseq. Checker hits become hypotheses that still need evidence contracts
+    (EV-01) before confirmation.
+
+    '
+  impact_hint: High — checkers convert sequences into findings.
+- id: PAYLOAD-01
+  name: Curated payload corpus with provenance
+  klass: methodology
+  requires:
+  - hypothesis_needing_probes
+  signals:
+  - payload
+  - fuzz
+  - wordlist
+  - corpus
+  questions:
+  - Is this payload vendored (with source) or hand-curated?
+  - Is it a detect, bypass, or exploit payload — and is exploit authorized?
+  - Does the hypothesis need 10 probes or 10,000?
+  evidence:
+    positive:
+    - payload_triggered_differential
+    - corpus_class_matched
+    negative:
+    - no_differential_across_corpus
+  followups:
+  - narrow_to_detect_payloads
+  - escalate_with_contract
+  test: 'Use deephunt.payloads: 11 classes, 4,409 entries (6 vendored from PayloadsAllTheThings/MIT, 5
+    hand-curated). Prefer small high-signal detect sets first; never blind-fire. Every send still passes
+    the enforced test loop.
+
+    '
+  impact_hint: Medium — stops re-deriving payloads per target.
 - id: JWT-01
   name: JWT alg confusion / none / weak secret
   klass: crypto
@@ -2711,9 +3068,8 @@
   - tamper_alg
   - confuse_key
   - edit_claims
-  test: 'Decode the token (owned account). Try alg=none, RS256->HS256 confusion with
-    the public key, and weak-secret cracking offline against the HMAC. Modify claims
-    (sub, role) and replay.
+  test: 'Decode the token (owned account). Try alg=none, RS256->HS256 confusion with the public key, and
+    weak-secret cracking offline against the HMAC. Modify claims (sub, role) and replay.
 
     '
   impact_hint: High — auth bypass.
@@ -2747,10 +3103,9 @@
   - test_metadata_paths
   - dns_rebinding
   - parser_differential
-  test: 'Point the parameter at an owned collaborator/out-of-band host; confirm DNS/HTTP
-    egress. Then test cloud-metadata (169.254.169.254) ONLY where the program explicitly
-    permits it — many forbid it. Prefer proving with the collaborator + internal 403-vs-timeout
-    oracle.
+  test: 'Point the parameter at an owned collaborator/out-of-band host; confirm DNS/HTTP egress. Then
+    test cloud-metadata (169.254.169.254) ONLY where the program explicitly permits it — many forbid it.
+    Prefer proving with the collaborator + internal 403-vs-timeout oracle.
 
     '
   impact_hint: Critical.
@@ -2781,8 +3136,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'Try 0x/decimal/octal IP encodings, @-userinfo tricks, #fragments, DNS rebinding
-    shapes, and redirect chains off an allowed domain.
+  test: 'Try 0x/decimal/octal IP encodings, @-userinfo tricks, #fragments, DNS rebinding shapes, and redirect
+    chains off an allowed domain.
 
     '
   impact_hint: Critical.
@@ -2813,9 +3168,9 @@
   followups:
   - identify_sink_context
   - test_encoding_bypass
-  test: 'Inject inert canary markup (<b> or <img src=x onerror>) into owned-account
-    fields; check where it reflects unescaped (other owned account''s view). Prefer
-    canary over alert(); prove with a unique string.
+  test: 'Inject inert canary markup (<b> or <img src=x onerror>) into owned-account fields; check where
+    it reflects unescaped (other owned account''s view). Prefer canary over alert(); prove with a unique
+    string.
 
     '
   impact_hint: High.
@@ -2848,8 +3203,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'Fuzz reflected params with a canary; check sinks with JS bundle review (innerHTML,
-    document.write, location-based sinks). DOM clobbering where forms exist.
+  test: 'Fuzz reflected params with a canary; check sinks with JS bundle review (innerHTML, document.write,
+    location-based sinks). DOM clobbering where forms exist.
 
     '
   impact_hint: Medium.
@@ -2881,8 +3236,8 @@
   followups:
   - test_error_oracle
   - test_time_oracle
-  test: 'Time-based and boolean probes on owned data only. Prefer error-shape analysis
-    first; confirm with sleep-differential, never destructive payloads.
+  test: 'Time-based and boolean probes on owned data only. Prefer error-shape analysis first; confirm
+    with sleep-differential, never destructive payloads.
 
     '
   impact_hint: Critical.
@@ -2916,8 +3271,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'Inject {{7*7}} / ${7*7} canaries into template-ish fields (owned account),
-    watch rendered output for 49. Escalate only to harmless math proof.
+  test: 'Inject {{7*7}} / ${7*7} canaries into template-ish fields (owned account), watch rendered output
+    for 49. Escalate only to harmless math proof.
 
     '
   impact_hint: Critical.
@@ -2946,8 +3301,8 @@
   followups:
   - polyglot_upload
   - check_serving_origin
-  test: 'Try double extensions, null bytes, SVG with script, polyglots (owned account,
-    inert payloads). Check where the file is served from and its Content-Type/Disposition.
+  test: 'Try double extensions, null bytes, SVG with script, polyglots (owned account, inert payloads).
+    Check where the file is served from and its Content-Type/Disposition.
 
     '
   impact_hint: High.
@@ -2974,8 +3329,8 @@
   followups:
   - test_origin_reflection
   - try_trusted_subdomain
-  test: 'Send Origin: null and Origin: https://evil.com with credentials; check ACAO
-    reflection + ACAC:true. Prove readability impact, not just headers.
+  test: 'Send Origin: null and Origin: https://evil.com with credentials; check ACAO reflection + ACAC:true.
+    Prove readability impact, not just headers.
 
     '
   impact_hint: Medium.
@@ -3005,9 +3360,8 @@
   followups:
   - identify_unkeyed_inputs
   - test_cross_user_poison
-  test: 'Try cache-key tricks (utm params, .css suffix on dynamic URLs, header injection
-    into cached responses) with owned sessions; verify poisoned response serves to
-    a second clean session.
+  test: 'Try cache-key tricks (utm params, .css suffix on dynamic URLs, header injection into cached responses)
+    with owned sessions; verify poisoned response serves to a second clean session.
 
     '
   impact_hint: High.
@@ -3040,9 +3394,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'Regex-scan all fetched bundles for high-entropy strings and key patterns
-    (aws_, sk_live, xoxb-, ghp_). Validate by TYPE only — never use a found secret;
-    report its existence and location.
+  test: 'Regex-scan all fetched bundles for high-entropy strings and key patterns (aws_, sk_live, xoxb-,
+    ghp_). Validate by TYPE only — never use a found secret; report its existence and location.
 
     '
   impact_hint: High-Critical.
@@ -3074,8 +3427,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'Try //evil.com, /\\/evil.com, ?next=javascript:, parameter smuggling. Chain
-    value comes from OAuth flows — test there.
+  test: 'Try //evil.com, /\\/evil.com, ?next=javascript:, parameter smuggling. Chain value comes from
+    OAuth flows — test there.
 
     '
   impact_hint: Medium (High chained).
@@ -3109,8 +3462,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'Upload XML with inert external-entity canary pointing at owned collaborator
-    (owned account). Prove with DNS/HTTP callback, never /etc/passwd exfil.
+  test: 'Upload XML with inert external-entity canary pointing at owned collaborator (owned account).
+    Prove with DNS/HTTP callback, never /etc/passwd exfil.
 
     '
   impact_hint: High.
@@ -3141,8 +3494,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'Only where the program permits active testing. Use differential timing, never
-    poison other users'' requests. High care required.
+  test: 'Only where the program permits active testing. Use differential timing, never poison other users''
+    requests. High care required.
 
     '
   impact_hint: Critical.
@@ -3175,8 +3528,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'Inject __proto__[canary]=polluted via query/body params; check client-side
-    behavior change in owned session. Server-side variants via lodash-style merges.
+  test: 'Inject __proto__[canary]=polluted via query/body params; check client-side behavior change in
+    owned session. Server-side variants via lodash-style merges.
 
     '
   impact_hint: Medium-High.
@@ -3209,8 +3562,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'Try ../ sequences and encoded variants on file parameters (owned account).
-    Prove with harmless canary file read, never sensitive paths beyond proof.
+  test: 'Try ../ sequences and encoded variants on file parameters (owned account). Prove with harmless
+    canary file read, never sensitive paths beyond proof.
 
     '
   impact_hint: High.
@@ -3240,8 +3593,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'X-Forwarded-Host / Host override on reset and link-generation flows; check
-    where the attacker host lands (owned mailbox).
+  test: 'X-Forwarded-Host / Host override on reset and link-generation flows; check where the attacker
+    host lands (owned mailbox).
 
     '
   impact_hint: Medium-High.
@@ -3275,9 +3628,9 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'Trace one user-controlled parameter from HTTP entry through code/JS to sink
-    (query, eval, innerHTML, redirect). If no sanitizer/validator node sits on the
-    path, the flow is a candidate. Prove with a benign marker reaching the sink.
+  test: 'Trace one user-controlled parameter from HTTP entry through code/JS to sink (query, eval, innerHTML,
+    redirect). If no sanitizer/validator node sits on the path, the flow is a candidate. Prove with a
+    benign marker reaching the sink.
 
     '
   impact_hint: High — finds injection classes scanners miss.
@@ -3311,8 +3664,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'Submit URLs that parse differently across validators: 0x7f.0.0.1, [::ffff:127.0.0.1],
-    DNS rebinding via owned domain, redirect chains. Detect via timing/DNS canary.
+  test: 'Submit URLs that parse differently across validators: 0x7f.0.0.1, [::ffff:127.0.0.1], DNS rebinding
+    via owned domain, redirect chains. Detect via timing/DNS canary.
 
     '
   impact_hint: High.
@@ -3345,8 +3698,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'Inject unkeyed header/query markers; check if the poisoned response is served
-    to a second clean session. Never poison real users — use cache-buster keys.
+  test: 'Inject unkeyed header/query markers; check if the poisoned response is served to a second clean
+    session. Never poison real users — use cache-buster keys.
 
     '
   impact_hint: High.
@@ -3377,8 +3730,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'Send Origin: https://evil.example with credentials on API hosts. Reflected
-    origin + allow-credentials = token theft primitive.
+  test: 'Send Origin: https://evil.example with credentials on API hosts. Reflected origin + allow-credentials
+    = token theft primitive.
 
     '
   impact_hint: Medium.
@@ -3412,8 +3765,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'For CNAMEs to claimable services, verify NXDOMAIN/claimability without claiming.
-    Report per program rules; never seize assets.
+  test: 'For CNAMEs to claimable services, verify NXDOMAIN/claimability without claiming. Report per program
+    rules; never seize assets.
 
     '
   impact_hint: Medium-High.
@@ -3446,8 +3799,8 @@
   - trace_data_flow
   - test_parser_differentials
   - check_defense_location
-  test: 'When a payload is blocked, try encoding layers (double URL, unicode, HTML
-    entities) and HTTP method/content-type swaps. A bypass proves filter-only defense.
+  test: 'When a payload is blocked, try encoding layers (double URL, unicode, HTML entities) and HTTP
+    method/content-type swaps. A bypass proves filter-only defense.
 
     '
   impact_hint: Medium.
@@ -3477,10 +3830,9 @@
   - test_h2_cl
   - test_h2_te
   - check_downgrade_path
-  test: 'Against an HTTP/2 front-end, send H2.CL (Content-Length honored by FE, ignored
-    by BE) and H2.TE variants with a smuggled prefix; use differential timing (never
-    poison other users). Grounded: PortSwigger "HTTP/2: The Sequel is Always Worse"
-    research — these desyncs hit real CDNs/gateways.
+  test: 'Against an HTTP/2 front-end, send H2.CL (Content-Length honored by FE, ignored by BE) and H2.TE
+    variants with a smuggled prefix; use differential timing (never poison other users). Grounded: PortSwigger
+    "HTTP/2: The Sequel is Always Worse" research — these desyncs hit real CDNs/gateways.
 
     '
   impact_hint: High — desync primitive enabling capture/poisoning chains.
@@ -3510,11 +3862,10 @@
   - test_path_crlf
   - test_header_name_crlf
   - try_head_tunnel
-  test: 'Set :path to "/?x=1 HTTP/1.1\r\nFoo: bar" over H2 and observe whether the
-    injected headers survive downgrade. Where the FE opens a fresh backend connection
-    per request, use HEAD-based request tunnelling instead of classic smuggling. Grounded:
-    PortSwigger advanced request-smuggling labs (H2 request splitting via CRLF, request
-    tunnelling).
+  test: 'Set :path to "/?x=1 HTTP/1.1\r\nFoo: bar" over H2 and observe whether the injected headers survive
+    downgrade. Where the FE opens a fresh backend connection per request, use HEAD-based request tunnelling
+    instead of classic smuggling. Grounded: PortSwigger advanced request-smuggling labs (H2 request splitting
+    via CRLF, request tunnelling).
 
     '
   impact_hint: High — works where classic CL.TE/TE.CL does not.
@@ -3544,11 +3895,10 @@
   - map_cache_keys
   - glue_to_static_url
   - verify_cross_session
-  test: 'Smuggle a malicious response (e.g. redirect with attacker Host) glued onto
-    a request for a STATIC cacheable resource (/static/include.js). The cache stores
-    the attacker''s response against the clean URL — every later visitor gets it with
-    zero further attacker action. Grounded: PortSwigger research; consistently the
-    highest-bounty smuggling outcome; chain valued $15K-$40K.
+  test: 'Smuggle a malicious response (e.g. redirect with attacker Host) glued onto a request for a STATIC
+    cacheable resource (/static/include.js). The cache stores the attacker''s response against the clean
+    URL — every later visitor gets it with zero further attacker action. Grounded: PortSwigger research;
+    consistently the highest-bounty smuggling outcome; chain valued $15K-$40K.
 
     '
   impact_hint: Critical — persistent, mass-impact, self-propagating.
@@ -3578,11 +3928,10 @@
   - map_cacheable_statics
   - smuggle_account_request
   - verify_cross_account
-  test: 'Smuggle GET /my-account (with the victim''s session riding the desync''d
-    connection) so the backend renders the victim''s page into a response the cache
-    stores under a static URL (e.g. /tracking.js). Retrieve the victim''s API key
-    from the cache with an unauthenticated request. Two owned accounts required. Grounded:
-    PortSwigger web-cache-deception-via-smuggling lab.
+  test: 'Smuggle GET /my-account (with the victim''s session riding the desync''d connection) so the backend
+    renders the victim''s page into a response the cache stores under a static URL (e.g. /tracking.js).
+    Retrieve the victim''s API key from the cache with an unauthenticated request. Two owned accounts
+    required. Grounded: PortSwigger web-cache-deception-via-smuggling lab.
 
     '
   impact_hint: Critical — unauthenticated theft of authenticated users' secrets.
@@ -3600,8 +3949,7 @@
   - node
   questions:
   - Does any endpoint deep-merge attacker JSON into an object?
-  - Which downstream gadget reads a pollutable default (child_process opts, template
-    opts)?
+  - Which downstream gadget reads a pollutable default (child_process opts, template opts)?
   - Is this an oracle-only hit, or does a gadget demonstrably fire?
   evidence:
     positive:
@@ -3614,13 +3962,11 @@
   - confirm_oracle
   - hunt_gadgets
   - test_child_process_sink
-  test: 'Confirm the oracle first: POST {"__proto__":{"status":555}} and check a later
-    response reflects it. Then hunt gadgets: pollute opts.shell / NODE_OPTIONS toward
-    child_process, or outputFunctionName/sourceURL toward EJS/lodash templates. Report
-    the SEVERITY honestly: oracle-only = P3-P4 noise; oracle + isAdmin flip = P2;
-    oracle + RCE = P1. Clean up after yourself — pollution persists for the Node process
-    lifetime. Grounded: 2025-2026 SSPP severity guides (Heyes methodology; guan4tou2
-    severity scale).
+  test: 'Confirm the oracle first: POST {"__proto__":{"status":555}} and check a later response reflects
+    it. Then hunt gadgets: pollute opts.shell / NODE_OPTIONS toward child_process, or outputFunctionName/sourceURL
+    toward EJS/lodash templates. Report the SEVERITY honestly: oracle-only = P3-P4 noise; oracle + isAdmin
+    flip = P2; oracle + RCE = P1. Clean up after yourself — pollution persists for the Node process lifetime.
+    Grounded: 2025-2026 SSPP severity guides (Heyes methodology; guan4tou2 severity scale).
 
     '
   impact_hint: Critical when a gadget fires; noise when it is oracle-only.
@@ -3649,10 +3995,10 @@
   - grep_sinks_in_js
   - craft_gadget_payload
   - verify_in_owned_browser
-  test: 'Pollute via ?__proto__[x]=test (qs-style) or JSON body; in DevTools confirm
-    ({}).x === "test". Then grep the JS for sinks reading possibly-undefined properties
-    (el.innerHTML = opts.errorTemplate) and pollute that exact key with an XSS payload.
-    Grounded: 2025-2026 client-side PP writeups (PP alone = Medium, PP+XSS = High).
+  test: 'Pollute via ?__proto__[x]=test (qs-style) or JSON body; in DevTools confirm ({}).x === "test".
+    Then grep the JS for sinks reading possibly-undefined properties (el.innerHTML = opts.errorTemplate)
+    and pollute that exact key with an XSS payload. Grounded: 2025-2026 client-side PP writeups (PP alone
+    = Medium, PP+XSS = High).
 
     '
   impact_hint: High — stored-pollution XSS without a stored-XSS endpoint.
@@ -3681,11 +4027,10 @@
   followups:
   - audit_whitelisted_domain
   - chain_redirect_to_oauth
-  test: 'Even with a correct redirect_uri allowlist, audit the ALLOWLISTED domain
-    for open redirects. One redirect on the trusted domain turns the OAuth flow into
-    code/token theft for any user clicking the crafted login link. Grounded: 2025-2026
-    chain tables — this is "often the highest-paying chain in the OAuth skill", $5K-$15K
-    range.
+  test: 'Even with a correct redirect_uri allowlist, audit the ALLOWLISTED domain for open redirects.
+    One redirect on the trusted domain turns the OAuth flow into code/token theft for any user clicking
+    the crafted login link. Grounded: 2025-2026 chain tables — this is "often the highest-paying chain
+    in the OAuth skill", $5K-$15K range.
 
     '
   impact_hint: Critical — converts a Low (open redirect) into ATO.
@@ -3715,8 +4060,8 @@
   followups:
   - cross_site_handshake
   - replay_message
-  test: 'Connect with victim''s channel params from attacker''s session; check cross-user
-    message receipt. Test CSWSH via Origin header.
+  test: 'Connect with victim''s channel params from attacker''s session; check cross-user message receipt.
+    Test CSWSH via Origin header.
 
     '
   impact_hint: High.
@@ -3749,8 +4094,8 @@
   - replay_message
   - cross_site_handshake
   - fuzz_message_schema
-  test: 'Connect with a low-priv token, attempt privileged actions over the socket.
-    Test cross-site handshake (Origin check) for WebSocket hijacking.
+  test: 'Connect with a low-priv token, attempt privileged actions over the socket. Test cross-site handshake
+    (Origin check) for WebSocket hijacking.
 
     '
   impact_hint: Medium-High.
@@ -3783,8 +4128,8 @@
   - omit_auth_on_handshake
   - guess_channel
   - subscribe_as_anon
-  test: 'Open the WS without cookies/token. Try subscribing to channels belonging
-    to another owned account. Compare message visibility.
+  test: 'Open the WS without cookies/token. Try subscribing to channels belonging to another owned account.
+    Compare message visibility.
 
     '
   impact_hint: High — real-time data leak.
@@ -3817,8 +4162,8 @@
   - replay_message
   - forge_sender
   - tamper_target
-  test: 'Capture a legitimate WS action message; replay it later and as the other
-    owned account. Forge sender/target fields.
+  test: 'Capture a legitimate WS action message; replay it later and as the other owned account. Forge
+    sender/target fields.
 
     '
   impact_hint: Medium-High — action forgery.
@@ -3848,8 +4193,8 @@
   followups:
   - cross_site_handshake
   - test_origin_variants
-  test: 'From a cross-origin page context, attempt the WS handshake with victim cookies
-    (lab only, owned accounts). Try Origin spoofing variants.
+  test: 'From a cross-origin page context, attempt the WS handshake with victim cookies (lab only, owned
+    accounts). Try Origin spoofing variants.
 
     '
   impact_hint: High — CSWSH, equivalent to CSRF on real-time actions.
@@ -3881,11 +4226,10 @@
   - two_account_marker_test
   - oast_exfil_proof
   - check_handshake_token
-  test: 'Host a PoC page on an attacker origin while victim account B is logged in.
-    The bug is confirmed ONLY if attacker JS receives B''s data (plant a unique marker
-    in B''s account) and exfils it to a collaborator/OAST listener. A bare 101 from
-    Origin: evil.com is NOT a finding — many servers upgrade then send nothing. A
-    per-connection token in the handshake kills cross-site exploitability; downgrade.
+  test: 'Host a PoC page on an attacker origin while victim account B is logged in. The bug is confirmed
+    ONLY if attacker JS receives B''s data (plant a unique marker in B''s account) and exfils it to a
+    collaborator/OAST listener. A bare 101 from Origin: evil.com is NOT a finding — many servers upgrade
+    then send nothing. A per-connection token in the handshake kills cross-site exploitability; downgrade.
     Grounded: 2025-2026 CSWSH methodology (murrtada/kenxploitz FP-killer guides).
 
     '
@@ -3915,10 +4259,9 @@
   followups:
   - replay_blocked_payloads_in_frames
   - test_reconnect_auth
-  test: 'Take a payload the WAF blocks over HTTP and deliver it inside a WS JSON frame
-    to the same backend logic; also test message flooding and whether reconnect re-validates
-    auth. Owned accounts, low volume. Grounded: 2025-2026 WS testing checklists (frames
-    bypass HTTP-level controls).
+  test: 'Take a payload the WAF blocks over HTTP and deliver it inside a WS JSON frame to the same backend
+    logic; also test message flooding and whether reconnect re-validates auth. Owned accounts, low volume.
+    Grounded: 2025-2026 WS testing checklists (frames bypass HTTP-level controls).
 
     '
   impact_hint: Medium-High — the WAF everyone trusts doesn't see this traffic.

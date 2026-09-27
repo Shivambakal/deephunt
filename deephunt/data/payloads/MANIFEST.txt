@@ -1,0 +1,13 @@
+DEEPHUNT payload corpus — build 2026-09-27T02:44:38Z
+Source: PayloadsAllTheThings (MIT) https://github.com/swisskyrepo/PayloadsAllTheThings
+xss.txt: 2101 payloads <- 15 files [vendored:PATT]
+sqli.txt: 467 payloads <- 6 files [vendored:PATT]
+cmdi.txt: 496 payloads <- 2 files [vendored:PATT]
+traversal.txt: 877 payloads <- 3 files [vendored:PATT]
+xxe.txt: 102 payloads <- 2 files [vendored:PATT]
+openredirect.txt: 299 payloads <- 2 files [vendored:PATT]
+jwt.txt: 11 entries [hand-curated:hand-curated]
+ssrf.txt: 11 entries [hand-curated:hand-curated]
+ssti.txt: 12 entries [hand-curated:hand-curated]
+authz-403.txt: 28 entries [hand-curated:hand-curated]
+hpp.txt: 5 entries [hand-curated:hand-curated]

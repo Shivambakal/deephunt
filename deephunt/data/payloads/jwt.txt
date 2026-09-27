@@ -1,0 +1,14 @@
+# JWT battery — hand-curated from HackTricks/JWT-01 survey findings.
+# Format: <description> | <transformation hint>
+# These are test shapes, not literal payloads: apply to a captured JWT.
+alg-none|set header alg to none and strip signature
+alg-none-trailing|alg=none with empty signature segment (header.payload.)
+rs256-hs256-confusion|change alg RS256->HS256, sign with RSA public key as HMAC secret
+kid-path-traversal|kid: ../../../../dev/null or /dev/null variants
+kid-sql-injection|kid: ' OR '1'='1
+jku-spoof|add jku header pointing to owned JWKS URL
+x5u-spoof|add x5u header pointing to owned certificate URL
+missing-exp|drop exp claim, keep signature valid
+role-escalation|edit role/admin claims, re-sign if weak secret known
+weak-secret-offline|crack HMAC with common secrets (do offline, never online brute-force)
+empty-signature|strip signature segment entirely

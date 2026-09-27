@@ -1,0 +1,180 @@
+# DEEPHUNT Semgrep bounty ruleset — for extracted client-side JS.
+# Each rule: id, languages, severity, mode (search|taint), message, fix hint.
+# Validate: semgrep --test --config intel/semgrep-rules/ <rule-dir>
+# Rules ship with positive/negative cases in tests/<rule-id>/{ok,ruleid}.js
+# (semgrep --test convention: `# ruleid:` = must match, `# ok:` = must not).
+
+rules:
+  # --- 1. IDOR-prone fetch: route param / location.search -> string-concat URL
+  - id: deephunt-idor-fetch
+    languages: [javascript, typescript]
+    severity: INFO
+    mode: taint
+    pattern-sources:
+      - patterns:
+          - pattern-either:
+              - pattern: $P = new URLSearchParams(...)
+              - pattern: window.location.search
+              - pattern: window.location.hash
+              - pattern: $PARAMS.get(...)
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: fetch($URL, ...)
+              - pattern: axios.get($URL, ...)
+              - pattern: "$.ajax({url: $URL, ...})"
+    pattern-sanitizers:
+      - pattern-either:
+          - pattern: encodeURIComponent(...)
+    message: User-controlled value flows into a fetch URL — candidate IDOR/BOLA hypothesis.
+    metadata:
+      class: IDOR
+      evidence_contract: [foreign_object_returned, control_denied_or_not_found]
+
+  # --- 2. Token mishandling: localStorage token -> dangerous sinks
+  - id: deephunt-token-leak
+    languages: [javascript, typescript]
+    severity: WARNING
+    mode: taint
+    pattern-sources:
+      - pattern: localStorage.getItem(...)
+      - pattern: sessionStorage.getItem(...)
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: window.postMessage($D, "*")
+              - pattern: document.cookie = $D
+              - pattern: console.log($D, ...)
+              - pattern: fetch("..." + $D, ...)
+    message: Auth token flows to a leak sink (postMessage *, cookie, log, URL).
+    metadata:
+      class: INFO_DISCLOSURE
+
+  # --- 3. GraphQL input interpolation instead of variables
+  - id: deephunt-gql-interpolation
+    languages: [javascript, typescript]
+    severity: WARNING
+    patterns:
+      - pattern-either:
+          - pattern: gql`...${$X}...`
+          - pattern: "`...query...${$X}...`"
+      - pattern-not: "$Q = { query: $T, variables: {...} }"
+    message: User input interpolated into GraphQL query text — injection candidate.
+    metadata:
+      class: GRAPHQL
+
+  # --- 4. Prototype pollution: tainted key into merge / dynamic assignment
+  - id: deephunt-proto-pollution
+    languages: [javascript, typescript]
+    severity: WARNING
+    mode: taint
+    pattern-sources:
+      - patterns:
+          - pattern-either:
+              - pattern: JSON.parse(...)
+              - pattern: $REQ.query.$K
+              - pattern: location.hash
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: _.merge($O, ...)
+              - pattern: $.extend($O, ...)
+              - pattern: $O[$K] = $V
+              - pattern: Object.assign($O, ...)
+    message: Tainted key reaches object merge/assignment — prototype pollution gadget hunt.
+    metadata:
+      class: PROTO_POLLUTION
+
+  # --- 5. DOM XSS sinks
+  - id: deephunt-dom-xss
+    languages: [javascript, typescript]
+    severity: WARNING
+    mode: taint
+    pattern-sources:
+      - patterns:
+          - pattern-either:
+              - pattern: location.hash
+              - pattern: location.search
+              - pattern: document.referrer
+              - pattern: $WS.onmessage = $H
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: $EL.innerHTML = ...
+              - pattern: document.write(...)
+              - pattern: eval(...)
+              - pattern: new Function(...)
+    pattern-sanitizers:
+      - pattern-either:
+          - pattern: DOMPurify.sanitize(...)
+          - pattern: $EL.textContent = ...
+    message: Untrusted input reaches DOM XSS sink without sanitizer.
+    metadata:
+      class: XSS
+
+  # --- 6. Client-side role gates (feeds target model, not a vuln itself)
+  - id: deephunt-client-role-gate
+    languages: [javascript, typescript]
+    severity: INFO
+    patterns:
+      - pattern-either:
+          - pattern: localStorage.getItem("role")
+          - pattern: $U.isAdmin
+          - pattern: $U.role === "..."
+    message: Client-side role check — enumerate roles for the authz matrix.
+    metadata:
+      class: AUTHZ_RECON
+
+  # --- 7. postMessage without origin check
+  - id: deephunt-postmessage-no-origin-check
+    languages: [javascript, typescript]
+    severity: WARNING
+    patterns:
+      - pattern: |
+          window.addEventListener("message", function($E) {
+            ...
+          })
+      - pattern-not-regex: (?s)event\.origin|e\.origin
+    message: message handler without origin check — postMessage hijack candidate.
+    metadata:
+      class: XSS
+
+  # --- 8. Weak randomness for tokens/nonces
+  - id: deephunt-math-random-token
+    languages: [javascript, typescript]
+    severity: INFO
+    patterns:
+      - pattern-either:
+          - pattern: $T = Math.random()...
+          - pattern: Math.random().toString(...)
+    message: Math.random() used — check if it seeds tokens/nonces/CSRF values.
+    metadata:
+      class: CRYPTO_WEAKNESS
+
+  # --- 9. Secrets in client bundle
+  - id: deephunt-client-secret
+    languages: [javascript, typescript]
+    severity: ERROR
+    patterns:
+      - pattern-either:
+          - pattern-regex: (sk_live_|sk_test_|xox[bap]-|ghp_|AKIA[0-9A-Z]{16})
+          - pattern-regex: -----BEGIN (RSA |EC )?PRIVATE KEY-----
+    message: Hardcoded secret or private key in client-side bundle.
+    metadata:
+      class: SECRET
+
+  # --- 10. SSRF hint: user-derived same-origin fetch URL
+  - id: deephunt-ssrf-hint
+    languages: [javascript, typescript]
+    severity: INFO
+    mode: taint
+    pattern-sources:
+      - pattern: $INPUT.value
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: fetch("/api/fetch?url=" + ...)
+              - pattern: fetch(`/proxy/${...}`)
+    message: User-derived URL passed to a fetch/proxy endpoint — SSRF hypothesis seed.
+    metadata:
+      class: SSRF

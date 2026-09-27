@@ -1,0 +1,7 @@
+# HTTP Parameter Pollution shapes — hand-curated.
+# DETECT: responses differing between single vs duplicated params.
+DUP?a=1&a=2
+DUP?a[]=1&a[]=2
+SPLIT-QUERY-BODY?a=1  (body: a=2)
+SPLIT-COOKIE?a=1  (cookie: a=2)
+ARRAY?a[0]=1&a[1]=2

