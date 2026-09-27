@@ -1,9 +1,13 @@
 # Research Google accounts for the hunt.
-# STATUS: slots prepared. Google forces phone verification + anti-automation
-# on signup, so the user creates these (2 minutes each); automation would get
-# them insta-banned. The moment the addresses exist, they get wired into the
-# identity registry, browser profiles, and learning pipeline.
+# PRIMARY (live, full hunt access granted 2026-09-27):
+#   attacksurface.alerts@gmail.com — see ../state/research_account.json
+#   Saved login in Secure Vault (google.com) is available; the browser signs
+#   in with it. Plus-addressing: attacksurface.alerts+<target>@gmail.com.
 accounts:
+  - slot: primary
+    purpose: bounty test accounts, service signups, browser sessions, learning
+    email: attacksurface.alerts@gmail.com
+    wired: true
   - slot: hunt-01
     purpose: service signups, bug bounty test accounts, browser access for hunting
     email: null  # user to create, e.g. shivohunt01@gmail.com
