@@ -1,0 +1,38 @@
+# Signup playbook template. Copy to <target>.yaml AFTER studying the real flow
+# in a read-only browser pass. A playbook must never be guessed.
+target: example
+studied_on: "2026-09-27"
+studied_by: agent
+signup_url: https://example.com/signup
+login_url: https://example.com/login
+
+steps:
+  - step: 1
+    description: enter email, continue
+  - step: 2
+    description: password step -> STOP, issue Secure Vault card
+
+consent:
+  checkboxes:
+    - "I agree to the Terms of Service"
+    - "I agree to the Privacy Policy"
+
+captcha:
+  type: unknown  # recaptcha_v2 | recaptcha_v3 | hcaptcha | turnstile | arkose | none_visible
+  notes: describe exactly what was observed
+  strategy: user_handles  # solve | user_handles | ask (see identity/CAPTCHA.md)
+
+verification:
+  method: email_otp  # email_otp | email_link | phone_otp | none
+
+# Anything here halts automation instantly and hands to the user.
+stop_conditions:
+  - SSN / national ID number
+  - government ID document upload
+  - real full name / date of birth beyond test persona
+  - payment instrument / bank details
+  - phone number tied to real identity (burner policy per user)
+
+vault:
+  domain: example.com
+  password_via: secure_card  # credentials.request_new_password

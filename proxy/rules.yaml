@@ -23,3 +23,11 @@ rules:
       direction: response
     actions:
       - add_header: ["X-Proxy-Modified", "modify-engine-ok"]
+
+  - name: robinhood-bounty-attribution
+    match:
+      host: "(.+\\.)?(robinhood\\.com|robinhood\\.net|rhapollo\\.net|rhinternal\\.net|say\\.rocks|saytechnologies\\.com|bitstamp\\.net|1integrations\\.com|x1\\.co|x1creditcard\\.com|tradepmr\\.com)$"
+      direction: request
+    actions:
+      - add_header: ["X-Bug-Bounty", "shiva92"]
+      # X-Test-Account-Email added once Shivam creates a Robinhood test account

@@ -156,3 +156,19 @@ Persona/IDV bypass (planned), SafeTix bypass (planned), job-token scope escapes.
   parsed as mappings) — seeds now quoted, 11 parse clean.
 - Adobe still passive-only (active_allowed: false) until the Intigriti test
   plan is read.
+
+## 2026-09-27 02:28 IST — Robinhood hunt started
+- Official "Robinhood Markets Bounty" policy verified from hackerone.com/robinhood (paid program, >$460k paid; Tier 1 Critical $10k-$25k).
+- Scope file: deephunt/targets/robinhood.yaml (14 scope hosts, out-of-scope list, excluded finding types).
+- Mandatory X-Bug-Bounty: shiva92 header auto-injected by proxy rule robinhood-bounty-attribution.
+- Daemon restarted: targets=robinhood,shopify,yahoo. ResearchSession 9fa7d08c88bf open, INTAKE phase running.
+- NOTE: X-Test-Account-Email header pending — Shivam needs to create a Robinhood test account for authenticated testing.
+
+## 2026-09-27 ~08:05 IST — CLI + GUI + identity module built (user: "give him cli and gui let him think see execute")
+- deephunt/cli.py: status/start/stop/targets/identities/sessions/findings/log/signup
+- deephunt/gui.py: stdlib-only dashboard on 127.0.0.1:5059 (localhost only) — overview/targets/identities/sessions/findings/logs + daemon start/stop + signup brief generator
+- deephunt/identity/: manager.py (metadata-only registry, email convention attacksurface.alerts+<target>@gmail.com), driver.py (playbook -> browser-task brief), playbooks/_template.yaml, CAPTCHA.md (honest strategy doc)
+- Passwords NEVER stored in code/logs/memory — Secure Vault only via user-set secure cards; browser fills from vault at sign-in.
+- Hard stops: KYC/PII (SSN, ID docs, payment) halts automation -> user.
+- CAPTCHA: runtime preference (solve/user_handles/ask); paid solvers need explicit cap — NOT enabled.
+- Pending: Robinhood signup-flow study (browser task running) -> playbooks/robinhood.yaml

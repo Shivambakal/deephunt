@@ -1,0 +1,142 @@
+# DEEPHUNT target profile: robinhood
+# Program: "Robinhood Markets Bounty" — PAID HackerOne program (launched Oct 2025)
+# Policy verified from official public program page 2026-09-27
+# (overview updated 2026-03-11; rewards updated 2026-02-11). >$460k paid to date.
+name: robinhood
+program: HackerOne robinhood — Robinhood Markets Bounty (paid; scope verified via official public policy 2026-09-27)
+
+scope_hosts:
+  # Tier 1 — highest rewards (Critical $10k-$25k)
+  - robinhood.com
+  - api.robinhood.com
+  - nummus.robinhood.com
+  - oak.robinhood.com
+  - www.bitstamp.net
+  # Tier 2
+  - saytechnologies.com
+  - say.rocks
+  # Tier 3 — acquisitions
+  - 1integrations.com
+  - x1.co
+  - x1creditcard.com
+  - fusion.tradepmr.com
+  - www.tradepmr.com
+  - insight2.tradepmr.com
+  - bitstamp.net
+
+ct_zones:
+  - robinhood.com
+  - say.rocks
+  - bitstamp.net
+
+# Internal-service wildcards: in scope but "you shouldn't be able to log into
+# anything here" — passive recon only, no credential attempts.
+internal_only_zones:
+  - rhapollo.net
+  - rhinternal.net
+  - robinhood.net
+
+seed_urls:
+  - https://robinhood.com/
+  - https://api.robinhood.com/
+  - https://nummus.robinhood.com/
+  - https://www.bitstamp.net/
+
+# Explicitly OUT OF SCOPE — never touch, even passively probing for vulns
+out_of_scope:
+  - shop.robinhood.com
+  - fleet.infra.robinhood.net
+  - content.research.robinhood.com
+  - events.robinhood.com
+  - affiliates.robinhood.com
+  - vgs-api.robinhood.com
+  - share.robinhood.com
+  - esg.robinhood.com
+  - go.robinhood.com
+  - press.robinhood.com
+  - careers.robinhood.com
+  - startinvesting.robinhood.com
+  - underthehoodpod.robinhood.com
+  - roadshow.robinhood.com
+  - weareallinvestors.robinhood.com
+  - earlytalent.robinhood.com
+  - sandbox.bitstamp.net
+  - auth-sandbox.tradepmr.com
+  - api-sandbox.tradepmr.com
+  - fusion-demo.tradepmr.com
+  - auth.tradepmr.com
+  - api.tradepmr.com
+
+# Finding-type exclusions per policy — do not report these
+excluded_finding_types:
+  - subdomain takeover WITHOUT actual takeover proof
+  - cache poisoning
+  - clickjacking without impact
+  - SPF/DKIM/DMARC/DNSSEC issues
+  - missing security headers unless exploitable
+  - missing cookie flags except session cookies
+  - logout CSRF
+  - disclosure of publicly available information
+  - Say Technologies voting info disclosure via IDOR
+  - findings requiring rooted/jailbroken devices
+
+mobile_apps:
+  - 1634080733  # iOS Robinhood Wallet
+  - 6462308655  # iOS Robinhood Credit Card
+  - 938003185   # iOS Robinhood Trading and Investing
+  - com.robinhood.android
+  - com.robinhood.gateway
+  - com.robinhood.money
+  - com.robinhood.global
+  - net.bitstamp.app
+
+tech_terms:
+  - brokerage API
+  - crypto trading (Nummus)
+  - Major Oak internal admin tooling
+  - Bitstamp exchange API
+  - Say Technologies shareholder Q&A
+  - TradePMR fusion
+
+vuln_classes:
+  - IDOR
+  - broken access control
+  - OAuth flow abuse
+  - business logic (trading flows — program staff say customer-found trading-flow bugs are top value)
+  - rate limit bypass
+  - SSRF
+  - stored XSS
+  - mobile API abuse
+
+vuln_classes_text: authorization, business logic/trading flows, OAuth, injection, SSRF, mobile API
+
+active_allowed: true
+
+auth_basis: |
+  HackerOne paid program "Robinhood Markets Bounty", Gold Standard Safe Harbor.
+  MANDATORY attribution headers on ALL test traffic:
+    X-Bug-Bounty: shiva92
+    X-Test-Account-Email: <test account email>
+  Rules: ONLY test accounts the researcher owns — never other users' accounts.
+  No DoS, no social engineering/phishing, no fraud. $1,000 USD cap when testing
+  unbounded-loss vulnerabilities — file the report at $1,000. No large data
+  volumes to websockets. No mass support-ticket creation. Findings dependent on
+  account takeover typically NOT accepted (small bonus only if novel).
+  Do NOT disclose reports outside the HackerOne platform, ever.
+  Throttled open-source tooling only; nuclei -rate-limit 20, high/critical
+  templates. No real-user data. Major Oak (oak.robinhood.*) is internal admin
+  tooling — treat as extremely sensitive, passive recon only unless a clear
+  in-scope misconfiguration appears.
+
+repo_keywords:
+  - robinhood
+  - bitstamp
+  - nummus
+
+hypothesis_seeds:
+  - api.robinhood.com proxies many services under path prefixes (/cashier etc.); a path-confusion or prefix-routing flaw may expose one service's endpoints under another's auth context.
+  - Nummus crypto balance endpoints may have IDOR across accounts (object IDs for wallets/orders).
+  - Bitstamp API (docs at bitstamp.net/api) may have auth gaps vs the main Robinhood API — acquisitions often lag in authz hardening.
+  - Say Technologies (*.say.rocks) shareholder Q&A flows may leak voter identity or allow vote manipulation (note: voting info disclosure via IDOR is explicitly out of scope — look for other classes).
+  - TradePMR fusion.tradepmr.com production app is a fresh acquisition surface with likely less hunter traffic.
+  - Tier-1 internal zones (rhapollo/rhinternal/robinhood.net) are in scope for misconfiguration but login-gated; exposed services without auth are the prize.

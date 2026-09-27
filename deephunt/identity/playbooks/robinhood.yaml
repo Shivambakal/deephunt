@@ -1,0 +1,56 @@
+# Studied Robinhood signup/login flow — OBSERVED 2026-09-27, read-only.
+# Nothing submitted, no account created. Later wizard steps (past email entry)
+# were not observable without submitting the form.
+target: robinhood
+studied_on: "2026-09-27"
+studied_by: browser recon (read-only DOM observation)
+signup_url: https://robinhood.com/signup/
+login_url: https://robinhood.com/login/
+
+steps:
+  - step: 1
+    description: "email only — 'Create your login'. Single field data-testid=SignupEmail; Continue disabled until valid email."
+  - step: 2
+    description: "password step expected -> STOP, issue Secure Vault card (credentials.request_new_password)"
+  - step: 3
+    description: "unknown — wizard progressbar at 2.5% after step 1 implies many steps; KYC (SSN/DOB/address/ID) expected -> KYC_STOP, hand to user"
+
+consent:
+  # NO checkboxes on signup. Clickwrap only:
+  checkboxes: []
+  clickwrap_text: "By continuing, you agree to the Robinhood User Account Agreement and Privacy Policy."
+  clickwrap_links:
+    - https://cdn.robinhood.com/assets/robinhood/legal/robinhood-user-account-agreement.pdf
+    - https://robinhood.com/us/en/support/articles/privacy-policy/
+
+captcha:
+  type: recaptcha_enterprise_invisible
+  notes: "Google reCAPTCHA Enterprise, invisible, badge hidden (site key observed in DOM). No v2 checkbox, no hCaptcha, no Turnstile, no Arkose visible. Extra silent signals: fp.robinhood.com, fp.robinhood.net, api.sjpf.io (device/browser fingerprinting). No challenge fired during passive observation."
+  strategy: solve  # invisible scoring; runtime attempts, falls back to user_handles if challenged
+
+verification:
+  method: unknown  # not visible without submitting step 1; likely email link or OTP
+
+login:
+  url: https://robinhood.com/login/
+  fields: ["Email (autocomplete=username)", "Password (autocomplete=current-password)"]
+  options: ["Keep me logged in for up to 30 days (unchecked)", "Log in with passkeys"]
+  social_oauth: none  # no Continue with Google/Apple observed
+
+stop_conditions:
+  - SSN / national ID number
+  - date of birth + legal name (brokerage KYC identity verification)
+  - government ID document upload / selfie
+  - home address for tax/regulatory purposes
+  - bank account / funding source linking
+  - any phone verification tied to real identity
+
+vault:
+  domain: robinhood.com
+  password_via: secure_card
+
+notes: >
+  Brokerage signup WILL require real identity (KYC is federal law for brokerages).
+  Automation covers: email entry, password via vault card, email OTP (user provides).
+  The user must personally complete identity verification — a test persona cannot
+  pass brokerage KYC, and must not attempt to.
