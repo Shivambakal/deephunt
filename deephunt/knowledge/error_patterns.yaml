@@ -1,0 +1,228 @@
+# knowledge/error_patterns.yaml — error regex -> meaning -> suggested technique.
+# Consumed by deephunt/error_intel.py. Categories:
+#   benign      — expected noise (rate limits, timeouts, DNS). Quiet.
+#   informative — leaks intelligence (WAF identity, versions, stack traces,
+#                 SQL dialects, cloud metadata). Extracted into findings.
+#   unknown     — anything else substantial -> STUDY task for the learning loop.
+#
+# Technique references are knowledge/techniques.yaml card IDs.
+patterns:
+  # ---------------- benign ----------------
+  - id: rate-limit
+    regex: '(?i)(429|too many requests|rate.?limit|slow down|retry-after)'
+    category: benign
+    meaning: "Rate limited — back off, reduce concurrency, rotate timing."
+    technique: null
+  - id: timeout
+    regex: '(?i)(timed?\s*out|timeout|deadline exceeded|operation timed out)'
+    category: benign
+    meaning: "Timeout — transient or filtered; retry once, then treat target as slow."
+    technique: null
+  - id: dns-fail
+    regex: '(?i)(NXDOMAIN|Name or service not known|Could not resolve host|DNS.*(fail|error)|no such host)'
+    category: benign
+    meaning: "DNS resolution failure — dead subdomain or resolver issue."
+    technique: null
+  - id: conn-refused
+    regex: '(?i)(Connection refused|ECONNREFUSED|No connection could be made)'
+    category: benign
+    meaning: "Port closed / nothing listening."
+    technique: null
+  - id: conn-reset
+    regex: '(?i)(Connection reset by peer|ECONNRESET|connection was forcibly closed)'
+    category: benign
+    meaning: "RST — firewall, IPS shun, or crashed listener."
+    technique: null
+  - id: tls-fail
+    regex: '(?i)(certificate verify failed|SSL.*(error|handshake)|handshake failure|dh key too small)'
+    category: benign
+    meaning: "TLS failure — note weak-TLS signal only if handshake *succeeds* with old ciphers."
+    technique: null
+  - id: empty-result
+    regex: '(?i)(no (results|subdomains|hosts|urls) found|0 results|empty response)'
+    category: benign
+    meaning: "Tool found nothing — not an error, just negative signal."
+    technique: null
+  - id: not-found-fuzz
+    regex: '(?i)^\s*404(\s|$)'
+    category: benign
+    meaning: "404 on a fuzzed path — expected noise during discovery."
+    technique: null
+
+  # ---------------- informative: WAF / edge ----------------
+  - id: waf-cloudflare
+    regex: '(?i)(Attention Required!?.*Cloudflare|cf-ray|__cf_bm|cf_chl_|cloudflare-nginx)'
+    category: informative
+    meaning: "Cloudflare edge in front — expect JS challenge / managed rules; tune evasion per WAF-01."
+    technique: WAF-01
+    extract: { waf: "Cloudflare" }
+  - id: waf-aws
+    regex: '(?i)(awselb|AWS WAF|Request blocked.*amazon|x-amzn-)'
+    category: informative
+    meaning: "AWS WAF / ELB — managed rules; test rule-specific bypasses."
+    technique: WAF-01
+    extract: { waf: "AWS" }
+  - id: waf-akamai
+    regex: '(?i)(AkamaiGHost|akamai.*(denied|reference)|_abck|bm_sz)'
+    category: informative
+    meaning: "Akamai (Ghost/Bot Manager) — sensor-data checks likely; sensor spoofing per WAF-01."
+    technique: WAF-01
+    extract: { waf: "Akamai" }
+  - id: waf-imperva
+    regex: '(?i)(Incapsula|incap_ses|_incap_|visid_incap)'
+    category: informative
+    meaning: "Imperva/Incapsula — cookie-based; test incap bypass differentials."
+    technique: WAF-01
+    extract: { waf: "Imperva" }
+  - id: waf-modsec
+    regex: '(?i)(ModSecurity|mod_security|Not Acceptable.*406|CRS)'
+    category: informative
+    meaning: "ModSecurity/CRS — rule IDs in body help pick bypass payloads."
+    technique: WAF-01
+    extract: { waf: "ModSecurity" }
+  - id: waf-f5
+    regex: '(?i)(BIG-IP|F5.*ASM|The requested URL was rejected.*support ID)'
+    category: informative
+    meaning: "F5 BIG-IP ASM — support-ID page; encoding differentials per WAF-01."
+    technique: WAF-01
+    extract: { waf: "F5" }
+
+  # ---------------- informative: SQL dialects ----------------
+  - id: sqli-mysql
+    regex: '(?i)(You have an error in your SQL syntax|Warning.*mysql_|MySqlException|valid MySQL result)'
+    category: informative
+    meaning: "MySQL/MariaDB error — SQLI-01 battery with MySQL dialect payloads."
+    technique: SQLI-01
+    extract: { sql_dialect: "MySQL" }
+  - id: sqli-postgres
+    regex: '(?i)(pg_query\(\)|PostgreSQL.*ERROR|unterminated quoted string|pg_exec)'
+    category: informative
+    meaning: "PostgreSQL error — SQLI-01 battery with Postgres dialect."
+    technique: SQLI-01
+    extract: { sql_dialect: "PostgreSQL" }
+  - id: sqli-mssql
+    regex: '(?i)(Unclosed quotation mark|Microsoft.*ODBC.*SQL Server|SqlException|System\.Data\.SqlClient)'
+    category: informative
+    meaning: "MSSQL error — SQLI-01 battery with T-SQL dialect (stacked queries possible)."
+    technique: SQLI-01
+    extract: { sql_dialect: "MSSQL" }
+  - id: sqli-oracle
+    regex: '(ORA-\d{5})'
+    category: informative
+    meaning: "Oracle error — SQLI-01 battery with Oracle dialect; ORA code narrows the bug."
+    technique: SQLI-01
+    extract: { sql_dialect: "Oracle" }
+  - id: sqli-sqlite
+    regex: '(?i)(SQLite.*error|sqlite3\.OperationalError|near ".*": syntax error)'
+    category: informative
+    meaning: "SQLite error — SQLI-01 battery with SQLite dialect."
+    technique: SQLI-01
+    extract: { sql_dialect: "SQLite" }
+
+  # ---------------- informative: stack traces / frameworks ----------------
+  - id: trace-python
+    regex: '(Traceback \(most recent call last\))'
+    category: informative
+    meaning: "Python traceback — framework + file paths + versions leak; read for sinks."
+    technique: API-03
+    extract: { framework_hint: "Python" }
+  - id: trace-java
+    regex: '((NullPointer|IllegalArgument|ClassCast)\w*Exception|Caused by:\s*[\w.$]+Exception|at [\w.$]+\([\w.$]+:\d+\))'
+    category: informative
+    meaning: "Java stack trace — package names reveal framework (Spring/Struts); internal paths leak."
+    technique: API-03
+    extract: { framework_hint: "Java" }
+  - id: trace-dotnet
+    regex: "(?i)(Server Error in '/' Application|System\\.Web\\.|IIS.*\\.NET|_ASPNET)"
+    category: informative
+    meaning: ".NET error page — viewstate/debug config may be reachable."
+    technique: API-03
+    extract: { framework_hint: "ASP.NET" }
+  - id: trace-php
+    regex: '(?i)(Fatal error:.*\.php on line \d+|Warning:.*\.php on line \d+|Parse error: syntax error)'
+    category: informative
+    meaning: "PHP error — file paths leak; LFI/RFI context if path controllable."
+    technique: API-03
+    extract: { framework_hint: "PHP" }
+  - id: trace-node
+    regex: '(at .*\(.*\.js:\d+:\d+\)|(Reference|Type)Error: Cannot read propert)'
+    category: informative
+    meaning: "Node.js stack — dependency + path leak; prototype-pollution context."
+    technique: API-03
+    extract: { framework_hint: "Node.js" }
+  - id: trace-ruby
+    regex: '(ActionController::|NoMethodError|ActiveRecord::|PG::Error)'
+    category: informative
+    meaning: "Ruby on Rails error — routes and model names leak."
+    technique: API-03
+    extract: { framework_hint: "Rails" }
+  - id: django-debug
+    regex: '(?i)(DisallowedHost|DEBUG = True|django.*Traceback|Using the URLconf defined in)'
+    category: informative
+    meaning: "Django debug page — full settings/traceback; check for SECRET_KEY leak."
+    technique: API-03
+    extract: { framework_hint: "Django" }
+  - id: spring-whitelabel
+    regex: '(?i)(Whitelabel Error Page|There was an unexpected error.*Spring)'
+    category: informative
+    meaning: "Spring Boot whitelabel — actuator endpoints may be exposed."
+    technique: API-05
+    extract: { framework_hint: "Spring Boot" }
+
+  # ---------------- informative: version / server leaks ----------------
+  - id: version-server
+    regex: '(?im)^Server:\s*([^\r\n]+)'
+    category: informative
+    meaning: "Server header version disclosure — feed CVE matching."
+    technique: API-03
+    extract: { header: "Server" }
+  - id: version-powered
+    regex: '(?im)^X-Powered-By:\s*([^\r\n]+)'
+    category: informative
+    meaning: "X-Powered-By disclosure — framework + version for CVE matching."
+    technique: API-03
+    extract: { header: "X-Powered-By" }
+  - id: version-nginx
+    regex: '(nginx/[\d.]+)'
+    category: informative
+    meaning: "nginx version pinned — check for version-specific bugs."
+    technique: API-03
+    extract: { server: "nginx" }
+  - id: version-apache
+    regex: '(Apache/[\d.]+)'
+    category: informative
+    meaning: "Apache version pinned — check for version-specific bugs."
+    technique: API-03
+    extract: { server: "Apache" }
+
+  # ---------------- informative: cloud / auth / api ----------------
+  - id: cloud-metadata
+    regex: '(169\.254\.169\.254|instance-identity|computeMetadata|/latest/meta-data/)'
+    category: informative
+    meaning: "Cloud metadata reference — SSRF-01 target; never fetch from here, report the vector."
+    technique: SSRF-01
+    extract: { cloud: "metadata-service-ref" }
+  - id: auth-differential
+    regex: '(?i)(WWW-Authenticate:\s*([^\r\n]+)|401 Unauthorized|407 Proxy Authentication)'
+    category: informative
+    meaning: "Auth challenge details — scheme/realm leak; 401 vs 403 vs 404 differential is an oracle."
+    technique: AUTHB-01
+    extract: { auth: "challenge-seen" }
+  - id: graphql-errors
+    regex: '(?i)("errors"\s*:\s*\[.*(Cannot query field|did you mean|Field .* doesn.t exist))'
+    category: informative
+    meaning: "GraphQL field-suggestion errors — schema oracle; enumerate via GQL-01/GQL-07."
+    technique: GQL-01
+    extract: { api: "GraphQL" }
+  - id: cors-reflect
+    regex: '(?im)^Access-Control-Allow-Origin:\s*(\*|[^\r\n]+)'
+    category: informative
+    meaning: "CORS ACAO present — test null/reflective origin with credentials per CORS-01."
+    technique: CORS-01
+    extract: { header: "Access-Control-Allow-Origin" }
+  - id: openapi-exposed
+    regex: '(?i)(openapi:\s*3\.|swagger:\s*["'']?2\.0|/openapi\.json|/swagger\.json)'
+    category: informative
+    meaning: "OpenAPI/Swagger spec exposed — ingest with API-05, then sequence with API-06."
+    technique: API-05
+    extract: { api: "OpenAPI" }

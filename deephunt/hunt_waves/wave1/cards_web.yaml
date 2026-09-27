@@ -1,0 +1,924 @@
+# DEEPHUNT Wave 1 — Web/API technique cards (internet intel sweep, 2025-2026)
+# Generated 2026-09-27 by Hunt Commander Worker 1. Research only; no live probing performed.
+# Sources: PortSwigger Research, HackerOne disclosed reports, Bishop Fox, Assetnote-style writeups,
+# public CVE analyses, bug-bounty writeups (2025-2026). All wording original; attributions inline.
+techniques:
+  - id: W1-001
+    name: "CL.0 / 0.CL parser-discrepancy request desync"
+    klass: web
+    requires: ["front-end proxy/CDN/load-balancer in front of an origin", "HTTP/1.1 spoken on the back-end leg", "shared back-end connection pool"]
+    signals: ["front-end and back-end disagree on whether a body exists", "one side ignores Content-Length", "static endpoints that accept POST"]
+    questions: ["does the front-end honor Content-Length on this route?", "does the back-end treat a CL body as empty (CL.0) or consume it (0.CL)?", "is there an early-response gadget to break the 0.CL deadlock?"]
+    evidence: ["James Kettle 'HTTP/1.1 Must Die: the desync endgame' (2025)", "Akamai CVE-2025-32094 ($9,000 bounty)", "T-Mobile non-prod desync ($12,000)", "Cloudflare CDN smuggling report ($7,000)"]
+    followups: ["W1-002 Expect-header trick", "W1-003 funky chunks", "early-response gadget hunt (IIS con/aux/nul, static files, redirects)"]
+    test: "Raw-socket POST with Content-Length: N where the body contains a smuggled request prefix; then send a normal GET on the same connection and check for queue poisoning or timing differential."
+    impact_hint: "Response-queue poisoning, session hijack, credential theft; at CDN layer affects all customers on the edge node."
+    preconditions: ["two HTTP processors parse the same bytes differently", "classic CL+TE conflict NOT required — CL.0/0.CL need no TE header at all"]
+    required_state: "Unauthenticated. Raw TCP/TLS socket access; ability to send pipelined requests on one connection."
+    hypothesis_generator: "For each route, hypothesize FE in {CL, none} x BE in {CL, none}: CL.0 = FE honors CL while BE treats body as empty; 0.CL = FE ignores CL while BE consumes CL bytes from the next request."
+    request_strategy: "POST /static-or-dynamic-path with Content-Length: 30 and body 'GET /admin HTTP/1.1\\r\\nFoo: x\\r\\n\\r\\n' padded to length; follow immediately with a benign GET; compare responses and timings."
+    mutation_strategy: "Vary Content-Length (0, small, large), method (POST/GET/HEAD), path (static asset vs dynamic), and add an early-response gadget path to resolve 0.CL deadlock."
+    expected_signal: "The follow-up GET receives the response meant for the smuggled request, or a timing delay equal to the smuggled request's processing time."
+    positive_oracle: "Time-delay differential across repeated trials, or response content from the smuggled path appearing on the victim request's socket."
+    negative_evidence: ["both sides consistently reject or consistently honor CL", "connection closes without queuing", "no timing differential over 10 trials"]
+    false_positive_rules: ["a single slow response is NOT desync — require a differential", "never run desync probes against shared production connections without explicit scope authorization"]
+    followup_experiment: "Escalate a confirmed primitive to response-queue poisoning against a cache-busted canary path you control, then to web-cache poisoning."
+    regression_test: "Send CL and TE together and expect rejection; send CL: 0 with a body and expect the body to be ignored identically by both sides."
+    difficulty_estimate: 5
+
+  - id: W1-002
+    name: "Expect: 100-continue header desync trick"
+    klass: web
+    requires: ["front-end that special-cases the Expect header", "HTTP/1.1 back-end leg"]
+    signals: ["front-end forwards or mishandles Expect: 100-continue", "0.CL-style deadlock on an otherwise clean link"]
+    questions: ["does adding 'Expect: 100-continue' change how the front-end frames the body?", "does the back-end see a body the front-end did not forward?"]
+    evidence: ["Kettle 2025 desync research", "Akamai CVE-2025-32094 via Expect trick", "T-Mobile $12,000 non-prod finding"]
+    followups: ["W1-001 CL.0/0.CL", "W1-004 H2 downgrade variants"]
+    test: "Send a request with 'Expect: 100-continue' plus a Content-Length body; observe whether the front-end and back-end disagree on body framing, producing 0.CL."
+    impact_hint: "Opens desync on links that previously had none — extends W1-001 to hardened front-ends."
+    preconditions: ["front-end parses Expect before deciding body handling", "back-end still honors Content-Length"]
+    required_state: "Unauthenticated. Raw socket control."
+    hypothesis_generator: "Hypothesize the front-end treats Expect: 100-continue as 'no body will follow' (or delays forwarding) while the back-end consumes CL bytes from subsequent data."
+    request_strategy: "POST with headers 'Expect: 100-continue' and 'Content-Length: N', body = smuggled prefix; compare against identical request without the Expect header."
+    mutation_strategy: "Vary Expect values (100-continue, garbage), CL sizes, and whether the 100 response is awaited."
+    expected_signal: "Only the Expect-bearing variant shows queuing/timing anomalies — a differential that isolates the header as the trigger."
+    positive_oracle: "Differential desync signal present with Expect header and absent without it, across repeated trials."
+    negative_evidence: ["front-end strips or normalizes Expect before framing", "no differential between Expect and non-Expect variants"]
+    false_positive_rules: ["confirm the differential is header-caused, not connection noise", "do not mistake 100-continue round-trip latency for desync"]
+    followup_experiment: "Chain with an early-response gadget to convert 0.CL deadlock into weaponizable queue poisoning."
+    regression_test: "Expect-bearing request with matching body must produce identical framing decisions on both sides."
+    difficulty_estimate: 4
+
+  - id: W1-003
+    name: "Funky chunks — chunk-extension parsing discrepancies"
+    klass: web
+    requires: ["Transfer-Encoding: chunked accepted on the link", "front-end and back-end written in different HTTP stacks (e.g. proxy vs Kestrel)"]
+    signals: ["chunk extensions tolerated differently", "lone control characters (\\n, \\r) inside chunk-size lines"]
+    questions: ["does the front-end treat '\\n' after ';' as a line terminator?", "does the back-end treat it as part of the chunk extension?", "which side terminates the chunked body first?"]
+    evidence: ["Documented as new 2025 smuggling class in public research compendia", "RFC 9112 token rules vs real-world parser leniency"]
+    followups: ["W1-001", "W1-004"]
+    test: "Send a chunked request whose chunk-size line contains a semicolon followed by a lone \\n; hide a smuggled request inside what one side believes is chunk data."
+    impact_hint: "Full request smuggling (queue poisoning, cache poisoning, credential theft) past WAFs keyed on classic CL.TE signatures."
+    preconditions: ["TE: chunked honored by at least one side", "parser differential on chunk extensions"]
+    required_state: "Unauthenticated. Raw socket; control over exact bytes including lone LF."
+    hypothesis_generator: "Hypothesize FE terminates the chunk-size line at lone \\n while BE consumes it as extension text, so BE sees extra pipelined bytes FE never framed."
+    request_strategy: "POST with 'Transfer-Encoding: chunked', body '2;\\nxx\\r\\n45\\r\\nGET /admin HTTP/1.1\\r\\nHost: x\\r\\n\\r\\n0\\r\\n\\r\\n'; observe which side parses the inner GET."
+    mutation_strategy: "Vary extension content (\\n, \\r, \\0, spaces), chunk sizes, and stack pairs."
+    expected_signal: "Back-end processes the hidden GET as a separate pipelined request while the front-end saw one chunked request."
+    positive_oracle: "Response to a follow-up request contains output of the smuggled path, or timing shows an extra request was processed."
+    negative_evidence: ["both sides reject lone control chars in chunk extensions", "both sides parse extensions identically"]
+    false_positive_rules: ["verify the differential is extension-parsing, not generic TE.CL", "rule out WAF normalization of the chunk stream"]
+    followup_experiment: "Attempt web-cache poisoning by smuggling a cacheable redirect response."
+    regression_test: "Chunked bodies with RFC-valid extensions must be framed identically by both sides."
+    difficulty_estimate: 5
+
+  - id: W1-004
+    name: "H2-to-H1 downgrade smuggling (H2.CL / H2.TE / CRLF injection)"
+    klass: web
+    requires: ["front-end terminates HTTP/2", "back-end speaks HTTP/1.1 (downgrade translation)", "attacker can set HTTP/2 pseudo-headers or header values"]
+    signals: ["HTTP/2 enabled at edge, HTTP/1.1 at origin", ":path or header values reflected into the downgraded request line", "Transfer-Encoding surviving downgrade"]
+    questions: ["does the downgrader strip Transfer-Encoding?", "can \\r\\n be smuggled inside an HTTP/2 header value?", "does :path injection reach the request line?"]
+    evidence: ["Kettle 2025 CDN-level desync research (~30M sites estimated exposure)", "PortSwigger request-tunnelling research"]
+    followups: ["W1-001", "W1-005 cache poisoning via smuggled redirect"]
+    test: "Over HTTP/2, send :path containing '/?x=1 HTTP/1.1\\r\\nTransfer-Encoding: chunked' or a header value with embedded CRLF; check whether the downgraded HTTP/1.1 request contains attacker-injected headers."
+    impact_hint: "CDN-edge desync affecting every customer behind the edge node; WAF bypass for all tenants at once."
+    preconditions: ["H2→H1 translation layer exists", "translation does not sanitize CRLF or strip TE"]
+    required_state: "Unauthenticated. HTTP/2-capable client."
+    hypothesis_generator: "Hypothesize the translator copies header values verbatim into the HTTP/1.1 byte stream, so embedded CRLF becomes real header delimiters."
+    request_strategy: "HTTP/2 request with header 'Foo: bar\\r\\nTransfer-Encoding: chunked' or :path '/?a=1 HTTP/1.1\\r\\nX: y'; then send a chunked smuggled body."
+    mutation_strategy: "Vary injection point (:path, custom headers, pseudo-headers), CRLF forms (\\r\\n, \\n), and TE vs CL framing."
+    expected_signal: "Origin logs or responses show the injected header/request as parsed HTTP/1.1 — e.g. a second request is processed."
+    positive_oracle: "Downgraded request demonstrably contains attacker-framed headers (verified via timing oracle or reflected parsing behavior)."
+    negative_evidence: ["translator strips TE and rejects/sanitizes CRLF in values", "origin sees exactly one request per H2 stream"]
+    false_positive_rules: ["HTTP/2 libraries may normalize before sending — verify bytes on the wire", "a 400 from the origin may mean the translator already rejected it"]
+    followup_experiment: "Poison the shared CDN cache with a smuggled redirect to an attacker domain."
+    regression_test: "Requests with CRLF in H2 header values must be rejected or sanitized at translation."
+    difficulty_estimate: 4
+
+  - id: W1-005
+    name: "Cookie chaos — __Host- / __Secure- prefix bypass"
+    klass: web
+    requires: ["application sets __Host- or __Secure- prefixed cookies for security boundaries", "attacker can plant cookies from a subdomain or via cookie-jar injection"]
+    signals: ["session or CSRF state split across prefixed and unprefixed cookies", "subdomain cookie-setting capability"]
+    questions: ["does the app honor a non-prefixed shadow cookie when the prefixed one is absent?", "can a subdomain plant a __Host- cookie (it should not be able to)?"]
+    evidence: ["PortSwigger Research 'Cookie Chaos: bypassing __Host/__Secure cookie prefixes' (Sep 2025)"]
+    followups: ["W1-006 cookie sandwich", "session fixation via cookie planting"]
+    test: "From a subdomain (or via an injection primitive), attempt to set __Host-session and __Secure-token cookies; then test whether the application accepts attacker-planted values or falls back to unprefixed shadows."
+    impact_hint: "Session fixation, CSRF-token override, auth-boundary bypass where prefix trust was load-bearing."
+    preconditions: ["cookie prefixes used as a security control", "some cookie-write primitive exists (subdomain, XSS-adjacent, header injection)"]
+    required_state: "Varies: subdomain control or any response-header injection."
+    hypothesis_generator: "Hypothesize the app checks the prefixed cookie name but a parser differential (browser vs server cookie jar) lets a planted or shadow cookie win."
+    request_strategy: "Set-Cookie from subdomain: '__Host-session=attacker'; then request the app with and without the legitimate cookie and compare auth decisions."
+    mutation_strategy: "Vary prefix (__Host-, __Secure-), Domain/Path/Secure attributes, and shadow-cookie names."
+    expected_signal: "Application accepts the planted prefixed cookie (browser should have rejected it) or silently falls back to an attacker-controlled unprefixed cookie."
+    positive_oracle: "Authenticated action performed under attacker-chosen session/CSRF state, confirmed by server-side state change."
+    negative_evidence: ["browser refuses to store the planted prefixed cookie", "app strictly requires the prefixed cookie and rejects shadows"]
+    false_positive_rules: ["verify in a real browser jar — curl does not enforce prefix rules", "a reflected cookie value is not acceptance"]
+    followup_experiment: "Chain into session fixation: plant session id, have victim-equivalent login, hijack."
+    regression_test: "Subdomain-planted __Host- cookies must never be stored or honored."
+    difficulty_estimate: 3
+
+  - id: W1-006
+    name: "Cookie sandwich — HttpOnly cookie theft via jar injection"
+    klass: web
+    requires: ["HttpOnly session cookie", "attacker can inject a Set-Cookie or cookie-like value (header injection, subdomain, MITM-adjacent)"]
+    signals: ["server-side cookie parsing differs from the browser jar", "multiple cookies with the same name accepted"]
+    questions: ["when two cookies share a name, which one does the server read — first or last?", "can an attacker sandwich a malicious value around the real HttpOnly cookie?"]
+    evidence: ["PortSwigger Research 'Stealing HttpOnly cookies with the cookie sandwich technique' (Jan 2025)"]
+    followups: ["W1-005 cookie chaos"]
+    test: "Inject a duplicate cookie name (attacker value) alongside the victim's HttpOnly cookie; determine server precedence and whether attacker value can shadow or leak the real one via reflection."
+    impact_hint: "HttpOnly bypass — session theft without XSS."
+    preconditions: ["server reads cookies with first-wins or last-wins ambiguity", "cookie injection primitive"]
+    required_state: "Cookie-write primitive (subdomain/header injection); victim session not required for the probe."
+    hypothesis_generator: "Hypothesize the server splits the Cookie header naively and takes the first (or last) duplicate, letting an injected value shadow the real session or leak it into a reflected context."
+    request_strategy: "Send 'Cookie: session=ATTACKER; session=REAL' and 'Cookie: session=REAL; session=ATTACKER'; compare auth outcomes and any reflection."
+    mutation_strategy: "Vary duplicate order, separators, quoting, and __Host- variants."
+    expected_signal: "Server honors the attacker-positioned duplicate, or reflects the real cookie value into the response."
+    positive_oracle: "Server-side authenticated state changes under attacker-chosen cookie value, or the HttpOnly value appears in attacker-observable output."
+    negative_evidence: ["server rejects duplicate cookie names", "consistent precedence that cannot be influenced"]
+    false_positive_rules: ["reflection of your own injected value is not theft — the oracle needs the VICTIM value", "confirm with two distinct test sessions"]
+    followup_experiment: "Use a subdomain Set-Cookie to plant the sandwich in a real browser jar, then trigger a victim-equivalent request."
+    regression_test: "Duplicate cookie names must be rejected or handled with documented, unexploitable precedence."
+    difficulty_estimate: 4
+
+  - id: W1-007
+    name: "Phantom $Version cookie WAF bypass"
+    klass: web
+    requires: ["WAF inspects Cookie header with signature rules", "back-end cookie parser follows RFC 2965 ($Version) semantics loosely"]
+    signals: ["WAF blocks payloads in cookies but back-end still parses them", "Cookie header with $Version prefix changes WAF verdict"]
+    questions: ["does the WAF's cookie parser understand '$Version=1' prefixes?", "does the back-end skip or reinterpret the $Version segment and still read the payload cookie?"]
+    evidence: ["PortSwigger Research 'Bypassing WAFs with the phantom $Version cookie' (Dec 2024)"]
+    followups: ["W1-008 origin bypass", "W1-034 unicode overflows"]
+    test: "Prefix the Cookie header with '$Version=1' (phantom segment) carrying the attack payload; check whether the WAF lets it through while the back-end still parses the payload cookie."
+    impact_hint: "WAF signature bypass for cookie-borne XSS/SQLi — payload reaches the app uninspected."
+    preconditions: ["WAF and back-end disagree on RFC 2965 cookie parsing"]
+    required_state: "Unauthenticated. Ability to set arbitrary Cookie headers."
+    hypothesis_generator: "Hypothesize the WAF splits cookies on ';' but chokes on the '$Version=1' preamble, while the back-end skips it and parses the remaining pairs normally."
+    request_strategy: "Baseline: 'Cookie: id=<script>alert(1)</script>' (expect WAF block). Variant: 'Cookie: $Version=1; id=<script>alert(1)</script>' (expect pass-through + app reflection)."
+    mutation_strategy: "Vary $Version values, quoting, separators, and payload classes (XSS, SQLi)."
+    expected_signal: "WAF-blocked baseline vs WAF-passed phantom variant with identical application-side parsing."
+    positive_oracle: "Payload executes/reflects in application output while WAF logs (if visible) show no block for the phantom variant."
+    negative_evidence: ["WAF blocks both variants", "back-end fails to parse the cookie after the $Version segment"]
+    false_positive_rules: ["confirm the app actually parsed the payload cookie — a 200 with no reflection is not a bypass", "rule out WAF learning-mode/passive mode"]
+    followup_experiment: "Escalate to stored payload (profile field, comment) to prove end-to-end impact."
+    regression_test: "WAF cookie parser must handle RFC 2965 preamble identically to the back-end."
+    difficulty_estimate: 3
+
+  - id: W1-008
+    name: "WAF origin bypass via DNS history and subdomain leaks"
+    klass: web
+    requires: ["site fronted by WAF/CDN", "origin IP reachable directly (stale DNS, mail subdomain, cert transparency, cloud metadata)"]
+    signals: ["WAF headers (cf-ray, x-akamai-*) present on the main domain", "subdomains resolving to different IPs", "historical DNS records pre-dating WAF adoption"]
+    questions: ["does any subdomain (mail, dev, origin, direct) leak the origin IP?", "does the origin accept requests with the production Host header?", "is origin access restricted at all?"]
+    evidence: ["HITCON ZeroDay ZD-2026-00539: Akamai WAF fully bypassed via mail-subdomain DNS leak on ezorder.8way.com.tw (2026)", "public origin-discovery tooling (EvilWAF auto-hunt, Cloudflair, viewdns.info)"]
+    followups: ["direct origin attack with forged Host header", "internal-only paths exposed past the WAF"]
+    test: "Enumerate subdomains and historical DNS for origin candidates; connect directly to the candidate IP with 'Host: <production domain>' and compare WAF behavior."
+    impact_hint: "Complete WAF bypass — all signature/rate-limit protections skipped; internal admin paths (e.g. Exchange OWA) exposed."
+    preconditions: ["origin reachable from the internet", "origin does not validate that traffic came through the WAF"]
+    required_state: "Unauthenticated. DNS/subdomain enumeration capability."
+    hypothesis_generator: "Hypothesize the origin IP is discoverable (stale A record, mail subdomain, cert SAN) and the origin trusts any request bearing the right Host header."
+    request_strategy: "1) subdomain + DNS-history sweep for origin candidates. 2) curl --resolve or direct-IP request with forged Host. 3) diff WAF-blocked payload vs direct-origin response."
+    mutation_strategy: "Vary origin candidates, Host header values, and SNI."
+    expected_signal: "Direct-to-origin request returns the application (200/app content) while the same payload via the WAF domain is blocked."
+    positive_oracle: "Attack payload blocked through the WAF succeeds when sent directly to the origin with a forged Host header."
+    negative_evidence: ["origin IP not discoverable or firewalled", "origin rejects non-WAF Host/SNI", "origin requires mTLS/client cert from the WAF"]
+    false_positive_rules: ["confirm the candidate IP is really the origin (matching TLS cert, app fingerprint) — not a different vhost", "a 200 from a default vhost is not the app"]
+    followup_experiment: "Probe origin-only paths (/admin, /owa, internal APIs) that the WAF policy hides."
+    regression_test: "Origin must allowlist WAF egress IPs or require a shared secret header."
+    difficulty_estimate: 2
+
+  - id: W1-009
+    name: "HTTP Anomaly Rank — differential behaviour fingerprinting"
+    klass: web
+    requires: ["any HTTP endpoint", "ability to send malformed/edge-case requests"]
+    signals: ["inconsistent handling of ambiguous requests across routes", "undocumented endpoints reacting differently to malformed input"]
+    questions: ["which routes deviate most from baseline HTTP behavior?", "do anomalies cluster on admin/debug/internal paths?"]
+    evidence: ["PortSwigger Research 'Introducing HTTP Anomaly Rank' (Nov 2025)", "James Kettle HTTP Terminator autonomous discovery (Aug 2026)"]
+    followups: ["feed anomalies into W1-001..W1-004 smuggling probes", "target top-ranked routes for manual review"]
+    test: "Send a battery of edge-case requests (odd methods, duplicate headers, weird CL/TE combos, strange paths) to many routes; rank routes by deviation from the baseline response profile."
+    impact_hint: "Recon multiplier — surfaces hidden attack surface and parser differentials that manual testing misses."
+    preconditions: ["none beyond HTTP access"]
+    required_state: "Unauthenticated. High request volume tolerance."
+    hypothesis_generator: "Hypothesize that routes with the most anomalous responses to malformed input sit on different stacks or have weaker validation — prime smuggling/SSRF candidates."
+    request_strategy: "Baseline: normal GET per route. Probe set: 20-50 malformed variants per route (method case, duplicate CL, TE variants, path tricks). Score deviation (status/body/length/timing deltas)."
+    mutation_strategy: "Expand the probe battery per anomaly class; cluster anomalies by route and by stack fingerprint."
+    expected_signal: "A ranked list where the top routes show strong, repeatable deviations (e.g. 400 vs 200 flips, body-length jumps)."
+    positive_oracle: "Top-ranked route yields a concrete follow-on finding (desync, auth bypass, info leak) when probed manually."
+    negative_evidence: ["uniform responses across all routes and probes", "anomalies not repeatable"]
+    false_positive_rules: ["rate limiting and WAF blocks look like anomalies — baseline them out", "CDN edge behavior differs from origin; rank per-host"]
+    followup_experiment: "Run the smuggling probe battery (W1-001..W1-004) against the top-5 anomalous routes."
+    regression_test: "N/A (recon technique) — re-run after infra changes to detect drift."
+    difficulty_estimate: 3
+
+  - id: W1-010
+    name: "SAML signature-optional authentication bypass"
+    klass: auth
+    requires: ["SAML SSO login flow", "application-side SAML response parsing"]
+    signals: ["SAMLResponse POST to /acs or /saml/callback", "IdP metadata or /saml/metadata endpoint"]
+    questions: ["is signature verification actually enforced, or treated as optional?", "are Issuer, Audience, Destination, timestamps validated?", "can the NameID be swapped to victim?"]
+    evidence: ["PortSwigger Research 'The Fragile Lock: Novel Bypasses For SAML Authentication' (Dec 2025)", "PortSwigger 'SAML roulette: the hacker always wins' (Mar 2025)", "Bishop Fox CVE-2026-28323: SolarWinds Web Help Desk treated SAML signature verification as optional (Sep 2026)", "Bishop Fox NetScaler CVE-2026-19490 pre-auth SAML bypass (Sep 2026)"]
+    followups: ["XML signature wrapping (XSW)", "NameID confusion across tenants"]
+    test: "Capture a valid SAMLResponse, strip or corrupt the Signature element, re-POST to the ACS endpoint; then try swapping NameID to a victim identifier."
+    impact_hint: "Unauthenticated full account takeover — one forged POST, no credentials."
+    preconditions: ["SAML response accepted without mandatory signature check, or signature validated against attacker-supplied key"]
+    required_state: "Unauthenticated; needs one valid SAMLResponse sample (own login) or knowledge of the NameID format."
+    hypothesis_generator: "Hypothesize the SP parses the assertion and establishes the session from NameID/attributes without cryptographically binding the response to the IdP key."
+    request_strategy: "1) strip Signature. 2) self-sign with attacker key. 3) XSW variants (duplicate assertions). 4) NameID swap to administrator."
+    mutation_strategy: "Vary signature presence, canonicalization, Issuer/Audience values, and clock skew."
+    expected_signal: "Stripped or self-signed response yields an authenticated session."
+    positive_oracle: "Session cookie issued for a forged NameID (e.g. administrator) with no valid IdP signature."
+    negative_evidence: ["ACS rejects unsigned/modified responses", "signature validated against pinned IdP cert with full condition checks"]
+    false_positive_rules: ["your own valid response replayed is not a bypass — the signature must be invalid or absent", "check for one-time-use (InResponseTo) enforcement separately"]
+    followup_experiment: "Test cross-tenant NameID confusion and IdP-initiated vs SP-initiated flows."
+    regression_test: "Unsigned, self-signed, and XSW-wrapped responses must all be rejected."
+    difficulty_estimate: 3
+
+  - id: W1-011
+    name: "OIDC ID-token fail-open on unrecognized algorithm"
+    klass: auth
+    requires: ["OIDC/OAuth login flow issuing JWT ID tokens", "client-side or server-side ID-token validation in a library"]
+    signals: ["ID token JWT in callback", "auth library version fingerprintable (Authlib, custom validators)"]
+    questions: ["what happens when 'alg' is an unknown value?", "does validation fail closed (reject) or fail open (return true)?", "is the expected alg pinned?"]
+    evidence: ["Authlib CVE-2026-28498 (CVSS 8.2): unrecognized alg silently returns True — ID-token integrity bypass", "Authlib CVE-2026-27962 (CVSS 9.1): JWT signature verification bypass", "86M+ monthly Authlib downloads affected"]
+    followups: ["W1-012 unsupported-alg fail-open", "alg:none and RS256->HS256 confusion"]
+    test: "Take a valid ID token, change header 'alg' to a bogus value (e.g. 'none2', 'RS999'), keep or drop the signature, and submit it; observe whether validation passes."
+    impact_hint: "Authentication bypass via forged ID tokens — attacker mints arbitrary identities."
+    preconditions: ["validator does not pin the expected algorithm", "unknown-alg path returns success instead of raising"]
+    required_state: "Unauthenticated; needs the token endpoint/callback and knowledge of claim names (sub, aud)."
+    hypothesis_generator: "Hypothesize the validator switches on 'alg' and has a default branch that returns True, so any unrecognized algorithm string skips signature verification."
+    request_strategy: "Forge ID token: header {'alg':'BOGUS','typ':'JWT'}, payload with victim sub and correct aud/iss; send through the login callback or session endpoint."
+    mutation_strategy: "Vary alg (unknown strings, empty, null, case variants), signature present/absent/garbage."
+    expected_signal: "Forged token accepted; session established for the claimed sub."
+    positive_oracle: "Authenticated session as a victim user with a token no legitimate IdP could have signed."
+    negative_evidence: ["unknown alg rejected with error", "alg allowlist enforced and pinned"]
+    false_positive_rules: ["the aud/iss must match the target — a token for another audience being rejected is correct behavior", "do not confuse with test-mode bypasses"]
+    followup_experiment: "Probe the RSA1_5 padding oracle (CVE-2026-28490) via distinguishable error responses on decryption failures."
+    regression_test: "Tokens with unknown, missing, or mismatched alg must be rejected."
+    difficulty_estimate: 3
+
+  - id: W1-012
+    name: "JWT fail-open on unsupported signing algorithm (gateway auth bypass)"
+    klass: auth
+    requires: ["JWT-based auth on an API gateway or management plane", "validator that inspects 'alg' instead of pinning it"]
+    signals: ["JWT accepted via Authorization header or X-JWT-Assertion", "gateway product (WSO2 API Manager et al.)"]
+    questions: ["does the validator reject algorithms it does not support, or accept them?", "can an arbitrary alg string skip verification entirely?"]
+    evidence: ["CVE-2026-5430: WSO2 API Manager JWT auth bypass via unsupported algorithm (CVSS 9.8/10.0, KEV-listed Sep 2026, active exploitation observed by watchTowr)", "HackerOne 3489490: Nextcloud ID4me missing JWT signature validation (2026)"]
+    followups: ["enumerate API catalog and backend credentials post-bypass (authorized scope only)", "W1-011"]
+    test: "Craft a JWT with header {'alg':'none'} or an unsupported algorithm name, payload {'sub':'admin'} with broad scopes, no valid signature; present it to the gateway admin API."
+    impact_hint: "Unauthenticated admin on the API management plane — backend URLs, consumer keys/secrets, OAuth token store."
+    preconditions: ["validator treats unsupported alg as valid instead of rejecting"]
+    required_state: "Unauthenticated. Knowledge of claim schema (sub, scope names) from docs or error messages."
+    hypothesis_generator: "Hypothesize the gateway's token validation has an allowlist gap: any alg string not explicitly handled falls through to an accept path."
+    request_strategy: "Baseline with a real low-priv token; then forge admin token with alg 'none' and with garbage algs; call /api/am/admin endpoints."
+    mutation_strategy: "Vary alg ('none', 'None', 'HS999', empty), kid/jku presence, and scope claim values."
+    expected_signal: "Forged admin JWT returns 200 with admin data instead of 401."
+    positive_oracle: "Admin-only API data (API catalog, consumer secrets) returned for a self-minted token."
+    negative_evidence: ["401 on all forged variants", "alg strictly pinned to the configured value"]
+    false_positive_rules: ["a 200 on a public endpoint is not a bypass — use a known admin-only path", "confirm the token was actually validated, not ignored (test with garbage payload too)"]
+    followup_experiment: "Verify whether the bypass extends to the traffic manager / universal gateway data plane."
+    regression_test: "Tokens with any alg other than the pinned expected value must be rejected."
+    difficulty_estimate: 3
+
+  - id: W1-013
+    name: "OAuth authorization-code client-binding bypass"
+    klass: auth
+    requires: ["OAuth 2.0 authorization-code flow with multiple registered clients", "token endpoint that does not bind the code to the issuing client"]
+    signals: ["/authorize and /token endpoints", "multiple client_ids in the ecosystem (mobile app, web app, partner integrations)"]
+    questions: ["does /token verify the exchanging client is the one the code was issued to?", "can client B redeem a code issued to client A?"]
+    evidence: ["Tinyauth CVE-2026-32245 (2026): token endpoint skipped client binding — malicious client exchanges another client's code", "Mozilla Taskcluster HackerOne 3734676: OAuth2 authorization codes reusable (2026)"]
+    followups: ["code replay across redirect_uris", "refresh-token binding checks"]
+    test: "As a victim-equivalent user, authorize with client A and capture the code; then redeem that code at /token using client B's credentials."
+    impact_hint: "Account takeover — attacker client obtains tokens for a victim's session authorized to a benign client."
+    preconditions: ["RFC 6749 Section 4.1.3 client binding not enforced", "attacker controls or can register a second client"]
+    required_state: "Attacker needs own OAuth client credentials plus a victim-issued code (phishing, leaked redirect, log). "
+    hypothesis_generator: "Hypothesize the token endpoint validates the code and redirect_uri but never compares the stored client_id against the authenticating client."
+    request_strategy: "1) victim flow with client A -> capture code. 2) POST /token with client B basic-auth, grant_type=authorization_code, code=<A's code>, redirect_uri=<A's uri>."
+    mutation_strategy: "Vary redirect_uri (A's vs B's vs omitted), code reuse (single vs multiple redemption)."
+    expected_signal: "/token returns access/ID/refresh tokens bound to client B for the victim user."
+    positive_oracle: "Tokens issued to client B authenticate as the victim (userinfo returns victim identity)."
+    negative_evidence: ["token endpoint rejects with invalid_grant for cross-client redemption", "codes single-use and client-bound"]
+    false_positive_rules: ["redeeming your own code with your own client is the happy path — the oracle requires a DIFFERENT client", "public clients without secrets need PKCE analysis instead"]
+    followup_experiment: "Test whether issued refresh tokens are also cross-client redeemable (persistent access)."
+    regression_test: "Cross-client code redemption must return invalid_grant."
+    difficulty_estimate: 3
+
+  - id: W1-014
+    name: "Keycloak client-initiated account-linking hash forgery"
+    klass: auth
+    requires: ["Keycloak realm with deprecated client-initiated account linking endpoint (/broker/{alias}/link)", "attacker controls a registered OIDC client"]
+    signals: ["GET /realms/{realm}/broker/{provider}/link reachable", "Keycloak <= 26.7.1"]
+    questions: ["is the linking hash a real MAC or a plain digest over public inputs?", "are all hash inputs attacker-known (nonce, session_state, clientId, alias)?"]
+    evidence: ["CVE-2026-15571 (CVSS 7.3): SHA-256 over nonce+userSessionId+clientId+providerAlias with no server secret — forgeable in seconds"]
+    followups: ["bind attacker IdP identity, then log in as victim through that IdP"]
+    test: "Compute SHA-256(nonce + session_state + client_id + provider_alias) with attacker-chosen nonce, build the /link URL, and have a victim session visit it (or use own session to validate the primitive)."
+    impact_hint: "Full account takeover — attacker-controlled external identity silently bound to the victim account."
+    preconditions: ["deprecated linking endpoint enabled", "hash not keyed with a server secret"]
+    required_state: "Attacker OIDC client + victim session (CSRF-adjacent delivery) or own session for primitive validation."
+    hypothesis_generator: "Hypothesize every digest input is observable or attacker-chosen, so the 'integrity' hash can be recomputed by anyone."
+    request_strategy: "Collect session_state from a login flow, pick nonce, compute digest, GET the link URL, verify the account-link event."
+    mutation_strategy: "Vary provider alias, nonce reuse, and target user."
+    expected_signal: "Account shows a new linked identity provider entry controlled by the attacker."
+    positive_oracle: "Login via the attacker IdP yields the victim's account session."
+    negative_evidence: ["endpoint disabled/removed", "digest includes a server-side secret or per-request server nonce"]
+    false_positive_rules: ["linking your own account is expected — the oracle needs a VICTIM account", "confirm the link persists server-side, not just UI"]
+    followup_experiment: "Test the same digest-forgery pattern on other broker endpoints (unlink, re-auth)."
+    regression_test: "Linking requests must carry a server-generated, single-use token."
+    difficulty_estimate: 4
+
+  - id: W1-015
+    name: "'Sign in with Google' defunct-domain reclaim account takeover"
+    klass: auth
+    requires: ["app offers 'Login with Google Workspace' and keys identity on email or hd claim instead of the stable sub", "a defunct company domain whose Workspace lapsed"]
+    signals: ["Google SSO login option", "accounts tied to corporate domains", "hd (hosted domain) claim used for tenant/user matching"]
+    questions: ["is the user record keyed on 'sub' or on 'email'/'hd'?", "what happens when the same email reappears from a re-registered domain?"]
+    evidence: ["TruffleSecurity research: millions at risk via Google OAuth domain reclaim (2024-2025, still applicable 2026)"]
+    followups: ["test other IdPs with reclaimable identifiers (email-only matching)"]
+    test: "For a target using Google Workspace SSO keyed on email/hd: re-register an expired domain, recreate the victim mailbox, and attempt login — check whether the victim's SaaS account is returned."
+    impact_hint: "Account takeover of former employees' SaaS accounts via domain re-registration."
+    preconditions: ["identity bound to reclaimable email/hd, not immutable sub", "domain actually expired and re-registerable"]
+    required_state: "Attacker must purchase/re-register the domain — only test against in-scope domains you own."
+    hypothesis_generator: "Hypothesize the app matches users by email string, so a freshly created mailbox with the same address inherits the old account."
+    request_strategy: "On an in-scope test tenant: create user via Google SSO, delete/recreate the mailbox, log in again, and check whether the original account (not a new one) is returned."
+    mutation_strategy: "Vary matching attribute (email vs hd vs sub) via IdP claim inspection."
+    expected_signal: "Second login returns the ORIGINAL account with its data, not a fresh account."
+    positive_oracle: "Access to pre-existing account data via the recreated mailbox."
+    negative_evidence: ["new login creates a fresh empty account", "identity keyed on sub"]
+    false_positive_rules: ["only test domains you own or are authorized for — never reclaim a real third-party domain", "a new empty account means NOT vulnerable"]
+    followup_experiment: "Audit all SSO integrations for sub-vs-email keying."
+    regression_test: "User identity must be keyed on the IdP's immutable subject identifier."
+    difficulty_estimate: 2
+
+  - id: W1-016
+    name: "Auth0 cross-tenant session (sid) reuse to forge victim-tenant JWT"
+    klass: auth
+    requires: ["multi-tenant Auth0 deployment", "session cookie (sid) not bound to the tenant that issued it"]
+    signals: ["Auth0 /authorize endpoints across tenants", "same sid cookie accepted by multiple tenants"]
+    questions: ["does /authorize validate which tenant the sid belongs to?", "can my tenant's session mint a victim tenant's token?"]
+    evidence: ["SentorSecurity disclosure: authentication bypass in Auth0 via cross-tenant sid reuse (2025)"]
+    followups: ["tenant-scoped session validation audit"]
+    test: "Authenticate in your own Auth0 tenant, capture the sid cookie, then replay it against the victim tenant's /authorize with the victim client_id and check the issued token's tenant/identity."
+    impact_hint: "Victim-tenant JWT for the same-email identity — cross-tenant impersonation."
+    preconditions: ["sid accepted cross-tenant", "email-matched identity across tenants"]
+    required_state: "Attacker Auth0 tenant + victim tenant client_id (often public)."
+    hypothesis_generator: "Hypothesize the session store is global and /authorize only checks the sid's validity, not its tenant scope."
+    request_strategy: "Login to attacker tenant -> save sid -> GET victim /authorize?...&client_id=VICTIM with attacker sid -> inspect returned token claims."
+    mutation_strategy: "Vary client_id, connection, and prompt parameters."
+    expected_signal: "Victim tenant issues tokens for the attacker-email identity."
+    positive_oracle: "JWT with victim tenant issuer/audience and attacker-controlled subject accepted by the victim app."
+    negative_evidence: ["sid rejected cross-tenant", "session re-scoped per tenant"]
+    false_positive_rules: ["same-tenant replay is expected — the oracle needs a DIFFERENT tenant", "confirm token audience/issuer are the victim tenant's"]
+    followup_experiment: "Check logout/session-revocation propagation across tenants."
+    regression_test: "Sessions must be cryptographically bound to their issuing tenant."
+    difficulty_estimate: 3
+
+  - id: W1-017
+    name: "OAuth cached display-name collision account takeover"
+    klass: auth
+    requires: ["OAuth/OIDC user cache keyed with fallback on mutable attributes (display name / email)", "attacker can set their provider display name arbitrarily"]
+    signals: ["OAuth login with user caching layer", "Google/Facebook/generic OIDC name field copied into identity comparison"]
+    questions: ["is identity resolved by immutable subject/vendor_user_id only, or does a display-name/email scan run on cache miss?", "does a name match rebind the cached row to the attacker?"]
+    evidence: ["MySQL Router MRS OAuth cached display-name ATO PoC (verified end-to-end 2026-08-09): cache_get display-name match rebinds victim row to attacker, copying privileges/groups/user_id"]
+    followups: ["test email-collision variant", "check limit_to_registered_users ordering"]
+    test: "Create a victim OAuth account (let it cache), then create an attacker account whose provider display name exactly matches the victim's; log in as attacker and check whose internal user_id/privileges the session carries."
+    impact_hint: "Full account takeover — victim's internal user_id, groups, and session state inherited by the attacker; row permanently rebound."
+    preconditions: ["cache lookup falls back to mutable-attribute scan", "provider lets users set arbitrary display names"]
+    required_state: "Two test accounts on the target; ability to set display name on the OAuth provider."
+    hypothesis_generator: "Hypothesize cache_get() scans cached users on vendor_user_id miss and treats a display-name match as identity, then user_get() copies the victim row onto the attacker."
+    request_strategy: "1) victim OAuth login (populate cache). 2) attacker sets display name = victim's. 3) attacker OAuth login. 4) inspect session identity, privileges, user_id."
+    mutation_strategy: "Vary matched attribute (name vs email), name casing/whitespace, and login order."
+    expected_signal: "Attacker session carries the victim's internal user_id and privileges."
+    positive_oracle: "Attacker performs a victim-only action (or reads victim data) after the name-collision login."
+    negative_evidence: ["identity resolved strictly by immutable subject", "name collision creates a separate account"]
+    false_positive_rules: ["use two clearly distinct accounts and verify pre-collision baselines", "display-name-only UI confusion without privilege inheritance is not ATO"]
+    followup_experiment: "Verify whether the victim row's vendor_user_id/email were permanently overwritten (persistence)."
+    regression_test: "Identity resolution must use only the provider's immutable subject; mutable attributes must never rebind rows."
+    difficulty_estimate: 3
+
+  - id: W1-018
+    name: "SSRF whitelist bypass via URL parser differentials"
+    klass: ssrf
+    requires: ["server-side fetch of an attacker-influenced URL", "whitelist or blacklist validation on the URL"]
+    signals: ["stockApi/url/webhook parameters", "error messages distinguishing blocked vs fetched", "open-redirect endpoints on the same app"]
+    questions: ["do the validator and the HTTP client parse the URL identically?", "do @ credentials, # fragments, or double-encoding split their views?", "is there an open redirect to launder the URL?"]
+    evidence: ["PortSwigger Academy SSRF labs (whitelist bypass via '@' + double-encoded '#', 2026 writeups)", "PortSwigger 'URL validation bypass cheat sheet' (Sep 2024)"]
+    followups: ["W1-019 DNS rebinding", "cloud metadata (169.254.169.254) once internal access is gained"]
+    test: "Submit whitelist-bypass candidates: 'http://127.1.1.1%2523@127.0.0.1/admin', 'http://whitelisted@127.0.0.1/', 'http://127.0.0.1#@whitelisted/', and open-redirect-laundered URLs; compare validator verdicts vs actual fetch targets."
+    impact_hint: "Internal admin access, cloud metadata/credential theft, internal port scanning."
+    preconditions: ["validation and fetching use different URL parsers (or different decode passes)"]
+    required_state: "Unauthenticated in the classic stock-check scenario; OAST listener (interactsh/Burp Collaborator) for blind confirmation."
+    hypothesis_generator: "Hypothesize the validator sees the whitelisted host (before @, or before the decoded #) while the HTTP client resolves the real host (after @, or after the second decode)."
+    request_strategy: "Baseline blocked URL -> alternate IP forms (127.1, 2130706433, 0x7f000001) -> @ credential syntax -> # fragment + double encoding -> open-redirect chain."
+    mutation_strategy: "Vary encoding depth (single/double/triple), IP representations, and fragment/query placement."
+    expected_signal: "Validator passes the URL but the fetched content (or OAST ping) shows the internal target was reached."
+    positive_oracle: "OAST interaction from an internal fetch, or internal content (e.g. /admin page) returned for a validator-approved URL."
+    negative_evidence: ["validator and client agree on every candidate", "egress firewall blocks RFC1918 regardless of parser games"]
+    false_positive_rules: ["a 200 with generic content is not internal access — need target-specific content or OAST", "confirm the OAST hit came from the target (unique token per payload)"]
+    followup_experiment: "Pivot to cloud metadata with IMDSv2 token PUT (where SSRF allows method/header control) and internal service enumeration."
+    regression_test: "Validate the parsed-and-normalized URL object (not the raw string) against an allowlist, and enforce egress firewall rules."
+    difficulty_estimate: 3
+
+  - id: W1-019
+    name: ".NET SOAP/WSDL protocol-switching SSRF (WebRequest.Create)"
+    klass: ssrf
+    requires: [".NET app that imports attacker-influenced WSDL or builds SOAP proxies from URLs", "ServiceDescriptionImporter or dynamic proxy generation"]
+    signals: ["WSDL import endpoints", ".asmx?WSDL", "SOAP client configuration via URL parameter"]
+    questions: ["is the WSDL service URL attacker-controllable?", "does WebRequest.Create allow file:// or gopher-ish scheme switching?", "are SOAP method names/arguments reflected into requests?"]
+    evidence: ["Piotr Bazydlo (Watch Towel) research, Jul 2026: unauthenticated WSDL import in Barracuda Service Center -> protocol switching to file:// (arbitrary file write) and NTLM relaying; also seen in Ivanti Endpoint Manager, Umbraco 8, PowerShell, SSIS; Microsoft declined to patch root cause"]
+    followups: ["NTLM relay via forced authentication", "file-write to RCE chains"]
+    test: "Point the WSDL importer at an attacker-controlled WSDL whose service URL uses file:// or an internal http:// target; observe whether the generated proxy performs the switched-protocol request."
+    impact_hint: "Arbitrary local file write, NTLM credential relay, SSRF to internal services — up to RCE."
+    preconditions: ["WSDL URL or service address derived from untrusted input", "no scheme allowlist before proxy invocation"]
+    required_state: "Attacker-controlled WSDL hosting; target endpoint that imports it."
+    hypothesis_generator: "Hypothesize the app passes the WSDL's service URL straight into WebRequest.Create, which honors non-HTTP schemes (file://) and triggers NTLM auth to attacker hosts."
+    request_strategy: "Host evil.wsdl with <soap:address location='file:///attacker-controlled-path'/> and with internal http:// targets; submit to the importer; monitor file/NTLM/OAST signals."
+    mutation_strategy: "Vary scheme (file, http, https, UNC paths), method names, and argument reflection."
+    expected_signal: "File-system side effect, NTLM authentication attempt to attacker listener, or internal HTTP request observed."
+    positive_oracle: "Attacker-observable file write or credential material captured from the switched-protocol request."
+    negative_evidence: ["importer allowlists http/https only", "service URL validated against expected hosts"]
+    false_positive_rules: ["NTLM attempts must come from the target (unique per-test identifiers)", "a failed import with no side effect is not a finding"]
+    followup_experiment: "Relay captured NTLM authentication to an in-scope internal service (authorized environments only)."
+    regression_test: "WSDL service URLs must be scheme- and host-validated before proxy generation."
+    difficulty_estimate: 4
+
+  - id: W1-020
+    name: "GraphQL federation directive bypass cluster"
+    klass: graphql
+    requires: ["Apollo Federation gateway + subgraphs using @authenticated/@requiresScopes/@policy"]
+    signals: ["_service { sdl } present on subgraphs", "directives visible in schema", "federated gateway routing"]
+    questions: ["are directives enforced on interfaces queried via implementing-type fragments?", "do renamed (@link import) directives still enforce?", "are transitive @requires(fields:) dependencies checked?"]
+    evidence: ["CVE-2025-64172/64173/64347/64530: directive bypass via interface fragments, @link renaming, and transitive @requires dependencies (2025-2026)"]
+    followups: ["W1-022 federation prototype pollution", "_service { sdl } schema leak even with introspection disabled"]
+    test: "Query a directive-protected field three ways: directly, via an interface with an implementing-type fragment, and via a @link-renamed directive name; compare authorization outcomes."
+    impact_hint: "Authorization bypass on federated fields — protected data exposed to unauthenticated/low-priv users."
+    preconditions: ["gateway enforces directives at the gateway layer but subgraphs or fragment paths skip checks"]
+    required_state: "Low-priv or unauthenticated GraphQL access; introspection or _service { sdl } for schema."
+    hypothesis_generator: "Hypothesize directive enforcement is attached to the named field, so reaching the same resolver through an interface fragment or a renamed directive bypasses the check."
+    request_strategy: "Baseline denied query -> fragment variant ('... on ImplementingType { protectedField }') -> renamed-directive variant -> nested @requires path variant."
+    mutation_strategy: "Vary fragment types, directive aliases, and nesting depth."
+    expected_signal: "One variant returns data while the direct query is denied."
+    positive_oracle: "Protected field data returned to an unauthorized caller via an alternate query shape."
+    negative_evidence: ["all shapes denied consistently", "directives enforced in the subgraph resolvers themselves"]
+    false_positive_rules: ["verify the caller is actually unauthorized for that field (baseline denial first)", "public fields returning data is not a bypass"]
+    followup_experiment: "Map every directive-protected field and fuzz all reachable shapes (fragments, aliases, federation _entities)."
+    regression_test: "Directive checks must run on the resolver path actually executed, regardless of query shape."
+    difficulty_estimate: 4
+
+  - id: W1-021
+    name: "GraphQL alias batching — rate-limit bypass and mutation-aliasing DoS"
+    klass: graphql
+    requires: ["GraphQL endpoint accepting aliased/batched operations", "rate limiting applied per HTTP request rather than per operation"]
+    signals: ["/graphql endpoint", "login/OTP/recovery mutations", "no query cost or alias limits"]
+    questions: ["can one HTTP request carry N operations via aliases?", "is the rate limiter counting requests or operations?", "do batched mutations execute sequentially with shared state?"]
+    evidence: ["HackerOne 3287208: DoS via mutation aliasing in GraphQL account-recovery phone numbers ($12,500, disclosed 2026-04-16)", "PortSwigger GraphQL batching research; operation-limit integer overflow CVE-2025-32033 on Apollo Router"]
+    followups: ["named-fragment recursion DoS (CVE-2025-32032/32034/31496)", "APQ hash-mismatch bypass (sha256Hash=000...0)"]
+    test: "Send a single request with 50-1000 aliased mutations (e.g. verifyOTP(code:...) or sendSms(phone:...)); measure whether all execute and whether rate limiting triggers."
+    impact_hint: "OTP brute-force in one request, SMS/email bombing, account-recovery DoS, resource exhaustion."
+    preconditions: ["aliases/batching enabled", "no per-operation cost accounting"]
+    required_state: "Unauthenticated for public mutations; low-priv account otherwise."
+    hypothesis_generator: "Hypothesize the rate limiter keys on the HTTP request while the executor fans out to N operations, giving an N-fold amplification."
+    request_strategy: "Baseline single mutation (observe rate-limit headers) -> batched request with 100 aliases of the same mutation -> compare execution count and limiter response."
+    mutation_strategy: "Vary alias count (10/100/1000), mix query+mutation, add named-fragment recursion."
+    expected_signal: "All N operations execute (N side effects observed) with no rate-limit rejection."
+    positive_oracle: "N distinct side effects (SMS sent, OTP attempts consumed, DB rows) from one HTTP request, confirmed via state check."
+    negative_evidence: ["batch rejected or truncated at a small alias cap", "rate limiter counts operations"]
+    false_positive_rules: ["count real side effects, not 200 responses — a 200 with partial execution is not full bypass", "respect DoS policy: use small N and canary accounts"]
+    followup_experiment: "Test whether batched mutations share transactional state (race/TOCTOU across aliases)."
+    regression_test: "Enforce alias caps and per-operation cost/rate accounting."
+    difficulty_estimate: 2
+
+  - id: W1-022
+    name: "Apollo Federation prototype pollution via GraphQL aliases/variables"
+    klass: graphql
+    requires: ["Apollo Federation gateway", "aliases or variables merged into plain JS objects without key sanitization"]
+    signals: ["federated /graphql", "gateway merges alias maps / variable objects"]
+    questions: ["are '__proto__', 'constructor', 'prototype' keys filtered before merge?", "does pollution persist across subsequent gateway requests?"]
+    evidence: ["CVE-2026-32621: Apollo Federation prototype pollution via aliases/variables named __proto__/constructor/prototype"]
+    followups: ["server-side prototype pollution gadget hunt (W1-036)", "pollution -> authz bypass (isAdmin-style properties)"]
+    test: "Send a query with alias '__proto__' (or variable key '__proto__') carrying a JSON object payload like {'isAdmin':true}; then send a benign follow-up query and check whether the polluted property is visible."
+    impact_hint: "Cross-request Object.prototype pollution — auth bypass, logic manipulation for all subsequent gateway traffic until restart."
+    preconditions: ["gateway uses recursive merge / object spread on attacker-controlled keys"]
+    required_state: "Unauthenticated GraphQL access."
+    hypothesis_generator: "Hypothesize the gateway builds its internal request plan with a merge function that walks attacker keys, so '__proto__' writes land on Object.prototype."
+    request_strategy: "Probe 1: alias named '__proto__' with object value. Probe 2: variables {'__proto__': {'polluted': 'yes'}}. Then a canary query reading the property."
+    mutation_strategy: "Vary key ('__proto__', 'constructor.prototype', 'prototype'), payload shape, and alias vs variable vector."
+    expected_signal: "Canary query reflects the polluted property even though it was never legitimately set."
+    positive_oracle: "A fresh object/property (e.g. ({}).polluted) evaluates true in a subsequent request context — confirmed via observable behavior, not just reflection."
+    negative_evidence: ["keys sanitized or merged into null-prototype objects", "no cross-request persistence"]
+    false_positive_rules: ["pollution must be demonstrated in a SEPARATE request/context — same-request reflection is not prototype pollution", "avoid destructive payloads (DoS gadgets)"]
+    followup_experiment: "Hunt for gadgets: properties the gateway checks for authz (roles, scopes) that could be polluted."
+    regression_test: "Alias/variable keys '__proto__'/'constructor'/'prototype' must be rejected or merged into Object.create(null)."
+    difficulty_estimate: 3
+
+  - id: W1-023
+    name: "graphql-ruby from_introspection RCE (CVE-2025-27407)"
+    klass: graphql
+    requires: ["graphql-ruby server", "introspection JSON fed into from_introspection / schema-from-JSON loading"]
+    signals: ["Ruby GraphQL stack", "schema reload / introspection import features"]
+    questions: ["does the app build a schema from client-supplied introspection JSON?", "are class_eval/instance_eval reachable from type definitions?"]
+    evidence: ["CVE-2025-27407 (CVSS 9.0): graphql-ruby RCE via class_eval/instance_eval on attacker-controlled introspection JSON"]
+    followups: ["version fingerprinting of graphql-ruby", "safe schema-loading audit"]
+    test: "If an endpoint accepts introspection JSON to build a schema, submit a crafted introspection payload with Ruby code in type-definition fields and observe for evaluation."
+    impact_hint: "Remote code execution at CVSS 9.0 from a GraphQL-adjacent feature."
+    preconditions: ["attacker-controlled introspection JSON reaches schema builder"]
+    required_state: "Access to the schema-import feature (may need low-priv auth)."
+    hypothesis_generator: "Hypothesize the schema loader evals parts of the introspection document as Ruby instead of treating them as data."
+    request_strategy: "Submit minimal introspection JSON with a canary string in each definitional field; watch for evaluation (time/DNS oracle with benign payload)."
+    mutation_strategy: "Vary which introspection sections carry the payload (types, directives, descriptions)."
+    expected_signal: "Benign evaluation oracle fires (e.g. sleep/DNS) proving code evaluation."
+    positive_oracle: "Time-based or out-of-band signal tied to the injected introspection content."
+    negative_evidence: ["introspection import disabled or strictly schema-validated", "no evaluation oracle"]
+    false_positive_rules: ["use only benign oracles (sleep/DNS) — never weaponized commands", "confirm the oracle came from the target (unique token)"]
+    followup_experiment: "Audit other schema-loading paths (SDL import, federation _service sdl)."
+    regression_test: "Introspection JSON must be parsed as pure data; no eval of its contents."
+    difficulty_estimate: 4
+
+  - id: W1-024
+    name: "Cross-site WebSocket hijacking (CSWSH) + origin-validation bypass"
+    klass: websocket
+    requires: ["WebSocket endpoint authenticating via cookies", "missing or flawed Origin validation on the handshake"]
+    signals: ["ws:// or wss:// endpoints", "session cookie sent with handshake", "no Origin check or regex/substring check"]
+    questions: ["is the Origin header validated against an allowlist?", "does the matcher have prefix/suffix flaws (Bokeh-style zip() truncation)?", "are messages authorized per-message or only at connect?"]
+    evidence: ["CVE-2026-21883 (Bokeh): match_host used zip() comparison — longer attacker hostnames incorrectly matched allowlist patterns", "PortSwigger Research 'WebSocket Turbo Intruder' (Sep 2025)", "OpenClaw CVE-2026-25253: CSWSH as RCE link (2026)"]
+    followups: ["W1-025 localhost trust", "W1-026 graphql-ws pre-init bypass", "per-message authz fuzzing"]
+    test: "From a cross-origin page context, open a WebSocket to the target with the victim session cookie; test handshake acceptance with evil Origin, null Origin, and Bokeh-style superdomain ('victim.com.evil.com')."
+    impact_hint: "Real-time theft of private messages/presence/data; with privileged WS RPCs, full account or host compromise."
+    preconditions: ["cookie-authenticated WS", "Origin not strictly validated"]
+    required_state: "Victim session cookie in the test browser (own test account); attacker page to initiate the cross-site handshake."
+    hypothesis_generator: "Hypothesize the server checks Origin with a flawed matcher (substring, regex, or zip-truncation) or not at all, so a cross-site page can ride the victim's cookie."
+    request_strategy: "1) handshake with Origin: https://evil.com. 2) Origin: null. 3) Origin: https://target.com.evil.com. 4) missing Origin. Observe 101 vs rejection and whether private data flows."
+    mutation_strategy: "Vary Origin forms, subprotocol headers, and post-handshake message authz."
+    expected_signal: "101 Switching Protocols from a cross-site origin followed by victim-private messages."
+    positive_oracle: "Cross-site connection receives data belonging to the victim session (own test account acting as victim)."
+    negative_evidence: ["handshake rejected for non-allowlisted Origins", "strict allowlist with exact matching"]
+    false_positive_rules: ["same-origin success is expected — the oracle needs a CROSS-site origin", "public broadcast data is not private-data theft"]
+    followup_experiment: "Fuzz post-handshake messages for missing per-message authorization (admin RPCs, other users' data)."
+    regression_test: "Handshake must enforce an exact-match Origin allowlist; re-validate auth on reconnect."
+    difficulty_estimate: 3
+
+  - id: W1-025
+    name: "Localhost WebSocket trust exploitation (agent/desktop apps)"
+    klass: websocket
+    requires: ["local agent/desktop app exposing a WebSocket on localhost", "browser running on the same machine", "no Origin validation on localhost WS"]
+    signals: ["ws://localhost:<port> or ws://127.0.0.1:<port> endpoints", "AI agent / desktop companion apps", "auto-approved pairing from localhost"]
+    questions: ["does the localhost WS validate Origin?", "are powerful tools (exec, config read) reachable without user approval from localhost?", "is there rate limiting?"]
+    evidence: ["CVE-2026-25253 (OpenClaw, CVSS 8.8): 1-click RCE — gatewayUrl trusted from query string + CSWSH to ws://localhost:18789 + operator scopes = host command execution (Jan 2026)", "MCP Streamable HTTP CVE-2026-33252: cross-site POST without Origin validation -> tool execution"]
+    followups: ["DNS rebinding to localhost (target the WS via attacker domain resolving to 127.0.0.1)"]
+    test: "From a web page, attempt new WebSocket('ws://localhost:<port>/...') and check whether the handshake succeeds cross-origin and whether privileged RPCs respond."
+    impact_hint: "Full agent takeover from any website: read config/logs, execute tools, escape sandboxes."
+    preconditions: ["localhost WS reachable from the browser", "no Origin check", "privileged operations exposed"]
+    required_state: "Local test installation of the target app; test in own browser only."
+    hypothesis_generator: "Hypothesize the app treats localhost as a trust boundary the browser does not enforce, so any website can drive the local agent."
+    request_strategy: "Enumerate common localhost WS ports from a test page; attempt handshakes; probe the RPC surface for auth requirements."
+    mutation_strategy: "Vary ports, paths, subprotocols, and Origin values."
+    expected_signal: "Cross-origin handshake accepted and privileged RPC (config dump, exec) responds."
+    positive_oracle: "Attacker page triggers a privileged local action (in the test install) with no user approval."
+    negative_evidence: ["Origin validated even on localhost", "user-approval gate on sensitive RPCs", "token-bound handshake"]
+    false_positive_rules: ["test only against your own installation — never probe someone else's localhost", "read-only info RPCs are lower severity than exec/config-write"]
+    followup_experiment: "Test DNS-rebinding delivery so the attack works without hardcoding localhost."
+    regression_test: "Localhost WebSocket must validate Origin and require explicit user approval for privileged actions."
+    difficulty_estimate: 3
+
+  - id: W1-026
+    name: "graphql-ws pre-init authentication bypass"
+    klass: websocket
+    requires: ["GraphQL subscriptions over the legacy graphql-ws subprotocol", "auth performed in on_ws_connect / connection_init handler"]
+    signals: ["Sec-WebSocket-Protocol: graphql-ws", "subscription endpoint", "Strawberry <= 0.312.2 or similar stacks"]
+    questions: ["can 'start' be sent without 'connection_init'?", "is on_ws_connect skipped when init is skipped?"]
+    evidence: ["CVE-2026-35523: sending 'start' over legacy graphql-ws without connection_init skips on_ws_connect auth (Strawberry <= 0.312.2)"]
+    followups: ["subscription re-authorization after token expiry", "W1-024 CSWSH on the subscription endpoint"]
+    test: "Open the WS with subprotocol graphql-ws and immediately send {'type':'start','payload':{'query':'subscription{...}'}} without any connection_init; check whether subscription data flows."
+    impact_hint: "Unauthenticated access to real-time subscription data (private events, messages, admin feeds)."
+    preconditions: ["auth gate lives only in the connection_init path", "server processes 'start' without requiring init"]
+    required_state: "Unauthenticated WS access; knowledge of a subscription query (introspection or docs)."
+    hypothesis_generator: "Hypothesize the server's auth hook fires on connection_init, so skipping init skips auth while the subscription executor still runs."
+    request_strategy: "Baseline: proper connection_init + start (observe auth). Variant: start-without-init. Compare data flow."
+    mutation_strategy: "Vary message order, connection params, and subscription queries (public vs private)."
+    expected_signal: "Subscription payloads delivered without any authentication step."
+    positive_oracle: "Private subscription data received on a connection that never authenticated."
+    negative_evidence: ["server rejects start before init", "auth enforced per-operation regardless of init"]
+    false_positive_rules: ["public subscriptions delivering data is expected — use a private/admin subscription as oracle", "confirm no ambient auth (cookies) is being applied"]
+    followup_experiment: "Test long-lived subscriptions for re-authorization after token expiry (stale-token data flow)."
+    regression_test: "Operations must be rejected until successful connection_init authentication."
+    difficulty_estimate: 3
+
+  - id: W1-027
+    name: "Cache-key injection — smuggling poison through the cache key"
+    klass: cache
+    requires: ["shared cache (CDN/edge) in front of the app", "attacker influence over cache-key components (path encoding, delimiters, headers, Vary)"]
+    signals: ["cache HIT/MISS headers (Age, X-Cache)", "URL normalization differences between cache and origin", "Vary header behavior"]
+    questions: ["which characters/delimiters split the cache's view of the key from the origin's?", "can attacker input become part of the keyed business-logic input?", "do encoded chars (%2f, %23, %00) or ';' change keying?"]
+    evidence: ["2026 watchlist: 'Cache Key Injection: Smuggling Poison Through the Door'", "Gareth Heyes cache-key normalization research (2023-2026 wave)", "PortSwigger 'Gotta cache em all' (2024)"]
+    followups: ["W1-028 Next.js fetch caching", "W1-029 wildcard deception"]
+    test: "Fuzz cache-key components (URL encoding, '?', '&', path delimiters, Vary-influencing headers) with a unique poisoning marker; check whether the poisoned body is served to a clean-key request."
+    impact_hint: "Stored XSS served to all visitors, defacement, session/credential theft at cache scale."
+    preconditions: ["cache key includes attacker-influenced bytes that the origin interprets differently"]
+    required_state: "Unauthenticated. Cache-buster control for oracle requests."
+    hypothesis_generator: "Hypothesize the cache normalizes (or fails to normalize) a delimiter the origin treats as data, so two different cache keys hit one origin behavior — or one key maps to attacker-chosen content."
+    request_strategy: "1) map the cache key (vary path/query/headers, watch HIT/MISS). 2) inject marker via each key component. 3) request the clean URL and look for the marker."
+    mutation_strategy: "Vary encoding (%2f, %252f, %23, %00), delimiters (;, #, ?), and Vary/Accept headers."
+    expected_signal: "Clean-key request returns the attacker's marker from cache (X-Cache: HIT with poisoned body)."
+    positive_oracle: "Victim-equivalent clean request served attacker content from the shared cache."
+    negative_evidence: ["key components fully normalized identically by cache and origin", "poisoned responses never served to clean keys"]
+    false_positive_rules: ["your own cache-busted request seeing your own poison is self-cache, not a finding — the oracle needs a CLEAN key", "confirm HIT (not MISS) on the victim request"]
+    followup_experiment: "Escalate the marker to a real XSS payload and verify execution context."
+    regression_test: "Cache keys must be built from normalized canonical URLs; unkeyed inputs must not affect origin behavior."
+    difficulty_estimate: 4
+
+  - id: W1-028
+    name: "Next.js fetch-caching unkeyed-input poisoning"
+    klass: cache
+    requires: ["Next.js app using fetch with cache:'force-cache' (or default static caching)", "cache keyed on URL+method only"]
+    signals: ["Next.js stack (/_next/, .next)", "SSR pages", "auth headers/cookies/query params ignored by the cache key"]
+    questions: ["is the fetch cache keyed on URL only?", "can an unauthenticated request poison a response later served to authenticated users?"]
+    evidence: ["2025 research '#7: Next.js, cache, and chains: the stale elixir' — static fetch/cache auto-caching keyed on URL+method, ignoring auth/cookies/query"]
+    followups: ["W1-027", "chain into W1-029 deception"]
+    test: "Request a victim URL without cookies carrying a poisoning marker (or an unauthenticated-state body); then replay the same URL with valid session cookies and check whether the stale unauthenticated body is served."
+    impact_hint: "Authenticated users served attacker-poisoned or wrong-user content; session confusion at scale."
+    preconditions: ["fetch cache ignores auth context in its key"]
+    required_state: "Two test sessions (attacker + victim-equivalent); unauthenticated request capability."
+    hypothesis_generator: "Hypothesize the Next.js data cache stores the first response per URL regardless of cookies, so the attacker's unauthenticated fetch poisons the slot the victim's SSR later reads."
+    request_strategy: "1) attacker GETs URL with marker, no cookies. 2) victim GETs same URL with session. 3) compare bodies and cache headers."
+    mutation_strategy: "Vary query params, headers, and cookie presence to map the real key."
+    expected_signal: "Victim's authenticated request returns the attacker's unauthenticated/poisoned body."
+    positive_oracle: "Victim session demonstrably served content generated from the attacker's request context."
+    negative_evidence: ["cache keyed per-cookie/per-auth (Vary: Cookie, private)", "no shared fetch cache on the route"]
+    false_positive_rules: ["confirm the victim response came from cache (HIT/age), not a fresh render", "rule out the app legitimately serving the same public content"]
+    followup_experiment: "Poison with an XSS payload and verify it executes in the victim's authenticated page."
+    regression_test: "Authenticated/cookie-varying fetches must use per-user cache keys or no-store."
+    difficulty_estimate: 3
+
+  - id: W1-029
+    name: "Wildcard web cache deception (path-confusion)"
+    klass: cache
+    requires: ["CDN cache that treats unknown extensions as static/cacheable", "origin that ignores the trailing path segment or extension when routing"]
+    signals: ["authenticated pages", ".css/.js/.png suffixes appended to dynamic paths returning the dynamic page", "cache HIT on crafted URLs"]
+    questions: ["does /account/x.css return the /account page?", "does the cache store it as a static object?", "can it be retrieved without auth?"]
+    evidence: ["Omer Gil 2017 (PayPal) — re-armed 2024 by Kettle/Brizendine 'Gotta Cache em all' via delimiter/normalization differentials", "2024 'ChatGPT Account Takeover — Wildcard Web Cache Deception' (/sessions/{id}.css)"]
+    followups: ["delimiter differentials: /account%23.css, /account;.css, /account%2f.css"]
+    test: "Request authenticated URLs with crafted wildcard suffixes (/account/{x}.css, /account%23.css, /.next-style paths) without auth; check for cache HIT carrying victim-private content."
+    impact_hint: "PII, CSRF tokens, API keys, and session-bound data served from public cache to unauthenticated attackers."
+    preconditions: ["origin path parser ignores the deceptive suffix", "cache keys and stores the response as static"]
+    required_state: "Attacker account to generate the victim-equivalent private page; unauthenticated fetch for the theft."
+    hypothesis_generator: "Hypothesize the origin routes on the logical path while the CDN keys on the raw URL, so a '.css'-suffixed private page lands in a public cache slot."
+    request_strategy: "1) as victim, visit /account/nonce.css (unique nonce). 2) as anonymous, request the same URL. 3) check X-Cache: HIT and body for victim PII."
+    mutation_strategy: "Vary suffixes (.css/.js/.png/.txt), delimiters (%23, ;, %2f, %00), and path depths."
+    expected_signal: "Anonymous request gets HIT with the victim's private page content."
+    positive_oracle: "Victim-unique nonce or PII retrieved from cache without authentication."
+    negative_evidence: ["suffix URLs return 404 or redirect", "cache refuses to store authenticated responses (Cache-Control: private honored)"]
+    false_positive_rules: ["the nonce must be victim-unique — your own content in cache is not a finding", "confirm HIT, not a fresh origin fetch of a public page"]
+    followup_experiment: "Enumerate all authenticated routes for the deception primitive; check for API JSON variants."
+    regression_test: "Authenticated responses must carry Cache-Control: private/no-store and the cache must honor it."
+    difficulty_estimate: 3
+
+  - id: W1-030
+    name: "Cache-poisoned DoS (CPDoS): HHO / HMC / HMO"
+    klass: cache
+    requires: ["shared cache that stores error responses", "origin that 400s on attacker-triggerable conditions"]
+    signals: ["cache stores 400s (check via oversized-header probe)", "X-HTTP-Method-Override honored", "headers forwarded to origin unvalidated"]
+    questions: ["does the cache store the origin's 400 response?", "can I force a 400 with an oversize header (HHO), a meta character (HMC), or method override (HMO)?"]
+    evidence: ["Hauser/Bajanik CPDoS family (HHO: HTTP Header Oversize, HMC: HTTP Meta Character, HMO: HTTP Method Override)"]
+    followups: ["confirm program DoS policy before any impact demonstration"]
+    test: "Send (a) an oversize header, (b) a header containing \\n/\\0, (c) X-HTTP-Method-Override: POST on a GET — each with a cache buster; then request the clean URL and check for a cached 400."
+    impact_hint: "Denial of service for all users of the cached resource — cached error served instead of content."
+    preconditions: ["cache stores error responses keyed to the clean URL"]
+    required_state: "Unauthenticated. Strict scope: only test where DoS testing is explicitly allowed."
+    hypothesis_generator: "Hypothesize the cache forwards the abusive request, the origin 400s, and the cache stores the 400 under the clean key."
+    request_strategy: "Poison attempt per primitive with unique cache buster -> clean GET -> inspect status and X-Cache."
+    mutation_strategy: "Vary header sizes, control chars, and override methods."
+    expected_signal: "Clean GET returns the cached 400 (X-Cache: HIT, status 400)."
+    positive_oracle: "Legitimate clean-key request served the error response from cache."
+    negative_evidence: ["cache does not store 4xx", "origin tolerates the abusive input"]
+    false_positive_rules: ["only test on targets whose policy explicitly permits DoS", "your own poisoned key is not impact — the clean key must be affected", "prefer demonstrating on a canary path"]
+    followup_experiment: "Measure blast radius (which keys/paths share the poisoned entry) without sustaining the DoS."
+    regression_test: "Caches must not store 4xx/5xx under keys reachable by clean requests."
+    difficulty_estimate: 3
+
+  - id: W1-031
+    name: "Single-packet HTTP/2 race (last-byte synchronization)"
+    klass: race
+    requires: ["HTTP/2 enabled on the target", "state-changing endpoint (redeem, transfer, checkout, vote, claim)"]
+    signals: ["h2 in ALPN", "balance/coupon/inventory/token mutations", "no visible locking (duplicate requests both succeed)"]
+    questions: ["does the endpoint run check-then-act without a transaction?", "can N requests land in the same server tick via one TCP packet?"]
+    evidence: ["PortSwigger 'Smashing the State Machine' (Kettle, 2023) + Academy race labs (2024-2026)", "2026 bounty writeups: loyalty-wallet duplication ($15,000), coupon 20x stacking, OpenCart checkout TOCTOU"]
+    followups: ["W1-032 wallet TOCTOU", "single-endpoint email-change race"]
+    test: "Use HTTP/2 single-packet technique (withhold the last byte of N requests, release simultaneously) against a redeem/transfer endpoint; then verify business state advanced N times."
+    impact_hint: "Double-spend, coupon/wallet duplication, inventory oversell, privilege duplication."
+    preconditions: ["TOCTOU between check and state update", "no row-level locking or idempotency key"]
+    required_state: "Authenticated test account with a redeemable balance/coupon; HTTP/2 client with frame-level control."
+    hypothesis_generator: "Hypothesize the endpoint reads state, validates, then writes — all outside a transaction — so N near-simultaneous requests all see the pre-update state."
+    request_strategy: "Prepare N identical requests; send all but the final byte; release the last bytes in one packet; then read back the business state (balance, redemption count, order count)."
+    mutation_strategy: "Vary N (5/20/50), request spacing, and endpoint (redeem vs transfer vs apply-coupon)."
+    expected_signal: "Business state reflects N applications of an operation that should have been single-use."
+    positive_oracle: "Server-side state diff proves N-fold application (balance over-credited, coupon redeemed N times) — not just N x 200 responses."
+    negative_evidence: ["state advances exactly once regardless of concurrency", "idempotency keys enforced"]
+    false_positive_rules: ["N x 200 responses without a state diff is NOT a finding", "confirm on a second run; rule out eventual-consistency display lag"]
+    followup_experiment: "Test whether the race composes with business-logic flaws (negative amounts, stacked discounts)."
+    regression_test: "Critical mutations must use atomic transactions / SELECT ... FOR UPDATE / idempotency keys."
+    difficulty_estimate: 4
+
+  - id: W1-032
+    name: "Wallet/balance transfer TOCTOU (check-then-act without locking)"
+    klass: race
+    requires: ["balance/wallet/credit transfer or redemption endpoint", "balance check and deduction in separate non-atomic steps"]
+    signals: ["transferBalance-style endpoints", "PHP/app-level sufficiency check before write", "no DB transactions"]
+    questions: ["is the sufficiency check inside the same transaction as the debit?", "do concurrent transfers each see the stale balance?"]
+    evidence: ["CVE-2026-34368 (WWBN AVideo YPTWallet, GHSA-h54m-c522-h6qr): transferBalance reads balance, checks in PHP, writes — no transactions or row locks; $10 balance x N concurrent = $10*N credited", "loyalty-wallet race $15,000 payout (2026)"]
+    followups: ["W1-031 single-packet delivery", "negative/zero-amount transfer logic"]
+    test: "With a small balance, fire N concurrent transfer requests to N recipients (or self-loop); verify whether total credited exceeds the original balance."
+    impact_hint: "Money creation from thin air — direct financial loss."
+    preconditions: ["read-check-write race window", "concurrent requests allowed"]
+    required_state: "Two test accounts; small funded balance."
+    hypothesis_generator: "Hypothesize transferBalance() does SELECT balance -> PHP if-check -> UPDATE without locking, so N concurrent transfers all pass the check."
+    request_strategy: "Fund account A with $10; send 10 concurrent $10 transfers to account B; read both balances after settlement."
+    mutation_strategy: "Vary concurrency, amounts, and recipient (self vs other vs new account)."
+    expected_signal: "Recipient credited more than the sender's original balance."
+    positive_oracle: "Ledger math proves created funds: sum of balances after > sum before."
+    negative_evidence: ["exactly one transfer succeeds; rest fail insufficient-funds", "pessimistic locking observed"]
+    false_positive_rules: ["pending/uncleared states can mislead — wait for settlement and re-read", "use unique amounts per request to attribute credits"]
+    followup_experiment: "Test the same primitive on coupon redemption and refund endpoints."
+    regression_test: "Balance mutations must run in a transaction with row-level locking."
+    difficulty_estimate: 3
+
+  - id: W1-033
+    name: "Inline style exfiltration via chained CSS conditionals"
+    klass: xss
+    requires: ["attacker can inject inline styles (style attribute or <style> block)", "secret value present in the DOM (CSRF token, PII)"]
+    signals: ["style= reflected", "user CSS allowed (profile themes, custom CSS fields)"]
+    questions: ["can injected CSS read attribute values via selectors?", "do chained conditionals allow character-by-character exfiltration?"]
+    evidence: ["PortSwigger Research 'Inline Style Exfiltration: leaking data with chained CSS conditionals' (Aug 2025)"]
+    followups: ["mutation XSS where style injection meets innerHTML"]
+    test: "Inject CSS using attribute selectors (input[value^='a']) with chained @import/conditional URL loads per character; observe whether per-character requests leak the secret to an attacker listener."
+    impact_hint: "Data theft (CSRF tokens, secrets) in contexts where script is blocked but style is allowed — CSP bypass class."
+    preconditions: ["style injection primitive", "secret in DOM attributes"]
+    required_state: "Style-injection point; attacker request listener for exfil URLs."
+    hypothesis_generator: "Hypothesize CSS attribute selectors plus conditional imports can binary-search each secret character, exfiltrating via URL requests."
+    request_strategy: "Inject style block with selectors for each candidate character mapping to distinct exfil URLs; load the page in a test browser and watch the listener."
+    mutation_strategy: "Vary selector prefixes, exfil encoding, and chaining depth."
+    expected_signal: "Listener receives the character sequence reconstructing the secret."
+    positive_oracle: "Full secret value reconstructed from exfil traffic."
+    negative_evidence: ["style attribute stripped/sanitized", "CSP style-src blocks inline styles"]
+    false_positive_rules: ["the page must actually render the injected style — injected-but-not-rendered is not exfiltration", "confirm the leaked value is the real secret, not a placeholder"]
+    followup_experiment: "Chain with a stored-style vector (profile theme) for persistent theft."
+    regression_test: "User-controlled CSS must be sanitized to block attribute selectors and external URLs."
+    difficulty_estimate: 4
+
+  - id: W1-034
+    name: "Unicode overflow bypass of character blocklists"
+    klass: injection
+    requires: ["blocklist-based input filter (WAF rule, app filter)", "downstream parser that normalizes unicode/overlong encodings"]
+    signals: ["blocked keywords rejected", "unicode normalization in the app stack"]
+    questions: ["does the filter compare before normalization?", "do overlong UTF-8 or unicode escapes survive the filter but decode downstream?"]
+    evidence: ["PortSwigger Research 'Bypassing character blocklists with unicode overflows' (Jan 2025)"]
+    followups: ["W1-007 phantom $Version", "W1-018 double-encoding differentials"]
+    test: "Encode blocked characters with unicode overflows/overlong UTF-8 (%c0%bc for '<', %u00XX forms) and check whether the filter passes them while the app decodes them into the blocked characters."
+    impact_hint: "Filter bypass for XSS/SQLi/payload delivery wherever blocklists are the control."
+    preconditions: ["filter operates on raw bytes; app normalizes before use"]
+    required_state: "Unauthenticated. Encoder for overlong/unicode forms."
+    hypothesis_generator: "Hypothesize the blocklist matches literal '<script' while the app's decoder turns %c0%bc into '<' after the check."
+    request_strategy: "Baseline blocked payload -> unicode-overflow variants -> compare filter verdict vs app-side decoding (reflection/parsing)."
+    mutation_strategy: "Vary encoding (overlong UTF-8, %u, HTML entities, mixed) across payload classes."
+    expected_signal: "Filter passes the variant; the application decodes and acts on the blocked characters."
+    positive_oracle: "Blocked payload class executes/reflects via the encoded variant while the literal form is blocked."
+    negative_evidence: ["filter normalizes before matching", "app rejects malformed encodings"]
+    false_positive_rules: ["confirm the app actually decoded it — filter-pass without app-decode is not a bypass", "watch for double-decoding collapsing your probe"]
+    followup_experiment: "Apply to SSRF/path filters (unicode slashes, dots) and auth checks."
+    regression_test: "Normalize (NFKC, full URL-decode) before blocklist matching."
+    difficulty_estimate: 2
+
+  - id: W1-035
+    name: "Server-side template injection via neutralisation failure"
+    klass: injection
+    requires: ["user input reaching a server-side template engine (Twig, Jinja2, Freemarker, Blade, custom)"]
+    signals: ["template syntax reflected", "email/PDF/invoice rendering features", "CMS theme editors"]
+    questions: ["is user input concatenated into the template string (not just a variable)?", "which engine and which introspection chain reaches code execution?"]
+    evidence: ["CVE-2026-75650: Adobe Commerce/Magento template-engine neutralisation failure -> unauthenticated RCE via /graphql (Sep 2026, active exploitation)", "tplmap methodology"]
+    followups: ["engine-specific sandbox escapes", "W1-036 deserialization where templates meet object graphs"]
+    test: "Inject arithmetic/concat markers ({{7*7}}, ${7*7}, #{7*7}) per engine; escalate with engine-specific object-graph traversal on confirmed evaluation."
+    impact_hint: "Unauthenticated remote code execution (as in the Adobe Commerce case)."
+    preconditions: ["input embedded in template source, not passed as a bound variable"]
+    required_state: "Unauthenticated where the feature is public (search, email preview); else low-priv."
+    hypothesis_generator: "Hypothesize the app builds template source by string-concatenating user input, so template syntax in input is evaluated."
+    request_strategy: "Polyglot marker probe across engines -> identify engine by output/error -> escalate with documented gadget chain (benign oracle first)."
+    mutation_strategy: "Vary delimiters per engine and introspection depth."
+    expected_signal: "'49' (or concat result) rendered where the marker was — proving evaluation."
+    positive_oracle: "Benign code-execution oracle (sleep/DNS) or engine introspection output tied to the injected payload."
+    negative_evidence: ["markers reflected verbatim or stripped", "input bound as variable only"]
+    false_positive_rules: ["client-side template evaluation (Angular/Vue) is a different class — confirm server-side", "use benign oracles only"]
+    followup_experiment: "Map every user-influenced template (emails, PDFs, exports) for the same flaw."
+    regression_test: "Never concatenate user input into template source; use bound variables and sandboxed engines."
+    difficulty_estimate: 3
+
+  - id: W1-036
+    name: "React2Shell — RSC flight-protocol prototype pollution to RCE (CVE-2025-55182)"
+    klass: deserialization
+    requires: ["Next.js with React Server Components (app router)", "unpatched version (e.g. 15.0.3)", "Next-Action / RSC flight endpoint reachable"]
+    signals: ["Next.js version header or /_next/ assets", "Server Actions in use", "Next-Action request header honored"]
+    questions: ["is the RSC handler version in the vulnerable range?", "does the flight deserializer evaluate the payload without adequate sanitization?"]
+    evidence: ["CVE-2025-55182 (Dec 2025): critical prototype pollution + unsafe deserialization in the RSC handler -> unauthenticated RCE via Next-Action header; public exploits; mass scanning observed"]
+    followups: ["framework version fingerprinting as a standing check", "W1-022 GraphQL-side prototype pollution"]
+    test: "Fingerprint the Next.js version; against an authorized lab copy, send the public React2Shell probe (Next-Action header with flight payload carrying a benign oracle) and check for evaluation."
+    impact_hint: "Unauthenticated remote code execution on the Node server."
+    preconditions: ["vulnerable Next.js/RSC version", "RSC endpoint exposed"]
+    required_state: "Unauthenticated network access; version fingerprint first."
+    hypothesis_generator: "Hypothesize the RSC flight deserializer merges attacker JSON into live objects without blocking __proto__/constructor paths, reaching code execution."
+    request_strategy: "1) version fingerprint (headers, build manifest). 2) in an authorized lab, replay the published probe shape with a benign oracle. 3) never run weaponized payloads against live targets."
+    mutation_strategy: "Vary payload carriers per published variants; test patched-version behavior as control."
+    expected_signal: "Benign oracle (sleep/DNS/timestamp) fires from the server context."
+    positive_oracle: "Server-side side effect provably caused by the deserialized payload."
+    negative_evidence: ["patched version", "RSC/Server Actions disabled", "probe has no effect in lab"]
+    false_positive_rules: ["version match alone is not exploitation — confirm behaviorally in an authorized lab", "never execute the public RCE exploit against systems you are not authorized to test"]
+    followup_experiment: "Audit other framework deserializers (PHP unserialize, pickle, Java) on the same target — W1-036 generalizes to serialized-blob probing."
+    regression_test: "Upgrade Next.js; block/validate Next-Action at the edge for non-action routes."
+    difficulty_estimate: 5
+
+  - id: W1-037
+    name: "Password-reset token weak/NULL comparison account takeover"
+    klass: business_logic
+    requires: ["password-reset flow comparing a user-supplied token against a stored token", "loose comparison or NULL-tolerant lookup"]
+    signals: ["/reset-password, /forgot-password endpoints", "token compared server-side rather than looked up"]
+    questions: ["is the token comparison strict (===) or loose (==)?", "what happens when the stored token is NULL/unset?", "does a NULL match return the first user row (admin)?"]
+    evidence: ["2026 bounty writeup: flawed reset-token validation -> MFA bypass -> admin ATO ($8,500); loose comparison against NULL reset_token matched the first DB record"]
+    followups: ["token entropy/predictability audit", "host-header reset poisoning (W1-008-adjacent)"]
+    test: "Request flows with no/empty/array-typed token values (token=, token[]=0, JSON [0]/null); observe whether validation passes and which account is returned."
+    impact_hint: "Full account takeover of arbitrary users (including admin) with no user interaction, MFA bypassed."
+    preconditions: ["loose comparison or NULL-coalescing token check", "fallback logic that skips MFA on 'system' states"]
+    required_state: "Unauthenticated; test accounts for baseline."
+    hypothesis_generator: "Hypothesize the check is 'if (input == stored)' where stored is NULL for users with no pending reset, and loose equality lets crafted input match — returning the first row."
+    request_strategy: "1) baseline: valid reset for own account. 2) variants: empty, array, null, 0, false as token. 3) observe session/token returned and its identity."
+    mutation_strategy: "Vary token type (string/array/int/null/bool), parameter pollution (token=valid&token=), and JSON vs form encoding."
+    expected_signal: "An invalid/empty token yields a valid session or password-change capability for an account you did not request a reset for."
+    positive_oracle: "Password changed or session issued for a victim-equivalent account without a legitimate token."
+    negative_evidence: ["strict comparison and constant-time check", "NULL stored token always rejects", "token single-use with expiry"]
+    false_positive_rules: ["your own account's legitimate flow succeeding is the baseline, not a finding", "confirm the victim account had NO pending reset (NULL state)"]
+    followup_experiment: "Test the same loose-comparison pattern on OTP, invite, and magic-link verifiers."
+    regression_test: "Strict, constant-time token comparison; NULL stored token must reject; tokens single-use with expiry."
+    difficulty_estimate: 3
+
+  - id: W1-038
+    name: "IDOR to account takeover via email manipulation in passwordless auth"
+    klass: authorization
+    requires: ["passwordless (magic-link/OTP) login", "profile-update endpoint with IDOR on email", "email as the identity anchor"]
+    signals: ["magic-link login", "profile update accepting email changes", "user IDs enumerable"]
+    questions: ["can user A set their email to user B's email?", "does the magic-link then authenticate A as B?", "is there verification on email change?"]
+    evidence: ["2026 writeup: IDOR chained to full ATO on openstad-headless API — cross-project user enumeration IDOR leaked admin IDs, then email manipulation on the passwordless flow took over accounts"]
+    followups: ["BOLA enumeration of user/project IDs", "W1-040 mass assignment on profile fields"]
+    test: "With two test accounts: enumerate user IDs via the IDOR; as attacker, change your email to the victim's; trigger a magic link and check which account it authenticates."
+    impact_hint: "Full account takeover via a low-severity IDOR chained into the auth flow."
+    preconditions: ["email change without verification/re-auth", "magic link keyed on email, not on immutable user id"]
+    required_state: "Two test accounts."
+    hypothesis_generator: "Hypothesize the profile endpoint lacks object-level authz on the email field, and the passwordless flow resolves identity by email — so setting the victim's email reroutes their login to you."
+    request_strategy: "1) enumerate IDs (BOLA). 2) PATCH/PUT profile email to victim's. 3) request magic link for that email. 4) follow the link and inspect the session identity."
+    mutation_strategy: "Vary email case, plus-addressing, unicode confusables, and verified/unverified states."
+    expected_signal: "Magic link for the victim's email authenticates the attacker's session as the victim."
+    positive_oracle: "Session identity equals the victim account after the email-swap + magic-link chain."
+    negative_evidence: ["email change requires verification link to the new address", "magic link bound to immutable user id"]
+    false_positive_rules: ["changing your own email and logging in as yourself is expected — the oracle needs the VICTIM identity", "check the session, not just the link delivery"]
+    followup_experiment: "Test the same chain against admin/support accounts found via enumeration."
+    regression_test: "Email changes require re-verification; passwordless tokens bind to immutable user ids."
+    difficulty_estimate: 3
+
+  - id: W1-039
+    name: "Unset/empty secret accepted as a signing key"
+    klass: crypto
+    requires: ["signed tokens or join keys (JWT, cluster join keys, session tokens)", "secret loaded from configuration that may be unset"]
+    signals: ["default/empty config values", "fresh installs", "error messages about join keys"]
+    questions: ["is the secret's PRESENCE checked, or only its format?", "what does verification do when the configured secret is empty?"]
+    evidence: ["CVE-2026-82329 (Bishop Fox, Sep 2026): JFrog Artifactory validated the cluster join key's encoding but never its presence — an unset value became a signing secret anyone could reproduce; KEV-listed with confirmed exploitation"]
+    followups: ["default-credential sweeps", "W1-012 JWT alg confusion"]
+    test: "Against an install with unset/empty secrets, attempt authentication with tokens signed using an empty string (or the documented default) as the key."
+    impact_hint: "Unauthenticated administrative access — empty secret is a publicly known secret."
+    preconditions: ["verification accepts empty/missing secret as valid key material"]
+    required_state: "Target instance with default/unset configuration (lab or authorized install)."
+    hypothesis_generator: "Hypothesize the code validates encoding/format of the configured secret but skips an existence check, so '' becomes the effective HMAC key."
+    request_strategy: "1) confirm default/unset config state. 2) forge token with empty-string signature. 3) call the privileged endpoint."
+    mutation_strategy: "Vary empty vs whitespace vs documented-default secrets."
+    expected_signal: "Privileged access granted with an empty-key-forged token."
+    positive_oracle: "Admin API responds to a token signed with '' on the unconfigured instance."
+    negative_evidence: ["startup refuses to run with unset secrets", "empty secret rejected at verification"]
+    false_positive_rules: ["only valid where the instance is genuinely unconfigured — a configured instance rejecting empty keys is correct", "do not reconfigure someone else's instance to make it vulnerable"]
+    followup_experiment: "Audit all secret-loading paths for presence-vs-format validation gaps."
+    regression_test: "Fail closed on unset secrets: refuse to start or reject verification."
+    difficulty_estimate: 3
+
+  - id: W1-040
+    name: "BOLA via Relay global ID decode and reuse"
+    klass: api
+    requires: ["GraphQL (or REST) API using Relay-style global IDs (base64 'Type:ID')", "object-level authorization gaps"]
+    signals: ["base64 IDs that decode to 'TypeName:123'", "IDs accepted across types/users"]
+    questions: ["are global IDs just base64(Type:id)?", "does the resolver check ownership of the decoded id?", "can one user's ID be used in another user's mutation?"]
+    evidence: ["PortSwigger GraphQL authorization research; 2026 API bounty methodology compendia: Relay global IDs commonly decodable and reusable across users"]
+    followups: ["W1-021 alias batching for ID enumeration", "W1-038 email-swap chaining"]
+    test: "Decode your own global IDs to learn the scheme; then substitute victim IDs (enumerated or guessed) into queries/mutations and check for cross-user data access."
+    impact_hint: "Horizontal privilege escalation — read/modify other users' objects; with mutations, full account/data takeover."
+    preconditions: ["predictable global-ID scheme", "missing per-object ownership check"]
+    required_state: "Two test accounts (victim-equivalent + attacker)."
+    hypothesis_generator: "Hypothesize the API trusts the decoded id without verifying the caller owns the object, so swapping ids crosses the authorization boundary."
+    request_strategy: "1) decode own IDs. 2) craft victim IDs (increment/known). 3) replay queries and mutations with swapped IDs as the attacker."
+    mutation_strategy: "Vary id values, types (User:1 vs Order:1), and query vs mutation paths."
+    expected_signal: "Attacker receives victim objects or mutates victim state."
+    positive_oracle: "Victim-private field values returned to the attacker, or victim state changed by the attacker's request."
+    negative_evidence: ["ownership checked per object (403/404 on foreign ids)", "opaque unguessable ids"]
+    false_positive_rules: ["your own objects returned is the baseline — the oracle needs the VICTIM's objects", "a 404 for foreign ids may be correct enforcement"]
+    followup_experiment: "Enumerate id ranges and object types for mass data exposure; test field-level (BOPLA) gaps on the same objects."
+    regression_test: "Every resolver must enforce caller-owns-object (or role grant) on the decoded id."
+    difficulty_estimate: 2
