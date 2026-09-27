@@ -37,6 +37,9 @@ from .prompt_injection import (
 )
 from .jailbreak import load_techniques, instantiate, battery
 from .scorer import classify, REFUSAL_PATTERNS, ALTERNATIVE_PATTERNS
+from .exfiltration import exfil_chain_cases, score_exfil
+from .ghostjacking import ghostjack_cases, score_ghostjack
+from .memory_write import memory_write_cases, score_memory_write
 
 __all__ = [
     "poisoned_document_patterns",
@@ -61,4 +64,11 @@ __all__ = [
     "classify",
     "REFUSAL_PATTERNS",
     "ALTERNATIVE_PATTERNS",
+    # ai_attacks wave1 extensions (A1-002 / A1-016 / A1-008)
+    "exfil_chain_cases",
+    "score_exfil",
+    "ghostjack_cases",
+    "score_ghostjack",
+    "memory_write_cases",
+    "score_memory_write",
 ]

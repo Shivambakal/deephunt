@@ -1,0 +1,9 @@
+# DEEPHUNT payload class: host_header (Wave 1 additions, 2026-09-27)
+# Shapes are pattern families; the fuzzer instantiates them.
+Host: dh-attacker.example
+X-Forwarded-Host: dh-attacker.example
+X-Host: dh-attacker.example
+Forwarded: host=dh-attacker.example
+X-Original-URL: /admin
+X-Rewrite-URL: /admin
+X-Forwarded-Path: /admin

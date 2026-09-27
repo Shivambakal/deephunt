@@ -1,0 +1,9 @@
+# DEEPHUNT payload class: mass_assignment (Wave 1 additions, 2026-09-27)
+# Shapes are pattern families; the fuzzer instantiates them.
+{"role": "admin"}
+{"isAdmin": true}
+{"verified": true}
+{"balance": 99999}
+{"user": {"role": "admin"}}
+{"role_ids": [1]}
+{"Role": "admin"}

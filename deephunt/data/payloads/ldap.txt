@@ -1,0 +1,7 @@
+# DEEPHUNT payload class: ldap (Wave 1 additions, 2026-09-27)
+# Shapes are pattern families; the fuzzer instantiates them.
+*)(uid=*))(|(uid=*
+*)(&(objectClass=*
+admin*
+*)(mail=*@*)
+\2a

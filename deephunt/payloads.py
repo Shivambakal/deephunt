@@ -24,6 +24,18 @@ CLASSES = {
     "ssti": ("SSTI detect polyglots", "hand-curated"),
     "authz-403": ("403/401 bypass battery", "hand-curated"),
     "hpp": ("HTTP parameter pollution shapes", "hand-curated"),
+    # Wave 1 additions (2026-09-27): genuinely new pattern families
+    "crlf": ("CRLF/response-splitting variants", "hand-curated"),
+    "nosql": ("NoSQL operator injection shapes", "hand-curated"),
+    "ldap": ("LDAP filter metachar injection", "hand-curated"),
+    "xpath": ("XPath expression injection", "hand-curated"),
+    "smuggling": ("HTTP request-smuggling framing shapes", "hand-curated"),
+    "prototype_pollution": ("prototype-pollution key paths", "hand-curated"),
+    "graphql": ("GraphQL batching/aliasing/introspection shapes", "hand-curated"),
+    "mass_assignment": ("mass-assignment field shapes", "hand-curated"),
+    "deserialization_markers": ("deserialization format magic bytes", "hand-curated"),
+    "host_header": ("Host-header / route-override variants", "hand-curated"),
+    "xslt": ("XSLT capability probes", "hand-curated"),
 }
 
 _cache: Dict[str, List[str]] = {}

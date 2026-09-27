@@ -83,7 +83,7 @@ def test_target_model():
 # ---------- 2. technique dir loading ----------
 def test_technique_loading():
     cards = kb.load_techniques()
-    check("cards_count_143", len(cards) == 143, f"got {len(cards)}")
+    check("cards_count_296", len(cards) == 296, f"got {len(cards)}")
     ids = [c["id"] for c in cards]
     check("cards_unique_ids", len(set(ids)) == len(ids))
     required = ("id", "name", "klass", "requires", "signals", "questions",
@@ -114,10 +114,14 @@ def test_technique_loading():
                  "GQL-07", "SEMGREP-01", "EV-01", "SEQ-01", "SEQ-02",
                  "SEQ-03", "PAYLOAD-01"):
         check(f"card_survey_{must}", kb.get_card(must) is not None)
-    # train.py consumer still works
+    # wave1 cards (2026-09-27 hunt-wave ingestion: web, ai, corpora, forged)
+    for must in ("W1-001", "W1-017", "W1-021", "W1-031", "A1-002", "A1-008",
+                 "A1-016", "C1-001", "C1-007", "C1-014", "C1-016",
+                 "F1-001"):
+        check(f"card_wave1_{must}", kb.get_card(must) is not None)
     import train
     tcards = train.load_techniques()
-    check("train_loads_143", len(tcards) == 143, f"got {len(tcards)}")
+    check("train_loads_296", len(tcards) == 296, f"got {len(tcards)}")
     seeds = train.recommend(
         [{"title": "/api/orders/{id}", "detail": "user_id param order invoice", "evidence": ""}],
         {"tech_terms": [], "vuln_classes": []}, {"rejected": [], "seen": []}, limit=5)

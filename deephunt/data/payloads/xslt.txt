@@ -1,0 +1,5 @@
+# DEEPHUNT payload class: xslt (Wave 1 additions, 2026-09-27)
+# Shapes are pattern families; the fuzzer instantiates them.
+<?xml-stylesheet type="text/xsl" href="data:text/xml,<xsl:stylesheet/>"?>
+<xsl:value-of select="system-property('xsl:version')"/>
+<svg><style>@import "data:text/xml,<xsl:stylesheet/>"</style></svg>

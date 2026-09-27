@@ -1,0 +1,10 @@
+# DEEPHUNT payload class: crlf (Wave 1 additions, 2026-09-27)
+# Shapes are pattern families; the fuzzer instantiates them.
+%0d%0aSet-Cookie: dh_marker=1
+%0D%0AHeader-Test: dh_marker
+%E5%98%8A%E5%98%8DSet-Cookie: dh_marker=1
+%E5%98%8A
+%E5%98%8D
+%250d%250aSet-Cookie: dh_marker=1
+%0d%0a%20Set-Cookie: dh_marker=1
+%0d%0aContent-Type: text/html%0d%0a%0d%0a<dh>
