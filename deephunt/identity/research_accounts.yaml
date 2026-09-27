@@ -1,6 +1,6 @@
 # Research Google accounts for the hunt.
 # PRIMARY (live, full hunt access granted 2026-09-27):
-#   attacksurface.alerts@gmail.com — see ../state/research_account.json
+#   attacksurface.alerts@gmail.com — see research_account.json (same folder)
 #   Saved login in Secure Vault (google.com) is available; the browser signs
 #   in with it. Plus-addressing: attacksurface.alerts+<target>@gmail.com.
 accounts:
