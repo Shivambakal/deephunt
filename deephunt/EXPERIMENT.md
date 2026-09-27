@@ -3,6 +3,13 @@
 Started 2026-09-27. Architecture is FROZEN: no new models, sources, scanners,
 agents, technique cards, brains, or dashboards until this experiment reports.
 
+The freeze is on the OPERATOR adding architecture. It does NOT stop DEEPHUNT
+itself from learning and updating: episodic memory, world-model updates,
+rejected-hypothesis memory ("never retry"), technique cards derived from
+confirmed findings, and calibration all stay ON — they are part of what is
+being measured. A hunter that can't update from experience can't pass
+question #5.
+
 ## The metric
 
 **Confirmed, independently reproducible findings per unit of research time.**
