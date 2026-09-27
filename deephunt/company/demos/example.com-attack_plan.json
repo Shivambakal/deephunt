@@ -1,0 +1,187 @@
+[
+ {
+  "card_id": "AUTHN-03",
+  "name": "Password reset email array injection (reset link to attacker)",
+  "klass": "authentication",
+  "score": 14.5,
+  "reasons": [
+   "klass authentication base 5",
+   "signal hits: forgot, application/x-www-form-urlencoded",
+   "impact bonus 4",
+   "past incident: auth weaknesses plausible"
+  ],
+  "requires": [
+   "http_observation",
+   "owned_test_account"
+  ],
+  "hypothesis": "Example: Password reset email array injection (reset link to attacker) \u2014 the dossier shows a matching surface (authentication); a controlled test with owned accounts/data would distinguish vulnerable from hardened.",
+  "test_sketch": "Submit the forgot-password form, intercept, and convert the body to JSON (Burp Content-Type Converter). Replace \"user[email]\":\"victim@x\" with \"user\": {\"email\": [\"victim@x\",\"attacker@x\"]}. If the reset link arrives in the ATTACKER-owned mailbox, it is account takeover with zero victim interaction. Gr",
+  "impact_hint": "Critical \u2014 full ATO knowing only the victim's email."
+ },
+ {
+  "card_id": "IDOR-01",
+  "name": "BOLA on numeric/UUID object IDs",
+  "klass": "authorization",
+  "score": 13.5,
+  "reasons": [
+   "klass authorization base 5",
+   "signal hits: invoice, order",
+   "impact bonus 3",
+   "past incident: auth weaknesses plausible"
+  ],
+  "requires": [
+   "authenticated_identity",
+   "object_identifier"
+  ],
+  "hypothesis": "Example: BOLA on numeric/UUID object IDs \u2014 the dossier shows a matching surface (authorization); a controlled test with owned accounts/data would distinguish vulnerable from hardened.",
+  "test_sketch": "Two owned accounts A/B. A creates object, captures its ID. B requests the same ID directly (GET/PUT/DELETE). Compare: 200 with A's data = broken object-level authorization. Also try IDOR via POST body id, X-HTTP-Method override, and .json suffix.",
+  "impact_hint": "High \u2014 cross-account data disclosure, the most paid bounty class."
+ },
+ {
+  "card_id": "AUTHZ-01",
+  "name": "Role/plan restriction enforced client-side only",
+  "klass": "authorization",
+  "score": 13.5,
+  "reasons": [
+   "klass authorization base 5",
+   "signal hits: plan, settings",
+   "impact bonus 3",
+   "past incident: auth weaknesses plausible"
+  ],
+  "requires": [
+   "authenticated_identity",
+   "object_identifier"
+  ],
+  "hypothesis": "Example: Role/plan restriction enforced client-side only \u2014 the dossier shows a matching surface (authorization); a controlled test with owned accounts/data would distinguish vulnerable from hardened.",
+  "test_sketch": "Replay a privileged action as a low-privilege owned account by calling the API directly (drop the UI gate). Watch for 200 vs 403. Try role param tampering (role=user -> role=admin) on profile-update endpoints.",
+  "impact_hint": "High \u2014 privilege escalation."
+ },
+ {
+  "card_id": "AI-07",
+  "name": "Excessive agency \u2014 over-permissioned tools, no server-side authz",
+  "klass": "ai-llm",
+  "score": 12,
+  "reasons": [
+   "klass ai-llm base 2",
+   "signal hits: function, agent, execute",
+   "impact bonus 4"
+  ],
+  "requires": [
+   "http_observation",
+   "authenticated_identity"
+  ],
+  "hypothesis": "Example: Excessive agency \u2014 over-permissioned tools, no server-side authz \u2014 the dossier shows a matching surface (ai-llm); a controlled test with owned accounts/data would distinguish vulnerable from hardened.",
+  "test_sketch": "Enumerate the agent's tools (function schemas, MCP manifests), then ask it to invoke a tool beyond your owned account's privilege (admin action, other-user data). If the tool executes, agency exceeds authorization. Grounded: OWASP LLM06 (2025, expanded for agentic AI) \u2014 \"Keys to the Kingdom\".",
+  "impact_hint": "Critical \u2014 the model becomes a confused deputy with privileges."
+ },
+ {
+  "card_id": "AUTHN-02",
+  "name": "Password reset token leakage / host header poisoning",
+  "klass": "authentication",
+  "score": 11.5,
+  "reasons": [
+   "klass authentication base 5",
+   "signal hits: forgot",
+   "impact bonus 3",
+   "past incident: auth weaknesses plausible"
+  ],
+  "requires": [
+   "owned_test_account"
+  ],
+  "hypothesis": "Example: Password reset token leakage / host header poisoning \u2014 the dossier shows a matching surface (authentication); a controlled test with owned accounts/data would distinguish vulnerable from hardened.",
+  "test_sketch": "Request reset with X-Forwarded-Host: attacker.com \u2014 check if the reset link in the (owned) mailbox points at the attacker host. Also test token predictability and whether the token is bound to the requester.",
+  "impact_hint": "High \u2014 account takeover."
+ },
+ {
+  "card_id": "OAUTH-01",
+  "name": "OAuth redirect_uri / state validation gaps",
+  "klass": "authentication",
+  "score": 11.5,
+  "reasons": [
+   "klass authentication base 5",
+   "signal hits: callback",
+   "impact bonus 3",
+   "past incident: auth weaknesses plausible"
+  ],
+  "requires": [
+   "owned_test_account"
+  ],
+  "hypothesis": "Example: OAuth redirect_uri / state validation gaps \u2014 the dossier shows a matching surface (authentication); a controlled test with owned accounts/data would distinguish vulnerable from hardened.",
+  "test_sketch": "Try open-redirect-ish redirect_uris (subdomain, path traversal, @-tricks), missing state, code leakage via referer, and PKCE downgrade. Owned apps only.",
+  "impact_hint": "High \u2014 token theft."
+ },
+ {
+  "card_id": "2FA-01",
+  "name": "2FA enrollment bypass / recovery-code flaws",
+  "klass": "authentication",
+  "score": 11.5,
+  "reasons": [
+   "klass authentication base 5",
+   "signal hits: backup-code",
+   "impact bonus 3",
+   "past incident: auth weaknesses plausible"
+  ],
+  "requires": [
+   "owned_test_account"
+  ],
+  "hypothesis": "Example: 2FA enrollment bypass / recovery-code flaws \u2014 the dossier shows a matching surface (authentication); a controlled test with owned accounts/data would distinguish vulnerable from hardened.",
+  "test_sketch": "Enroll 2FA on owned account; test recovery-code entropy/reuse, disabling 2FA without re-auth, and backup-code brute-force protections (low volume).",
+  "impact_hint": "High."
+ },
+ {
+  "card_id": "OAUTH-02",
+  "name": "OAuth redirect_uri / state confusion",
+  "klass": "authentication",
+  "score": 11.5,
+  "reasons": [
+   "klass authentication base 5",
+   "signal hits: callback",
+   "impact bonus 3",
+   "past incident: auth weaknesses plausible"
+  ],
+  "requires": [
+   "owned_test_account"
+  ],
+  "hypothesis": "Example: OAuth redirect_uri / state confusion \u2014 the dossier shows a matching surface (authentication); a controlled test with owned accounts/data would distinguish vulnerable from hardened.",
+  "test_sketch": "Mutate redirect_uri (subdomain, path traversal, query smuggling), drop/replay state, mix code across clients. Capture with an owned receiver only.",
+  "impact_hint": "High \u2014 account takeover adjacent."
+ },
+ {
+  "card_id": "INVITE-01",
+  "name": "Invite/token reuse and privilege confusion in teams/orgs",
+  "klass": "authorization",
+  "score": 11.5,
+  "reasons": [
+   "klass authorization base 5",
+   "signal hits: org",
+   "impact bonus 3",
+   "past incident: auth weaknesses plausible"
+  ],
+  "requires": [
+   "authenticated_identity",
+   "object_identifier"
+  ],
+  "hypothesis": "Example: Invite/token reuse and privilege confusion in teams/orgs \u2014 the dossier shows a matching surface (authorization); a controlled test with owned accounts/data would distinguish vulnerable from hardened.",
+  "test_sketch": "Reuse expired invites, tamper role in invite accept, self-invite to privileged teams. Two owned accounts, one org.",
+  "impact_hint": "High."
+ },
+ {
+  "card_id": "EXPORT-01",
+  "name": "Data export / bulk download authorization gaps",
+  "klass": "authorization",
+  "score": 11.5,
+  "reasons": [
+   "klass authorization base 5",
+   "signal hits: backup",
+   "impact bonus 3",
+   "past incident: auth weaknesses plausible"
+  ],
+  "requires": [
+   "authenticated_identity",
+   "object_identifier"
+  ],
+  "hypothesis": "Example: Data export / bulk download authorization gaps \u2014 the dossier shows a matching surface (authorization); a controlled test with owned accounts/data would distinguish vulnerable from hardened.",
+  "test_sketch": "Trigger exports as low-priv owned user; check whether the job includes other users'/tenants' data or is enumerable by job ID.",
+  "impact_hint": "High."
+ }
+]
