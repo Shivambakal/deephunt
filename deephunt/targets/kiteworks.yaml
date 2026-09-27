@@ -1,0 +1,61 @@
+# DEEPHUNT target profile: kiteworks
+name: kiteworks
+program: YesWeHack kiteworks-public-bug-bounty-program-1 (public; policy read live 2026-09-27)
+scope_hosts:
+  - ywh-kw-public.bounty.kiteworks.dev
+ct_zones:
+  - bounty.kiteworks.dev
+github_orgs:
+  - kiteworks
+seed_urls:
+  - https://ywh-kw-public.bounty.kiteworks.dev
+tech_terms:
+  - Kiteworks Core
+  - Email Protection Gateway
+  - Managed File Transfer
+  - Secure Data Forms
+  - Apache Airflow
+vuln_classes:
+  - privilege escalation
+  - RCE
+  - XSS
+  - LDAP injection
+  - IDOR
+  - SSRF
+  - LFI
+  - XXE
+  - broken authentication
+  - business logic
+vuln_classes_text: priv-esc, rce, xss, ldap-injection, idor, ssrf, lfi, xxe, auth, business-logic
+active_allowed: false
+auth_basis: |
+  YesWeHack public program. CRITICAL: program rules forbid automated tools
+  ("refrain from using automated tools, and limit yourself about requests
+  per second"). Daemon does passive recon + dossier + hypothesis generation
+  ONLY. All active testing is manual, low-rate, by the human operator.
+  Required User-Agent suffix: '-public-yeswehack'.
+  No DoS, no infra interference, no touching other users' data, report within
+  24h exclusively via yeswehack.com, no disclosure (not even partial).
+  They monitor the hunting environment. Focus areas per program: privilege
+  role escalation, RCE, XSS (needs REAL impact PoC, alert(1) insufficient),
+  LDAP injection. Crown Jewel bonus: up to $50k for unauth RCE as root on
+  Core appliance.
+  Accepted risks (DO NOT report): AV/filetype bypass via rename, user ID
+  enumeration, "anyone after authentication" file disclosure. Also out:
+  race conditions, user enumeration, rate-limit issues, self-XSS.
+repo_keywords:
+  - kiteworks
+  - mft
+  - airflow
+hypothesis_seeds:
+  - File upload/share flows in Core/MFT are the densest surface; look for IDOR on file objects and recipient handling bypasses (but NOT the accepted "anyone after authentication" case).
+  - Role/permission boundaries between user types may allow vertical escalation; the program explicitly invites this.
+  - MFT is powered by Apache Airflow (open source) — known Airflow CVE patterns may apply to the deployment.
+  - EPG email handling (encryption/DLP/anti-malware) may have parsing bugs; LDAP integration is an explicit focus area.
+operator_brief: |
+  1. Register on YesWeHack, join the Kiteworks public program, get hunting
+     environment access at ywh-kw-public.bounty.kiteworks.dev.
+  2. Set User-Agent suffix '-public-yeswehack' on all manual traffic.
+  3. Work through the dossier's ranked hypotheses manually, low request rate,
+     no scanners. Document every step for the 24h report window.
+  4. XSS needs impact PoC (session hijack / actions as victim), not alert(1).
