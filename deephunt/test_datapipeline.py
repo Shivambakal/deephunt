@@ -83,7 +83,7 @@ def test_target_model():
 # ---------- 2. technique dir loading ----------
 def test_technique_loading():
     cards = kb.load_techniques()
-    check("cards_count_296", len(cards) == 296, f"got {len(cards)}")
+    check("cards_count_311", len(cards) == 311, f"got {len(cards)}")
     ids = [c["id"] for c in cards]
     check("cards_unique_ids", len(set(ids)) == len(ids))
     required = ("id", "name", "klass", "requires", "signals", "questions",
@@ -119,9 +119,17 @@ def test_technique_loading():
                  "A1-016", "C1-001", "C1-007", "C1-014", "C1-016",
                  "F1-001"):
         check(f"card_wave1_{must}", kb.get_card(must) is not None)
+    # sweep-2026-09-28 cards (daily intel sweep: A2M, auth-laundering, SalesBleed,
+    # MCP exposure/supply-chain, GitLab 85706, MikroTrick, WP 87902, TrueBooker,
+    # containerd checkpoint, register_argc_argv)
+    for must in ("S28-AI-01", "S28-AI-02", "S28-AI-03", "S28-AI-04",
+                 "S28-AI-05", "S28-AI-06", "S28-AI-07", "S28-AI-08",
+                 "S28-AUTH-01", "S28-AUTH-02", "S28-AUTH-03", "S28-AUTH-04",
+                 "S28-INJ-01", "S28-CLD-01", "S28-WEB-01"):
+        check(f"card_sweep_{must}", kb.get_card(must) is not None)
     import train
     tcards = train.load_techniques()
-    check("train_loads_296", len(tcards) == 296, f"got {len(tcards)}")
+    check("train_loads_311", len(tcards) == 311, f"got {len(tcards)}")
     seeds = train.recommend(
         [{"title": "/api/orders/{id}", "detail": "user_id param order invoice", "evidence": ""}],
         {"tech_terms": [], "vuln_classes": []}, {"rejected": [], "seen": []}, limit=5)

@@ -338,3 +338,81 @@
   detection_clue: "Any voice-verification flow is now a deepfake target — test with synthetic audio on your own account and check for liveness/replay defenses."
   why_scanners_missed_it: "Biometric presentation attacks operate in the audio domain against a phone system — invisible to web/API scanners."
   source: "Farlow Ch.3 p.97 (Lloyds Bank Voice ID bypass, 2023, via ElevenLabs)."
+
+- id: CASE-28
+  application_type: "Salesforce Agentforce AI agents with Web-to-Lead intake (SalesBleed)"
+  architecture: "CRM + AI agent consuming inbound lead records + outbound messaging tools"
+  initial_observation: "Web-to-Lead forms let anonymous visitors create CRM records the AI agent processes."
+  attacker_assumption: "Lead records are business data; the agent treats them as trusted content to act on."
+  unexpected_behavior: "Malicious instructions embedded in a lead form submission were executed by the agent with zero user interaction — exfiltrating CRM data and sending phishing messages anonymously."
+  chain_of_events: ["Attacker submits Web-to-Lead form containing hidden instructions", "Agent ingests the lead record as trusted business data", "Agent interprets embedded instructions as task directives", "Agent exfiltrates CRM data / sends phishing with no user click", "Attacker never authenticates or interacts with a user"]
+  root_cause: "No trust boundary between anonymous inbound records and agent instructions; business data processed by the agent was implicitly trusted."
+  impact: "0-click CRM data theft and anonymous phishing via the victim's own AI agent (SalesBleed, Zenity Labs, disclosed Sep 2026)."
+  detection_clue: "Every agent-ingested record source needs an authorship trust label — test what the agent does with anonymous-authored records."
+  why_scanners_missed_it: "Scanners test input validation, not whether the agent's planner treats stored business data as instructions; the attack crosses the data/instruction boundary the scanner doesn't model."
+  source: "Zenity Labs SalesBleed research, disclosed publicly Sep 2026 (Salesforce Agentforce)."
+
+- id: CASE-29
+  application_type: "MikroTik RouterOS SSH service (MikroTrick chain)"
+  architecture: "RouterOS 7.x SSH daemon + legacy login helper program"
+  initial_observation: "SSH requires authentication before any channel can be opened."
+  attacker_assumption: "The pre-auth state machine cannot be advanced without credentials."
+  unexpected_behavior: "A client-requested key re-exchange advanced the unauthenticated client into the connection protocol phase, letting it open a session channel and dispatch exec requests — and a username of '-2' made the login helper read its 'trusted identity' from the attacker's terminal (fd 2), granting full admin."
+  chain_of_events: ["Unauthenticated client requests SSH key re-exchange (CVE-2026-67279)", "Server advances client to connection phase pre-auth", "Client opens session channel and sends exec request", "Exec dispatched: file creation/overwrite in managed namespace", "Separately: username '-2' passed to legacy helper as argv (CVE-2026-86060)", "Helper treats dash arg as fd selector, reads 'trusted identity' from fd 2 (attacker's terminal)", "Full administrative session with no authentication"]
+  root_cause: "Protocol state machine advanced on client-requested rekey without authentication (CWE-841); login helper passed unsanitized username as argv to a helper interpreting dash args as fd selectors (CWE-88)."
+  impact: "Unauthenticated remote administrative takeover of internet-facing routers; exploited in the wild from 2026-09-02 (CERT Polska); KEV-listed 2026-09-25; fixed 6.49.21/7.23.4/7.24.2."
+  detection_clue: "Test pre-auth protocol transitions (rekey, channel open) and dash-prefixed usernames against any SSH login path that shells out to helpers."
+  why_scanners_missed_it: "Network scanners don't drive SSH state machines past authentication or fuzz the username as an argv injection vector into helper programs."
+  source: "CERT Polska + Bishop Fox (Emilio Gallegos), 'MikroTrick', disclosed Sep 2026."
+
+- id: CASE-30
+  application_type: "GitLab CE/EE repository commits API with Workhorse body upload"
+  architecture: "Rails API + GitLab Workhorse (Go reverse proxy handling body uploads)"
+  initial_observation: "The create-commit API requires authentication and push authorization."
+  attacker_assumption: "Every variant of the endpoint enforces the same auth checks."
+  unexpected_behavior: "The Workhorse body-upload variant of the create-commit API read a server-side file by attacker-controlled path and size BEFORE the route's authenticate!/authorize_push_to_branch! checks ran — unauthenticated arbitrary file read."
+  chain_of_events: ["Attacker sends unauthenticated request to commits API body-upload variant", "Workhorse reads server-side file at attacker path before Rails auth runs", "File contents (secrets, config, DB credentials) returned", "Plain route variant correctly returns 401/403 for the same operation"]
+  root_cause: "Auth-ordering flaw: middleware side-channel handler performed the privileged file read before the route's authentication/authorization checks (CWE-22/306)."
+  impact: "Unauthenticated disclosure of arbitrary local files on the GitLab server; CVSS 10.0; published 2026-09-12; HackerOne report 3909881; 8+ independent PoCs; patched 19.1.8/19.2.6/19.3.2."
+  detection_clue: "Enumerate every middleware/body-upload/streaming variant of authenticated endpoints and replay unauthenticated — the side channel may run before auth."
+  why_scanners_missed_it: "Scanners test the documented route; the vulnerable variant is a middleware upload path with different auth ordering that only code review or differential testing reveals."
+  source: "CVE-2026-85706, HackerOne report 3909881, published 2026-09-12."
+
+- id: CASE-31
+  application_type: "Trusted AI platforms abused as malware distribution (Huntress, Sep 2026)"
+  architecture: "Public AI sharing features (claude.ai/share, ChatGPT/Grok shared chats) + paid search ads"
+  initial_observation: "Users trust content on claude.ai, ChatGPT, and Grok as official and safe."
+  attacker_assumption: "The platform's own domain and sharing features can't be turned into a malware channel without breaching the platform."
+  unexpected_behavior: "Attackers never breached the AI platforms: Bing sponsored ads for 'Claude desktop client' led to a fraudulent download page hosted on the legitimate claude.ai domain (SectopRAT, 7,100 views before takedown); claude.ai/share links impersonated Apple Support install instructions (MacSync stealer); shared ChatGPT/Grok conversations became SEO-poisoned pages delivering AMOS."
+  chain_of_events: ["Attacker buys Bing sponsored ad for 'Claude desktop client' (July 2026, 29+ orgs clicked)", "Ad lands on fraudulent page hosted on legitimate claude.ai domain", "Victim downloads SectopRAT believing it is official", "Parallel: claude.ai/share link impersonates Apple Support → MacSync stealer on macOS", "Shared ChatGPT/Grok chats SEO-poisoned → AMOS delivery"]
+  root_cause: "User trust in familiar AI brands and legitimate domains was weaponized; none of the three vectors breached platform security mechanisms — they abused sharing, SEO, and ad placement around the trust boundary."
+  impact: "Enterprise-wide RAT/stealer infections via trusted domains; campaigns ran July–August 2026 before takedowns."
+  detection_clue: "Threat-model the trust users place in platform domains and sharing features — abuse doesn't require a vulnerability in the platform itself."
+  why_scanners_missed_it: "No code vulnerability existed to scan for; the attack is trust-abuse via legitimate features plus ad/SEO placement — invisible to vulnerability scanners."
+  source: "Huntress SOC cases, released 2026-09-11 (nine-month tracking period)."
+
+- id: CASE-32
+  application_type: "WordPress core page-template resolution (CVE-2026-87902)"
+  architecture: "WordPress core wp-includes/template.php, get_page_template()"
+  initial_observation: "The pagename parameter is sanitized (literal dots stripped) before template resolution."
+  attacker_assumption: "Stripping dots plus validate_file() on the neighboring path means traversal is blocked."
+  unexpected_behavior: "The pagename branch never called validate_file(); the sanitizer stripped literal dots but left percent-encoded dots intact, and get_page_template() then called urldecode() — completing ../../ into a working traversal that included a chosen local .php file."
+  chain_of_events: ["Attacker sends pagename with double-encoded traversal (%252e%252e%252f)", "Sanitizer strips literal dots, leaves encoded dots", "get_page_template() urldecodes, completing ../ sequences", "WordPress includes attacker-chosen local .php outside the theme", "Conditional RCE under common server/theme conditions"]
+  root_cause: "Sanitize-then-decode ordering gap: validation ran on the encoded form, decoding ran at the include point with no post-decode check (affects 4.7.0–7.1.1)."
+  impact: "Unauthenticated LFI → conditional RCE on every unpatched WordPress site; CVSS 9.2; disclosed 2026-09-22 with 7.1.2; exploited in the wild within hours (Patchstack first attempt 11:49 UTC same day)."
+  detection_clue: "Map the ORDER of sanitize vs decode stages on every include path — test the encoding-depth ladder (literal, single, double, triple)."
+  why_scanners_missed_it: "Scanners testing literal ../ see it blocked and move on; the gap only appears at double-encoding depth, and the vulnerable branch is one of two neighboring code paths."
+  source: "CVE-2026-87902, WordPress 7.1.2 security release, 2026-09-22."
+
+- id: CASE-33
+  application_type: "TrueBooker WordPress appointment-booking plugin (CVE-2026-14364)"
+  architecture: "WordPress plugin password-reset handler userresetPassword()"
+  initial_observation: "Password reset requires a valid reset key."
+  attacker_assumption: "The handler validates the reset key for every reset attempt."
+  unexpected_behavior: "The handler only validated the reset key IF the account's user_activation_key field was non-empty — and that field is empty for normal accounts not mid-reset. So for ordinary accounts, validation was skipped entirely and the password was set unconditionally from unauthenticated POST data."
+  chain_of_events: ["Attacker POSTs target user id + new password with no token", "Handler checks: is user_activation_key present? No (normal account)", "Validation skipped; password set unconditionally", "Attacker logs in as administrator → full site takeover (plugin/theme editor RCE)"]
+  root_cause: "Conditional validation on stored state: the empty reset state — the COMMON case — was the unprotected one (CWE-640)."
+  impact: "Unauthenticated takeover of any WordPress account including admins; CVSS 9.8; TrueBooker <=1.2.3, patched 1.2.4."
+  detection_clue: "Test reset handlers in every stored state (normal, mid-reset, expired) — the common empty state is the one developers forget to guard."
+  why_scanners_missed_it: "Scanners test with tokens present/absent but rarely model the server-side stored state (activation key empty vs set) that gates the validation branch."
+  source: "CVE-2026-14364, 1dayexploit analysis, Sep 2026."

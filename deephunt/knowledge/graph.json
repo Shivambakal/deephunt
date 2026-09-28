@@ -804,11 +804,1059 @@
    "klass": "methodology",
    "impact": "Medium \u2014 stops re-deriving payloads per target."
   },
-  "JWT-01": {
+  "S28-AI-01": {
    "type": "technique",
-   "name": "JWT alg confusion / none / weak secret",
+   "name": "Trace-optimized MCP agent hijacking via semantic tool-metadata manipulation",
+   "klass": "ai_llm",
+   "impact": "Critical \u2014 A2M shows semantic supply-chain manipulation of tool metadata is a pr"
+  },
+  "class:ai_llm": {
+   "type": "class",
+   "name": "ai_llm"
+  },
+  "S28-AI-02": {
+   "type": "technique",
+   "name": "Endogenous authorization laundering through agent memory",
+   "klass": "ai_llm",
+   "impact": "High \u2014 reframes agent-memory risk from injected-content poisoning to an endogeno"
+  },
+  "S28-AI-03": {
+   "type": "technique",
+   "name": "Zero-click indirect prompt injection via public inbound CRM channels",
+   "klass": "ai_llm",
+   "impact": "Critical \u2014 SalesBleed showed public lead forms become a 0-click remote attack su"
+  },
+  "S28-AI-04": {
+   "type": "technique",
+   "name": "Test-time search indirect prompt injection with an agentic attacker",
+   "klass": "ai_llm",
+   "impact": "High \u2014 reframes IPI from a static vulnerability to a dynamic search problem: att"
+  },
+  "S28-AI-05": {
+   "type": "technique",
+   "name": "NeighborJack \u2014 MCP servers bound to 0.0.0.0 exposing command injection to adjacent hosts",
+   "klass": "ai_llm",
+   "impact": "High \u2014 turns a 'local' AI component into a network-reachable command-execution s"
+  },
+  "S28-AI-06": {
+   "type": "technique",
+   "name": "Public MCP configuration files as a credential-harvesting source",
+   "klass": "ai_llm",
+   "impact": "High \u2014 MCP configs hand an attacker credentials PLUS the agent identity that wie"
+  },
+  "S28-AI-07": {
+   "type": "technique",
+   "name": "Trojanized MCP servers as malware distribution and CI credential theft",
+   "klass": "ai_llm",
+   "impact": "Critical \u2014 MCP servers are now a malware distribution channel with real in-the-w"
+  },
+  "S28-AI-08": {
+   "type": "technique",
+   "name": "Prompt-injection anti-analysis against LLM-based security scanners",
+   "klass": "ai_llm",
+   "impact": "High \u2014 first observed anti-analysis technique aimed at AI scanners: malware that"
+  },
+  "S28-AUTH-01": {
+   "type": "technique",
+   "name": "Middleware auth-ordering flaw \u2014 privileged side-channel action before route auth",
+   "klass": "authentication",
+   "impact": "Critical \u2014 pre-auth file read/write through a middleware side channel; the route"
+  },
+  "S28-AUTH-02": {
+   "type": "technique",
+   "name": "Password-reset validation skipped on empty reset state",
+   "klass": "authentication",
+   "impact": "Critical \u2014 unauthenticated account takeover of any account including administrat"
+  },
+  "S28-AUTH-03": {
+   "type": "technique",
+   "name": "SSH protocol-state bypass via client-requested key re-exchange",
+   "klass": "authentication",
+   "impact": "High \u2014 unauthenticated remote file creation/overwrite on network appliances; cha"
+  },
+  "S28-AUTH-04": {
+   "type": "technique",
+   "name": "Argument injection via dash-prefixed username into fd-selector legacy helper",
+   "klass": "authentication",
+   "impact": "Critical \u2014 unauthenticated full administrative access from a single crafted user"
+  },
+  "S28-INJ-01": {
+   "type": "technique",
+   "name": "Sanitize-then-decode ordering gap in template/include resolution",
+   "klass": "injection",
+   "impact": "Critical \u2014 unauthenticated path traversal to local file inclusion, escalating to"
+  },
+  "S28-CLD-01": {
+   "type": "technique",
+   "name": "CRI checkpoint import image-tag poisoning",
+   "klass": "cloud",
+   "impact": "High \u2014 tag poisoning converts pod-creation rights into execution as any pre-depl"
+  },
+  "S28-WEB-01": {
+   "type": "technique",
+   "name": "PHP register_argc_argv as a web-request code-execution precondition",
+   "klass": "injection",
+   "impact": "High \u2014 web-request code execution with web-server privileges on affected configu"
+  },
+  "A1-001": {
+   "type": "technique",
+   "name": "Self-replicating adversarial prompt worm across agent ecosystems",
+   "klass": "ai_llm",
+   "impact": "Critical \u2014 ClawWorm (2026) demonstrated worm-like spread across a production-sca"
+  },
+  "A1-002": {
+   "type": "technique",
+   "name": "Zero-click exfiltration chains against enterprise copilots (defense-chain bypass)",
+   "klass": "ai_llm",
+   "impact": "Critical \u2014 EchoLeak was the first documented real-world zero-click prompt-inject"
+  },
+  "A1-003": {
+   "type": "technique",
+   "name": "MCP tool shadowing via namespace collisions",
+   "klass": "ai_llm",
+   "impact": "High \u2014 tool shadowing exploits the absence of namespace isolation in MCP tool li"
+  },
+  "A1-004": {
+   "type": "technique",
+   "name": "MCP sampling primitive abuse for conversation hijack and covert invocation",
+   "klass": "ai_llm",
+   "impact": "High \u2014 MCP sampling reverses the trust direction: the server asks the client mod"
+  },
+  "A1-005": {
+   "type": "technique",
+   "name": "MCP OAuth and transport-layer account takeover (consent bypass, DNS rebinding, proxy RCE)",
+   "klass": "ai_llm",
+   "impact": "Critical \u2014 the 2025\u20132026 MCP CVE surge (30+ CVEs in early 2026 alone) clusters o"
+  },
+  "A1-006": {
+   "type": "technique",
+   "name": "A2A cross-agent session smuggling",
+   "klass": "ai_llm",
+   "impact": "High \u2014 inter-agent protocols are the new network boundary, and session smuggling"
+  },
+  "A1-007": {
+   "type": "technique",
+   "name": "Trigger-keyed RAG backdoor (dormant corpus poison)",
+   "klass": "ai_llm",
+   "impact": "High \u2014 trigger-keyed backdoors evade routine evals because they only fire on att"
+  },
+  "A1-008": {
+   "type": "technique",
+   "name": "Query-only memory write-path injection (MINJA class)",
+   "klass": "ai_llm",
+   "impact": "Critical \u2014 MINJA proved any ordinary user can poison a shared agent's long-term "
+  },
+  "A1-009": {
+   "type": "technique",
+   "name": "Cross-task memory persistence (poison survives task boundaries)",
+   "klass": "ai_llm",
+   "impact": "High \u2014 cross-task persistence defeats permission-based defenses because the late"
+  },
+  "A1-010": {
+   "type": "technique",
+   "name": "Slopsquatting \u2014 coding agents installing hallucinated packages",
+   "klass": "ai_llm",
+   "impact": "High \u2014 slopsquatting bets on the AI being predictably wrong: hallucinations are "
+  },
+  "A1-011": {
+   "type": "technique",
+   "name": "Visual and steganographic prompt injection (image/audio carriers)",
+   "klass": "ai_llm",
+   "impact": "High \u2014 multimodal inputs are a classifier blind spot: humans see a benign image "
+  },
+  "A1-012": {
+   "type": "technique",
+   "name": "KV-cache timing oracle for cross-tenant prompt recovery",
+   "klass": "ai_llm",
+   "impact": "High \u2014 shared prefix caches turn latency into a prompt-extraction oracle; agenti"
+  },
+  "A1-013": {
+   "type": "technique",
+   "name": "Task-decomposition jailbreak (safe in isolation, harmful in composition)",
+   "klass": "ai_llm",
+   "impact": "High \u2014 this breaks the core assumption of per-step safety: TwinGate (arXiv:2604."
+  },
+  "A1-014": {
+   "type": "technique",
+   "name": "Many-shot in-context jailbreak (power-law conditioning)",
+   "klass": "ai_llm",
+   "impact": "High \u2014 many-shot became a dominant 2026 technique because modern 128k\u20131M token w"
+  },
+  "A1-015": {
+   "type": "technique",
+   "name": "Fuzzing-driven jailbreak search (JBFuzz class)",
+   "klass": "ai_llm",
+   "impact": "High \u2014 fuzzing industrializes jailbreaking: what took human creativity now takes"
+  },
+  "A1-016": {
+   "type": "technique",
+   "name": "GhostJacking \u2014 observability and log injection against investigating agents",
+   "klass": "ai_llm",
+   "impact": "Critical \u2014 GhostJacking inverts the security stack: the firewall doing its job c"
+  },
+  "A1-017": {
+   "type": "technique",
+   "name": "Approval-gate and trust-on-first-use bypass (MCPoison class)",
+   "klass": "ai_llm",
+   "impact": "High \u2014 trust-on-first-use turns one approval into a standing permission; attacke"
+  },
+  "A1-018": {
+   "type": "technique",
+   "name": "Semantic privilege escalation (in-scope technically, out-of-scope semantically)",
+   "klass": "ai_llm",
+   "impact": "High \u2014 RBAC answers \"may it call this tool\" but not \"may it read all records\"; a"
+  },
+  "A1-019": {
+   "type": "technique",
+   "name": "Malicious agent skill/marketplace supply chain (ClawHavoc class)",
+   "klass": "ai_llm",
+   "impact": "Critical \u2014 agent skill marketplaces replay the early mobile-app-store era: no re"
+  },
+  "A1-020": {
+   "type": "technique",
+   "name": "Real-time voice-clone vishing against human authorization",
+   "klass": "ai_llm",
+   "impact": "Critical \u2014 voice cloning costs fell from ~INR 400 to under INR 5 per voice (2023"
+  },
+  "A1-021": {
+   "type": "technique",
+   "name": "AI-orchestrated intrusion operations (adversary agent tradecraft)",
+   "klass": "ai_llm",
+   "impact": "High \u2014 the operator side now runs agents too: 80\u201390% of a state-sponsored intrus"
+  },
+  "A1-022": {
+   "type": "technique",
+   "name": "Insecure-by-default AI-generated applications (vibe-coded exposure)",
+   "klass": "ai_llm",
+   "impact": "High \u2014 vibe-coded apps ship the happy path: auth and RLS are \"added later\" (neve"
+  },
+  "C1-001": {
+   "type": "technique",
+   "name": "SSRF filter bypass via IP-format polymorphism",
+   "klass": "ssrf",
+   "impact": "SSRF to loopback/internal services; escalation path to cloud metadata or interna"
+  },
+  "class:ssrf": {
+   "type": "class",
+   "name": "ssrf"
+  },
+  "CWE-918": {
+   "type": "weakness",
+   "name": "Server-Side Request Forgery"
+  },
+  "C1-002": {
+   "type": "technique",
+   "name": "SSRF allowlist bypass via DNS rebinding TOCTOU",
+   "klass": "ssrf",
+   "impact": "Full SSRF despite a correct-looking hostname allowlist; same escalation as class"
+  },
+  "C1-003": {
+   "type": "technique",
+   "name": "Cloud metadata SSRF via header-requirement primitives",
+   "klass": "cloud",
+   "impact": "Cloud credential theft; pivot to IAM, storage, queues."
+  },
+  "C1-004": {
+   "type": "technique",
+   "name": "SSRF allowlist bypass via attacker-controlled redirect chain",
+   "klass": "ssrf",
+   "impact": "Defeats domain allowlists entirely; same escalation as direct SSRF."
+  },
+  "C1-005": {
+   "type": "technique",
+   "name": "JWT kid SQL injection for key confusion",
+   "klass": "auth",
+   "impact": "Full JWT forgery; impersonate any user, escalate to admin."
+  },
+  "class:auth": {
+   "type": "class",
+   "name": "auth"
+  },
+  "C1-006": {
+   "type": "technique",
+   "name": "JWT kid path traversal to attacker-known key material",
+   "klass": "auth",
+   "impact": "Full JWT forgery without any key discovery."
+  },
+  "C1-007": {
+   "type": "technique",
+   "name": "JWT jku/x5u spoofed key URL with collaborator oracle",
+   "klass": "auth",
+   "impact": "JWT forgery plus an SSRF primitive via the key-fetch channel."
+  },
+  "C1-008": {
+   "type": "technique",
+   "name": "OAuth redirect_uri bypass to authorization-code theft",
+   "klass": "auth",
+   "impact": "Account takeover via stolen authorization code; token theft if implicit flow."
+  },
+  "C1-009": {
+   "type": "technique",
+   "name": "Host-header injection into absolute password-reset links",
+   "klass": "auth",
+   "impact": "Account takeover at scale if chained with a victim clicking the poisoned link."
+  },
+  "C1-010": {
+   "type": "technique",
+   "name": "SSTI context fingerprinting: plaintext vs code context",
+   "klass": "injection",
+   "impact": "Determines exploitability path; SSTI leads to RCE in most engines."
+  },
+  "C1-011": {
+   "type": "technique",
+   "name": "Jinja2 SSTI filter bypass via attr() and bracket notation",
+   "klass": "injection",
+   "impact": "SSTI filter bypass to RCE."
+  },
+  "C1-012": {
+   "type": "technique",
+   "name": "SSTI engine fingerprinting from error-message differentials",
+   "klass": "injection",
+   "impact": "Turns a blind reflection into a targeted engine-specific exploit."
+  },
+  "C1-013": {
+   "type": "technique",
+   "name": "Deserialization format fingerprinting from magic bytes and markers",
+   "klass": "deserialization",
+   "impact": "Unsafe deserialization leads to RCE via gadget chains per language."
+  },
+  "class:deserialization": {
+   "type": "class",
+   "name": "deserialization"
+  },
+  "C1-014": {
+   "type": "technique",
+   "name": "Server-side prototype pollution via JSON merge endpoints",
+   "klass": "deserialization",
+   "impact": "Pollution alone is low; chained to a gadget (template, child_process, config fla"
+  },
+  "C1-015": {
+   "type": "technique",
+   "name": "Prototype pollution filter bypass via alternate key paths",
+   "klass": "deserialization",
+   "impact": "Same as C1-014; bypasses naive key blocklists."
+  },
+  "C1-016": {
+   "type": "technique",
+   "name": "CL.TE / TE.CL desync detection via timing differential",
+   "klass": "web",
+   "impact": "Request smuggling: cache poisoning, credential capture, front-end control bypass"
+  },
+  "class:web": {
+   "type": "class",
+   "name": "web"
+  },
+  "C1-017": {
+   "type": "technique",
+   "name": "Transfer-Encoding obfuscation ladder for smuggling",
+   "klass": "web",
+   "impact": "Turns a hardened stack into a smuggling primitive; same impact as C1-016."
+  },
+  "C1-018": {
+   "type": "technique",
+   "name": "CL.0 desync detection (back-end ignores request body)",
+   "klass": "web",
+   "impact": "Request smuggling without any TE header; bypasses TE-focused defenses."
+  },
+  "C1-019": {
+   "type": "technique",
+   "name": "Hop-by-hop header stripping to force desync (Connection: ...)",
+   "klass": "web",
+   "impact": "Creates smuggling on stacks that normalize TE correctly."
+  },
+  "C1-020": {
+   "type": "technique",
+   "name": "CRLF filter bypass via Unicode homoglyph encodings",
+   "klass": "injection",
+   "impact": "Response splitting, header injection, log injection; chained to XSS or cache poi"
+  },
+  "C1-021": {
+   "type": "technique",
+   "name": "NoSQL operator injection for authentication bypass",
+   "klass": "injection",
+   "impact": "Authentication bypass; with $regex, blind data extraction."
+  },
+  "C1-022": {
+   "type": "technique",
+   "name": "LDAP filter injection for authentication bypass",
+   "klass": "injection",
+   "impact": "Authentication bypass; with blind techniques, directory enumeration."
+  },
+  "C1-023": {
+   "type": "technique",
+   "name": "XPath injection for authentication bypass",
+   "klass": "injection",
+   "impact": "Authentication bypass; XPath 2.0 functions can extend to blind extraction."
+  },
+  "C1-024": {
+   "type": "technique",
+   "name": "XSLT injection via stylesheet upload (SVG/XML)",
+   "klass": "injection",
+   "impact": "Server-side XSLT can reach file read and, with extension functions, code executi"
+  },
+  "C1-025": {
+   "type": "technique",
+   "name": "GraphQL nested-argument injection (SQLi/NoSQL inside filter args)",
+   "klass": "graphql",
+   "impact": "Data extraction or auth bypass through the GraphQL layer."
+  },
+  "C1-026": {
+   "type": "technique",
+   "name": "GraphQL JSON array batching to bypass single-query rate limits",
+   "klass": "graphql",
+   "impact": "Credential stuffing / OTP brute-force at N\u00d7 the intended rate."
+  },
+  "C1-027": {
+   "type": "technique",
+   "name": "GraphQL deep/circular nesting to evade depth limits (resource exhaustion)",
+   "klass": "graphql",
+   "impact": "Denial of service via expensive queries; often out of scope \u2014 check program rule"
+  },
+  "C1-028": {
+   "type": "technique",
+   "name": "Open-redirect fragment smuggling past path-only validators",
+   "klass": "web",
+   "impact": "Open redirect; chained into OAuth code theft or phishing."
+  },
+  "C1-029": {
+   "type": "technique",
+   "name": "DOM open redirect via validate-decoded / emit-original mismatch",
+   "klass": "web",
+   "impact": "Client-side path traversal; chained with a redirect gadget it becomes XSS/accoun"
+  },
+  "C1-030": {
+   "type": "technique",
+   "name": "Mass assignment via nested objects and array role fields",
+   "klass": "api",
+   "impact": "Privilege escalation, balance/price manipulation."
+  },
+  "C1-031": {
+   "type": "technique",
+   "name": "Blind XXE exfiltration via out-of-band parameter entities",
+   "klass": "injection",
+   "impact": "File disclosure, SSRF via the parser, and with expect:// wrappers, RCE on some s"
+  },
+  "C1-032": {
+   "type": "technique",
+   "name": "403/401 bypass via X-Original-URL / X-Rewrite-URL route override",
+   "klass": "auth",
+   "impact": "Authorization bypass to admin/internal functionality."
+  },
+  "F1-001": {
+   "type": "technique",
+   "name": "Raced IDOR: IDOR via parameter pollution / duplicate para\u2026 against Race on coupon/credit/refund/balance operatio\u2026 revocation window",
+   "klass": "forged",
+   "impact": "High \u2014 cross-account data disclosure through a revocation race."
+  },
+  "class:forged": {
+   "type": "class",
+   "name": "forged"
+  },
+  "F1-002": {
+   "type": "technique",
+   "name": "Raced IDOR: Cross-tenant object creation via tenant/clust\u2026 against Race on coupon/credit/refund/balance operatio\u2026 revocation window",
+   "klass": "forged",
+   "impact": "High \u2014 cross-account data disclosure through a revocation race."
+  },
+  "F1-003": {
+   "type": "technique",
+   "name": "Raced IDOR: Cross-tenant object creation via tenant/clust\u2026 against TOCTOU on email change / invite / share revoc\u2026 revocation window",
+   "klass": "forged",
+   "impact": "High \u2014 cross-account data disclosure through a revocation race."
+  },
+  "F1-004": {
+   "type": "technique",
+   "name": "Raced IDOR: IDOR via parameter pollution / duplicate para\u2026 against TOCTOU on email change / invite / share revoc\u2026 revocation window",
+   "klass": "forged",
+   "impact": "High \u2014 cross-account data disclosure through a revocation race."
+  },
+  "F1-005": {
+   "type": "technique",
+   "name": "Cross-tenant injection via poisoned retrieval: Indirect prompt injection across a share/coll\u2026 \u00d7 RAG retrieval poisoning via embedding manipul\u2026",
+   "klass": "forged",
+   "impact": "High \u2014 cross-tenant prompt injection via shared retrieval."
+  },
+  "F1-006": {
+   "type": "technique",
+   "name": "Staged webhook SSRF: SSRF via URL fetch / webhook / file-import pa\u2026 \u00d7 Producer/consumer dependency inference",
+   "klass": "forged",
+   "impact": "Critical \u2014 blind SSRF with the event system's credentials."
+  },
+  "F1-007": {
+   "type": "technique",
+   "name": "OAuth code theft through chained redirect: OAuth redirect_uri / state confusion \u00d7 Open redirect on OAuth-whitelisted domain to\u2026",
+   "klass": "forged",
+   "impact": "Critical \u2014 Low-severity redirect escalated to account takeover."
+  },
+  "F1-008": {
+   "type": "technique",
+   "name": "OAuth code theft through chained redirect: PKCE downgrade \u2014 strip code_challenge or acce\u2026 \u00d7 Open redirect on OAuth-whitelisted domain to\u2026",
+   "klass": "forged",
+   "impact": "Critical \u2014 Low-severity redirect escalated to account takeover."
+  },
+  "F1-009": {
+   "type": "technique",
+   "name": "OAuth code theft through chained redirect: OAuth redirect_uri / state confusion \u00d7 Open redirect -> OAuth/token theft chain",
+   "klass": "forged",
+   "impact": "Critical \u2014 Low-severity redirect escalated to account takeover."
+  },
+  "F1-010": {
+   "type": "technique",
+   "name": "OAuth code theft through chained redirect: PKCE downgrade \u2014 strip code_challenge or acce\u2026 \u00d7 Open redirect -> OAuth/token theft chain",
+   "klass": "forged",
+   "impact": "Critical \u2014 Low-severity redirect escalated to account takeover."
+  },
+  "F1-011": {
+   "type": "technique",
+   "name": "Batched authz bypass: GraphQL query batching for brute-force/amplif\u2026 \u00d7 Role/plan restriction enforced client-side on\u2026",
+   "klass": "forged",
+   "impact": "High \u2014 authorization enforced everywhere except the batch path."
+  },
+  "F1-012": {
+   "type": "technique",
+   "name": "Batched authz bypass: GraphQL query batching for brute-force/amplif\u2026 \u00d7 IDOR via parameter pollution / duplicate para\u2026",
+   "klass": "forged",
+   "impact": "High \u2014 authorization enforced everywhere except the batch path."
+  },
+  "F1-013": {
+   "type": "technique",
+   "name": "Batched authz bypass: GraphQL query batching for brute-force/amplif\u2026 \u00d7 BOLA on numeric/UUID object IDs",
+   "klass": "forged",
+   "impact": "High \u2014 authorization enforced everywhere except the batch path."
+  },
+  "F1-014": {
+   "type": "technique",
+   "name": "Batched authz bypass: GraphQL query batching for brute-force/amplif\u2026 \u00d7 Systematic 403/401 bypass battery",
+   "klass": "forged",
+   "impact": "High \u2014 authorization enforced everywhere except the batch path."
+  },
+  "F1-015": {
+   "type": "technique",
+   "name": "Auth-boundary cache poisoning: Cache deception via smuggled authenticated re\u2026 \u00d7 oauth2-proxy skip_auth_routes query-parameter\u2026",
+   "klass": "forged",
+   "impact": "High \u2014 authenticated content served across the identity boundary."
+  },
+  "F1-016": {
+   "type": "technique",
+   "name": "Auth-boundary cache poisoning: Cache deception via smuggled authenticated re\u2026 \u00d7 OAuth redirect_uri / state validation gaps",
+   "klass": "forged",
+   "impact": "High \u2014 authenticated content served across the identity boundary."
+  },
+  "F1-017": {
+   "type": "technique",
+   "name": "Auth-boundary cache poisoning: Web cache poisoning / deception \u00d7 Authorization code replay race (single-use vi\u2026",
+   "klass": "forged",
+   "impact": "High \u2014 authenticated content served across the identity boundary."
+  },
+  "F1-018": {
+   "type": "technique",
+   "name": "Auth-boundary cache poisoning: Web cache poisoning via unkeyed inputs \u00d7 JWT algorithm-confusion and key-spoof battery",
+   "klass": "forged",
+   "impact": "High \u2014 authenticated content served across the identity boundary."
+  },
+  "F1-019": {
+   "type": "technique",
+   "name": "Poisoned-tool steering of an over-permissioned agent: MCP tool-description / registry poisoning \u00d7 Excessive agency \u2014 over-permissioned tools, n\u2026",
+   "klass": "forged",
+   "impact": "High \u2014 attacker steers agent into privileged actions."
+  },
+  "F1-020": {
+   "type": "technique",
+   "name": "Upload \u2192 traversal \u2192 server-side fetch chain: Unrestricted file upload (type/extension/cont\u2026 + Path traversal in download/export/file-read + SSRF allowlist bypass via parser differentials",
+   "klass": "forged",
+   "impact": "Critical \u2014 file upload escalated to server-side request forgery."
+  },
+  "F1-021": {
+   "type": "technique",
+   "name": "Upload \u2192 traversal \u2192 server-side fetch chain: Unrestricted file upload (type/extension/cont\u2026 + Path traversal in download/export/file-read + SSRF via parser differentials",
+   "klass": "forged",
+   "impact": "Critical \u2014 file upload escalated to server-side request forgery."
+  },
+  "F1-022": {
+   "type": "technique",
+   "name": "Upload \u2192 traversal \u2192 server-side fetch chain: Unrestricted file upload (type/extension/cont\u2026 + Path traversal in download/export/file-read + SSRF via URL fetch / webhook / file-import pa\u2026",
+   "klass": "forged",
+   "impact": "Critical \u2014 file upload escalated to server-side request forgery."
+  },
+  "F1-023": {
+   "type": "technique",
+   "name": "Ownership transfer via mass assignment: BOLA on numeric/UUID object IDs \u00d7 Excessive data exposure / mass assignment",
+   "klass": "forged",
+   "impact": "High \u2014 silent ownership takeover on an endpoint that passed IDOR testing."
+  },
+  "F1-024": {
+   "type": "technique",
+   "name": "Ownership transfer via mass assignment: Cross-tenant object creation via tenant/clust\u2026 \u00d7 Excessive data exposure / mass assignment",
+   "klass": "forged",
+   "impact": "High \u2014 silent ownership takeover on an endpoint that passed IDOR testing."
+  },
+  "F1-025": {
+   "type": "technique",
+   "name": "Ownership transfer via mass assignment: IDOR via parameter pollution / duplicate para\u2026 \u00d7 Excessive data exposure / mass assignment",
+   "klass": "forged",
+   "impact": "High \u2014 silent ownership takeover on an endpoint that passed IDOR testing."
+  },
+  "F1-026": {
+   "type": "technique",
+   "name": "Token-forged privilege escalation: JWT alg confusion / none / weak secret \u00d7 Role/plan restriction enforced client-side on\u2026",
+   "klass": "forged",
+   "impact": "High \u2014 forged token converts UI-hiding into real privilege escalation."
+  },
+  "F1-027": {
+   "type": "technique",
+   "name": "Stored-XSS-driven cross-session action: Stored XSS via profile/content fields \u00d7 Session fixation / concurrent-session / logou\u2026",
+   "klass": "forged",
+   "impact": "High \u2014 stored XSS converted into actions with admin authority."
+  },
+  "F1-028": {
+   "type": "technique",
+   "name": "Residue after state rollback: Coupon/promo stacking and reuse abuse \u00d7 Feedback pruning and use-after-delete checkers",
+   "klass": "forged",
+   "impact": "High \u2014 financial residue from an incompletely rolled-back flow."
+  },
+  "F1-029": {
+   "type": "technique",
+   "name": "Residue after state rollback: Price/quantity tampering in cart/checkout flo\u2026 \u00d7 Feedback pruning and use-after-delete checkers",
+   "klass": "forged",
+   "impact": "High \u2014 financial residue from an incompletely rolled-back flow."
+  },
+  "F1-030": {
+   "type": "technique",
+   "name": "Residue after state rollback: Currency/price tampering on checkout \u00d7 Feedback pruning and use-after-delete checkers",
+   "klass": "forged",
+   "impact": "High \u2014 financial residue from an incompletely rolled-back flow."
+  },
+  "F1-031": {
+   "type": "technique",
+   "name": "Residue after state rollback: Negative/zero quantity and arithmetic abuse \u00d7 Feedback pruning and use-after-delete checkers",
+   "klass": "forged",
+   "impact": "High \u2014 financial residue from an incompletely rolled-back flow."
+  },
+  "F1-032": {
+   "type": "technique",
+   "name": "Upload as deserialization sink: Unrestricted file upload (type/extension/cont\u2026 \u00d7 XXE in file import / document processing / SA\u2026",
+   "klass": "forged",
+   "impact": "High \u2014 file upload converted into server-side deserialization."
+  },
+  "F1-033": {
+   "type": "technique",
+   "name": "Cookie theft via reclaimed subdomain: Subdomain takeover via dangling CNAME \u00d7 Session/token confusion across subdomains",
+   "klass": "forged",
+   "impact": "High \u2014 session theft via DNS + cookie scope, no injection needed."
+  },
+  "F1-034": {
+   "type": "technique",
+   "name": "Version-drift authorization gap: Bounded multi-request sequence planning \u00d7 IDOR via parameter pollution / duplicate para\u2026",
+   "klass": "forged",
+   "impact": "High \u2014 deprecated-but-live API version bypasses current authorization."
+  },
+  "F1-035": {
+   "type": "technique",
+   "name": "Version-drift authorization gap: API version replay (v1 bugs in v2/v3) \u00d7 Data export / bulk download authorization gaps",
+   "klass": "forged",
+   "impact": "High \u2014 deprecated-but-live API version bypasses current authorization."
+  },
+  "F1-036": {
+   "type": "technique",
+   "name": "Version-drift authorization gap: Unauthenticated / unthrottled enumeration end\u2026 \u00d7 IDOR via parameter pollution / duplicate para\u2026",
+   "klass": "forged",
+   "impact": "High \u2014 deprecated-but-live API version bypasses current authorization."
+  },
+  "F1-037": {
+   "type": "technique",
+   "name": "Version-drift authorization gap: Bounded multi-request sequence planning \u00d7 Forced browsing to unlinked admin/debug endpo\u2026",
+   "klass": "forged",
+   "impact": "High \u2014 deprecated-but-live API version bypasses current authorization."
+  },
+  "F1-038": {
+   "type": "technique",
+   "name": "Post-revocation WebSocket channel: WebSocket authorization and CSRF \u00d7 Session fixation / concurrent-session / logou\u2026",
+   "klass": "forged",
+   "impact": "High \u2014 revoked sessions remain actionable over the open channel."
+  },
+  "F1-039": {
+   "type": "technique",
+   "name": "Post-revocation WebSocket channel: WebSocket authorization gaps (missing origin/\u2026 \u00d7 Session fixation / concurrent-session / logou\u2026",
+   "klass": "forged",
+   "impact": "High \u2014 revoked sessions remain actionable over the open channel."
+  },
+  "F1-040": {
+   "type": "technique",
+   "name": "Post-revocation WebSocket channel: CSWSH confirmation standard (101 is not a fin\u2026 \u00d7 Session fixation / concurrent-session / logou\u2026",
+   "klass": "forged",
+   "impact": "High \u2014 revoked sessions remain actionable over the open channel."
+  },
+  "F1-041": {
+   "type": "technique",
+   "name": "Post-revocation WebSocket channel: WebSocket handshake without authentication \u00d7 Session fixation / concurrent-session / logou\u2026",
+   "klass": "forged",
+   "impact": "High \u2014 revoked sessions remain actionable over the open channel."
+  },
+  "F1-042": {
+   "type": "technique",
+   "name": "Cross-origin IDOR read: CORS credential reflection on API subdomains \u00d7 IDOR via parameter pollution / duplicate para\u2026",
+   "klass": "forged",
+   "impact": "High \u2014 victim's browser becomes the IDOR vehicle."
+  },
+  "F1-043": {
+   "type": "technique",
+   "name": "Cross-origin IDOR read: CORS misconfiguration (null/reflective origin\u2026 \u00d7 IDOR via parameter pollution / duplicate para\u2026",
+   "klass": "forged",
+   "impact": "High \u2014 victim's browser becomes the IDOR vehicle."
+  },
+  "F1-044": {
+   "type": "technique",
+   "name": "Cross-origin IDOR read: CORS credential reflection on API subdomains \u00d7 BOLA on numeric/UUID object IDs",
+   "klass": "forged",
+   "impact": "High \u2014 victim's browser becomes the IDOR vehicle."
+  },
+  "F1-045": {
+   "type": "technique",
+   "name": "Cross-origin IDOR read: CORS misconfiguration (null/reflective origin\u2026 \u00d7 Cross-tenant object creation via tenant/clust\u2026",
+   "klass": "forged",
+   "impact": "High \u2014 victim's browser becomes the IDOR vehicle."
+  },
+  "F1-046": {
+   "type": "technique",
+   "name": "Identity-rotated credential brute force: Rate-limit bypass via identity rotation \u00d7 OTP/rate-limit bypass via response manipulati\u2026",
+   "klass": "forged",
+   "impact": "High \u2014 rate limit bypass converts OTP into a brute-force problem."
+  },
+  "F1-047": {
+   "type": "technique",
+   "name": "Desync-authenticated smuggled request: Smuggling-to-cache-poisoning chain (persisten\u2026 \u00d7 Session fixation / concurrent-session / logou\u2026",
+   "klass": "forged",
+   "impact": "Critical \u2014 authenticated actions as the victim via connection desync."
+  },
+  "F1-048": {
+   "type": "technique",
+   "name": "Desync-authenticated smuggled request: Request tunnelling via :path CRLF injection (\u2026 \u00d7 Session fixation / concurrent-session / logou\u2026",
+   "klass": "forged",
+   "impact": "Critical \u2014 authenticated actions as the victim via connection desync."
+  },
+  "F1-049": {
+   "type": "technique",
+   "name": "Desync-authenticated smuggled request: HTTP request smuggling (CL.TE / TE.CL) \u00d7 Session fixation / concurrent-session / logou\u2026",
+   "klass": "forged",
+   "impact": "Critical \u2014 authenticated actions as the victim via connection desync."
+  },
+  "F1-050": {
+   "type": "technique",
+   "name": "Desync-authenticated smuggled request: Request tunnelling via :path CRLF injection (\u2026 \u00d7 Session/token confusion across subdomains",
+   "klass": "forged",
+   "impact": "Critical \u2014 authenticated actions as the victim via connection desync."
+  },
+  "F1-051": {
+   "type": "technique",
+   "name": "Authorization-code capture on reclaimed subdomain: Subdomain takeover via dangling CNAME \u00d7 Authorization code replay race (single-use vi\u2026",
+   "klass": "forged",
+   "impact": "Critical \u2014 the identity provider delivers codes to attacker DNS."
+  },
+  "F1-052": {
+   "type": "technique",
+   "name": "Authorization-code capture on reclaimed subdomain: Subdomain takeover via dangling CNAME \u00d7 Implicit-flow identity/token mismatch (client\u2026",
+   "klass": "forged",
+   "impact": "Critical \u2014 the identity provider delivers codes to attacker DNS."
+  },
+  "F1-053": {
+   "type": "technique",
+   "name": "Authorization-code capture on reclaimed subdomain: Subdomain takeover via dangling CNAME \u00d7 PKCE downgrade \u2014 strip code_challenge or acce\u2026",
+   "klass": "forged",
+   "impact": "Critical \u2014 the identity provider delivers codes to attacker DNS."
+  },
+  "F1-054": {
+   "type": "technique",
+   "name": "Authorization-code capture on reclaimed subdomain: Subdomain takeover via dangling CNAME \u00d7 OAuth redirect_uri / state validation gaps",
+   "klass": "forged",
+   "impact": "Critical \u2014 the identity provider delivers codes to attacker DNS."
+  },
+  "F1-055": {
+   "type": "technique",
+   "name": "Prototype-polluted authorization decision: Prototype pollution in JS-heavy apps \u00d7 Role/plan restriction enforced client-side on\u2026",
+   "klass": "forged",
+   "impact": "High \u2014 authorization flipped by prototype pollution, no token forgery needed."
+  },
+  "F1-056": {
+   "type": "technique",
+   "name": "Enrollment-window OTP race: 2FA/OTP verification race (parallel attempts\u2026 \u00d7 2FA enrollment bypass / recovery-code flaws",
+   "klass": "forged",
+   "impact": "High \u2014 2FA left in an attacker-known or bypassable state."
+  },
+  "F1-057": {
+   "type": "technique",
+   "name": "Parameter-polluted authz split: HTTP parameter pollution differential \u00d7 IDOR via parameter pollution / duplicate para\u2026",
+   "klass": "forged",
+   "impact": "High \u2014 IDOR through parameter-resolution split brain."
+  },
+  "F1-058": {
+   "type": "technique",
+   "name": "Parameter-polluted authz split: HTTP parameter pollution differential \u00d7 BOLA on numeric/UUID object IDs",
+   "klass": "forged",
+   "impact": "High \u2014 IDOR through parameter-resolution split brain."
+  },
+  "F1-059": {
+   "type": "technique",
+   "name": "Parameter-polluted authz split: HTTP parameter pollution differential \u00d7 Cross-tenant object creation via tenant/clust\u2026",
+   "klass": "forged",
+   "impact": "High \u2014 IDOR through parameter-resolution split brain."
+  },
+  "W1-001": {
+   "type": "technique",
+   "name": "CL.0 / 0.CL parser-discrepancy request desync",
+   "klass": "web",
+   "impact": "Response-queue poisoning, session hijack, credential theft; at CDN layer affects"
+  },
+  "W1-002": {
+   "type": "technique",
+   "name": "Expect: 100-continue header desync trick",
+   "klass": "web",
+   "impact": "Opens desync on links that previously had none \u2014 extends W1-001 to hardened fron"
+  },
+  "W1-003": {
+   "type": "technique",
+   "name": "Funky chunks \u2014 chunk-extension parsing discrepancies",
+   "klass": "web",
+   "impact": "Full request smuggling (queue poisoning, cache poisoning, credential theft) past"
+  },
+  "W1-004": {
+   "type": "technique",
+   "name": "H2-to-H1 downgrade smuggling (H2.CL / H2.TE / CRLF injection)",
+   "klass": "web",
+   "impact": "CDN-edge desync affecting every customer behind the edge node; WAF bypass for al"
+  },
+  "W1-005": {
+   "type": "technique",
+   "name": "Cookie chaos \u2014 __Host- / __Secure- prefix bypass",
+   "klass": "web",
+   "impact": "Session fixation, CSRF-token override, auth-boundary bypass where prefix trust w"
+  },
+  "W1-006": {
+   "type": "technique",
+   "name": "Cookie sandwich \u2014 HttpOnly cookie theft via jar injection",
+   "klass": "web",
+   "impact": "HttpOnly bypass \u2014 session theft without XSS."
+  },
+  "W1-007": {
+   "type": "technique",
+   "name": "Phantom $Version cookie WAF bypass",
+   "klass": "web",
+   "impact": "WAF signature bypass for cookie-borne XSS/SQLi \u2014 payload reaches the app uninspe"
+  },
+  "W1-008": {
+   "type": "technique",
+   "name": "WAF origin bypass via DNS history and subdomain leaks",
+   "klass": "web",
+   "impact": "Complete WAF bypass \u2014 all signature/rate-limit protections skipped; internal adm"
+  },
+  "W1-009": {
+   "type": "technique",
+   "name": "HTTP Anomaly Rank \u2014 differential behaviour fingerprinting",
+   "klass": "web",
+   "impact": "Recon multiplier \u2014 surfaces hidden attack surface and parser differentials that "
+  },
+  "W1-010": {
+   "type": "technique",
+   "name": "SAML signature-optional authentication bypass",
+   "klass": "auth",
+   "impact": "Unauthenticated full account takeover \u2014 one forged POST, no credentials."
+  },
+  "W1-011": {
+   "type": "technique",
+   "name": "OIDC ID-token fail-open on unrecognized algorithm",
+   "klass": "auth",
+   "impact": "Authentication bypass via forged ID tokens \u2014 attacker mints arbitrary identities"
+  },
+  "W1-012": {
+   "type": "technique",
+   "name": "JWT fail-open on unsupported signing algorithm (gateway auth bypass)",
+   "klass": "auth",
+   "impact": "Unauthenticated admin on the API management plane \u2014 backend URLs, consumer keys/"
+  },
+  "W1-013": {
+   "type": "technique",
+   "name": "OAuth authorization-code client-binding bypass",
+   "klass": "auth",
+   "impact": "Account takeover \u2014 attacker client obtains tokens for a victim's session authori"
+  },
+  "W1-014": {
+   "type": "technique",
+   "name": "Keycloak client-initiated account-linking hash forgery",
+   "klass": "auth",
+   "impact": "Full account takeover \u2014 attacker-controlled external identity silently bound to "
+  },
+  "W1-015": {
+   "type": "technique",
+   "name": "'Sign in with Google' defunct-domain reclaim account takeover",
+   "klass": "auth",
+   "impact": "Account takeover of former employees' SaaS accounts via domain re-registration."
+  },
+  "W1-016": {
+   "type": "technique",
+   "name": "Auth0 cross-tenant session (sid) reuse to forge victim-tenant JWT",
+   "klass": "auth",
+   "impact": "Victim-tenant JWT for the same-email identity \u2014 cross-tenant impersonation."
+  },
+  "W1-017": {
+   "type": "technique",
+   "name": "OAuth cached display-name collision account takeover",
+   "klass": "auth",
+   "impact": "Full account takeover \u2014 victim's internal user_id, groups, and session state inh"
+  },
+  "W1-018": {
+   "type": "technique",
+   "name": "SSRF whitelist bypass via URL parser differentials",
+   "klass": "ssrf",
+   "impact": "Internal admin access, cloud metadata/credential theft, internal port scanning."
+  },
+  "W1-019": {
+   "type": "technique",
+   "name": ".NET SOAP/WSDL protocol-switching SSRF (WebRequest.Create)",
+   "klass": "ssrf",
+   "impact": "Arbitrary local file write, NTLM credential relay, SSRF to internal services \u2014 u"
+  },
+  "W1-020": {
+   "type": "technique",
+   "name": "GraphQL federation directive bypass cluster",
+   "klass": "graphql",
+   "impact": "Authorization bypass on federated fields \u2014 protected data exposed to unauthentic"
+  },
+  "W1-021": {
+   "type": "technique",
+   "name": "GraphQL alias batching \u2014 rate-limit bypass and mutation-aliasing DoS",
+   "klass": "graphql",
+   "impact": "OTP brute-force in one request, SMS/email bombing, account-recovery DoS, resourc"
+  },
+  "W1-022": {
+   "type": "technique",
+   "name": "Apollo Federation prototype pollution via GraphQL aliases/variables",
+   "klass": "graphql",
+   "impact": "Cross-request Object.prototype pollution \u2014 auth bypass, logic manipulation for a"
+  },
+  "W1-023": {
+   "type": "technique",
+   "name": "graphql-ruby from_introspection RCE (CVE-2025-27407)",
+   "klass": "graphql",
+   "impact": "Remote code execution at CVSS 9.0 from a GraphQL-adjacent feature."
+  },
+  "W1-024": {
+   "type": "technique",
+   "name": "Cross-site WebSocket hijacking (CSWSH) + origin-validation bypass",
+   "klass": "websocket",
+   "impact": "Real-time theft of private messages/presence/data; with privileged WS RPCs, full"
+  },
+  "class:websocket": {
+   "type": "class",
+   "name": "websocket"
+  },
+  "CWE-1385": {
+   "type": "weakness",
+   "name": "Missing Origin Validation in WebSockets"
+  },
+  "W1-025": {
+   "type": "technique",
+   "name": "Localhost WebSocket trust exploitation (agent/desktop apps)",
+   "klass": "websocket",
+   "impact": "Full agent takeover from any website: read config/logs, execute tools, escape sa"
+  },
+  "W1-026": {
+   "type": "technique",
+   "name": "graphql-ws pre-init authentication bypass",
+   "klass": "websocket",
+   "impact": "Unauthenticated access to real-time subscription data (private events, messages,"
+  },
+  "W1-027": {
+   "type": "technique",
+   "name": "Cache-key injection \u2014 smuggling poison through the cache key",
+   "klass": "cache",
+   "impact": "Stored XSS served to all visitors, defacement, session/credential theft at cache"
+  },
+  "class:cache": {
+   "type": "class",
+   "name": "cache"
+  },
+  "CWE-524": {
+   "type": "weakness",
+   "name": "Cached Sensitive Data"
+  },
+  "W1-028": {
+   "type": "technique",
+   "name": "Next.js fetch-caching unkeyed-input poisoning",
+   "klass": "cache",
+   "impact": "Authenticated users served attacker-poisoned or wrong-user content; session conf"
+  },
+  "W1-029": {
+   "type": "technique",
+   "name": "Wildcard web cache deception (path-confusion)",
+   "klass": "cache",
+   "impact": "PII, CSRF tokens, API keys, and session-bound data served from public cache to u"
+  },
+  "W1-030": {
+   "type": "technique",
+   "name": "Cache-poisoned DoS (CPDoS): HHO / HMC / HMO",
+   "klass": "cache",
+   "impact": "Denial of service for all users of the cached resource \u2014 cached error served ins"
+  },
+  "W1-031": {
+   "type": "technique",
+   "name": "Single-packet HTTP/2 race (last-byte synchronization)",
+   "klass": "race",
+   "impact": "Double-spend, coupon/wallet duplication, inventory oversell, privilege duplicati"
+  },
+  "W1-032": {
+   "type": "technique",
+   "name": "Wallet/balance transfer TOCTOU (check-then-act without locking)",
+   "klass": "race",
+   "impact": "Money creation from thin air \u2014 direct financial loss."
+  },
+  "W1-033": {
+   "type": "technique",
+   "name": "Inline style exfiltration via chained CSS conditionals",
+   "klass": "xss",
+   "impact": "Data theft (CSRF tokens, secrets) in contexts where script is blocked but style "
+  },
+  "class:xss": {
+   "type": "class",
+   "name": "xss"
+  },
+  "W1-034": {
+   "type": "technique",
+   "name": "Unicode overflow bypass of character blocklists",
+   "klass": "injection",
+   "impact": "Filter bypass for XSS/SQLi/payload delivery wherever blocklists are the control."
+  },
+  "W1-035": {
+   "type": "technique",
+   "name": "Server-side template injection via neutralisation failure",
+   "klass": "injection",
+   "impact": "Unauthenticated remote code execution (as in the Adobe Commerce case)."
+  },
+  "W1-036": {
+   "type": "technique",
+   "name": "React2Shell \u2014 RSC flight-protocol prototype pollution to RCE (CVE-2025-55182)",
+   "klass": "deserialization",
+   "impact": "Unauthenticated remote code execution on the Node server."
+  },
+  "W1-037": {
+   "type": "technique",
+   "name": "Password-reset token weak/NULL comparison account takeover",
+   "klass": "business_logic",
+   "impact": "Full account takeover of arbitrary users (including admin) with no user interact"
+  },
+  "class:business_logic": {
+   "type": "class",
+   "name": "business_logic"
+  },
+  "W1-038": {
+   "type": "technique",
+   "name": "IDOR to account takeover via email manipulation in passwordless auth",
+   "klass": "authorization",
+   "impact": "Full account takeover via a low-severity IDOR chained into the auth flow."
+  },
+  "W1-039": {
+   "type": "technique",
+   "name": "Unset/empty secret accepted as a signing key",
    "klass": "crypto",
-   "impact": "High \u2014 auth bypass."
+   "impact": "Unauthenticated administrative access \u2014 empty secret is a publicly known secret."
   },
   "class:crypto": {
    "type": "class",
@@ -818,19 +1866,23 @@
    "type": "weakness",
    "name": "Broken Crypto"
   },
+  "W1-040": {
+   "type": "technique",
+   "name": "BOLA via Relay global ID decode and reuse",
+   "klass": "api",
+   "impact": "Horizontal privilege escalation \u2014 read/modify other users' objects; with mutatio"
+  },
+  "JWT-01": {
+   "type": "technique",
+   "name": "JWT alg confusion / none / weak secret",
+   "klass": "crypto",
+   "impact": "High \u2014 auth bypass."
+  },
   "SSRF-01": {
    "type": "technique",
    "name": "SSRF via URL fetch / webhook / file-import parameters",
    "klass": "ssrf",
    "impact": "Critical."
-  },
-  "class:ssrf": {
-   "type": "class",
-   "name": "ssrf"
-  },
-  "CWE-918": {
-   "type": "weakness",
-   "name": "Server-Side Request Forgery"
   },
   "SSRF-02": {
    "type": "technique",
@@ -843,10 +1895,6 @@
    "name": "Stored XSS via profile/content fields",
    "klass": "xss",
    "impact": "High."
-  },
-  "class:xss": {
-   "type": "class",
-   "name": "xss"
   },
   "XSS-02": {
    "type": "technique",
@@ -899,14 +1947,6 @@
    "name": "Web cache poisoning / deception",
    "klass": "cache",
    "impact": "High."
-  },
-  "class:cache": {
-   "type": "class",
-   "name": "cache"
-  },
-  "CWE-524": {
-   "type": "weakness",
-   "name": "Cached Sensitive Data"
   },
   "SECRETS-01": {
    "type": "technique",
@@ -1061,14 +2101,6 @@
    "name": "WebSocket authorization gaps (missing origin/token checks)",
    "klass": "websocket",
    "impact": "High."
-  },
-  "class:websocket": {
-   "type": "class",
-   "name": "websocket"
-  },
-  "CWE-1385": {
-   "type": "weakness",
-   "name": "Missing Origin Validation in WebSockets"
   },
   "WS-02": {
    "type": "technique",
@@ -3649,6 +4681,1906 @@
    "PAYLOAD-01"
   ],
   [
+   "S28-AI-01",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "S28-AI-02",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "S28-AI-03",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "S28-AI-04",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "S28-AI-05",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "S28-AI-06",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "S28-AI-07",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "S28-AI-08",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "S28-AUTH-01",
+   "in_class",
+   "class:authentication"
+  ],
+  [
+   "S28-AUTH-01",
+   "exploits_weakness",
+   "CWE-287"
+  ],
+  [
+   "CWE-287",
+   "enables",
+   "S28-AUTH-01"
+  ],
+  [
+   "S28-AUTH-01",
+   "exploits_weakness",
+   "CWE-307"
+  ],
+  [
+   "CWE-307",
+   "enables",
+   "S28-AUTH-01"
+  ],
+  [
+   "S28-AUTH-01",
+   "exploits_weakness",
+   "CWE-613"
+  ],
+  [
+   "CWE-613",
+   "enables",
+   "S28-AUTH-01"
+  ],
+  [
+   "S28-AUTH-02",
+   "in_class",
+   "class:authentication"
+  ],
+  [
+   "S28-AUTH-02",
+   "exploits_weakness",
+   "CWE-287"
+  ],
+  [
+   "CWE-287",
+   "enables",
+   "S28-AUTH-02"
+  ],
+  [
+   "S28-AUTH-02",
+   "exploits_weakness",
+   "CWE-307"
+  ],
+  [
+   "CWE-307",
+   "enables",
+   "S28-AUTH-02"
+  ],
+  [
+   "S28-AUTH-02",
+   "exploits_weakness",
+   "CWE-613"
+  ],
+  [
+   "CWE-613",
+   "enables",
+   "S28-AUTH-02"
+  ],
+  [
+   "S28-AUTH-03",
+   "in_class",
+   "class:authentication"
+  ],
+  [
+   "S28-AUTH-03",
+   "exploits_weakness",
+   "CWE-287"
+  ],
+  [
+   "CWE-287",
+   "enables",
+   "S28-AUTH-03"
+  ],
+  [
+   "S28-AUTH-03",
+   "exploits_weakness",
+   "CWE-307"
+  ],
+  [
+   "CWE-307",
+   "enables",
+   "S28-AUTH-03"
+  ],
+  [
+   "S28-AUTH-03",
+   "exploits_weakness",
+   "CWE-613"
+  ],
+  [
+   "CWE-613",
+   "enables",
+   "S28-AUTH-03"
+  ],
+  [
+   "S28-AUTH-04",
+   "in_class",
+   "class:authentication"
+  ],
+  [
+   "S28-AUTH-04",
+   "exploits_weakness",
+   "CWE-287"
+  ],
+  [
+   "CWE-287",
+   "enables",
+   "S28-AUTH-04"
+  ],
+  [
+   "S28-AUTH-04",
+   "exploits_weakness",
+   "CWE-307"
+  ],
+  [
+   "CWE-307",
+   "enables",
+   "S28-AUTH-04"
+  ],
+  [
+   "S28-AUTH-04",
+   "exploits_weakness",
+   "CWE-613"
+  ],
+  [
+   "CWE-613",
+   "enables",
+   "S28-AUTH-04"
+  ],
+  [
+   "S28-INJ-01",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "S28-INJ-01",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "S28-INJ-01"
+  ],
+  [
+   "S28-INJ-01",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "S28-INJ-01"
+  ],
+  [
+   "S28-INJ-01",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "S28-INJ-01"
+  ],
+  [
+   "S28-INJ-01",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "S28-INJ-01"
+  ],
+  [
+   "S28-CLD-01",
+   "in_class",
+   "class:cloud"
+  ],
+  [
+   "S28-CLD-01",
+   "exploits_weakness",
+   "CWE-200"
+  ],
+  [
+   "CWE-200",
+   "enables",
+   "S28-CLD-01"
+  ],
+  [
+   "S28-WEB-01",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "S28-WEB-01",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "S28-WEB-01"
+  ],
+  [
+   "S28-WEB-01",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "S28-WEB-01"
+  ],
+  [
+   "S28-WEB-01",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "S28-WEB-01"
+  ],
+  [
+   "S28-WEB-01",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "S28-WEB-01"
+  ],
+  [
+   "A1-001",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "A1-002",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "A1-003",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "A1-004",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "A1-005",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "A1-006",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "A1-007",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "A1-008",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "A1-009",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "A1-010",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "A1-011",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "A1-012",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "A1-013",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "A1-014",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "A1-015",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "A1-016",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "A1-017",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "A1-018",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "A1-019",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "A1-020",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "A1-021",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "A1-022",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "C1-001",
+   "in_class",
+   "class:ssrf"
+  ],
+  [
+   "C1-001",
+   "exploits_weakness",
+   "CWE-918"
+  ],
+  [
+   "CWE-918",
+   "enables",
+   "C1-001"
+  ],
+  [
+   "C1-002",
+   "in_class",
+   "class:ssrf"
+  ],
+  [
+   "C1-002",
+   "exploits_weakness",
+   "CWE-918"
+  ],
+  [
+   "CWE-918",
+   "enables",
+   "C1-002"
+  ],
+  [
+   "C1-003",
+   "in_class",
+   "class:cloud"
+  ],
+  [
+   "C1-003",
+   "exploits_weakness",
+   "CWE-200"
+  ],
+  [
+   "CWE-200",
+   "enables",
+   "C1-003"
+  ],
+  [
+   "C1-004",
+   "in_class",
+   "class:ssrf"
+  ],
+  [
+   "C1-004",
+   "exploits_weakness",
+   "CWE-918"
+  ],
+  [
+   "CWE-918",
+   "enables",
+   "C1-004"
+  ],
+  [
+   "C1-005",
+   "in_class",
+   "class:auth"
+  ],
+  [
+   "C1-006",
+   "in_class",
+   "class:auth"
+  ],
+  [
+   "C1-007",
+   "in_class",
+   "class:auth"
+  ],
+  [
+   "C1-008",
+   "in_class",
+   "class:auth"
+  ],
+  [
+   "C1-009",
+   "in_class",
+   "class:auth"
+  ],
+  [
+   "C1-010",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "C1-010",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "C1-010"
+  ],
+  [
+   "C1-010",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "C1-010"
+  ],
+  [
+   "C1-010",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "C1-010"
+  ],
+  [
+   "C1-010",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "C1-010"
+  ],
+  [
+   "C1-011",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "C1-011",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "C1-011"
+  ],
+  [
+   "C1-011",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "C1-011"
+  ],
+  [
+   "C1-011",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "C1-011"
+  ],
+  [
+   "C1-011",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "C1-011"
+  ],
+  [
+   "C1-012",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "C1-012",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "C1-012"
+  ],
+  [
+   "C1-012",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "C1-012"
+  ],
+  [
+   "C1-012",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "C1-012"
+  ],
+  [
+   "C1-012",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "C1-012"
+  ],
+  [
+   "C1-013",
+   "in_class",
+   "class:deserialization"
+  ],
+  [
+   "C1-014",
+   "in_class",
+   "class:deserialization"
+  ],
+  [
+   "C1-015",
+   "in_class",
+   "class:deserialization"
+  ],
+  [
+   "C1-016",
+   "in_class",
+   "class:web"
+  ],
+  [
+   "C1-017",
+   "in_class",
+   "class:web"
+  ],
+  [
+   "C1-018",
+   "in_class",
+   "class:web"
+  ],
+  [
+   "C1-019",
+   "in_class",
+   "class:web"
+  ],
+  [
+   "C1-020",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "C1-020",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "C1-020"
+  ],
+  [
+   "C1-020",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "C1-020"
+  ],
+  [
+   "C1-020",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "C1-020"
+  ],
+  [
+   "C1-020",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "C1-020"
+  ],
+  [
+   "C1-021",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "C1-021",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "C1-021"
+  ],
+  [
+   "C1-021",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "C1-021"
+  ],
+  [
+   "C1-021",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "C1-021"
+  ],
+  [
+   "C1-021",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "C1-021"
+  ],
+  [
+   "C1-022",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "C1-022",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "C1-022"
+  ],
+  [
+   "C1-022",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "C1-022"
+  ],
+  [
+   "C1-022",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "C1-022"
+  ],
+  [
+   "C1-022",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "C1-022"
+  ],
+  [
+   "C1-023",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "C1-023",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "C1-023"
+  ],
+  [
+   "C1-023",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "C1-023"
+  ],
+  [
+   "C1-023",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "C1-023"
+  ],
+  [
+   "C1-023",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "C1-023"
+  ],
+  [
+   "C1-024",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "C1-024",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "C1-024"
+  ],
+  [
+   "C1-024",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "C1-024"
+  ],
+  [
+   "C1-024",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "C1-024"
+  ],
+  [
+   "C1-024",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "C1-024"
+  ],
+  [
+   "C1-025",
+   "in_class",
+   "class:graphql"
+  ],
+  [
+   "C1-025",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "C1-025"
+  ],
+  [
+   "C1-025",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "C1-025"
+  ],
+  [
+   "C1-026",
+   "in_class",
+   "class:graphql"
+  ],
+  [
+   "C1-026",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "C1-026"
+  ],
+  [
+   "C1-026",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "C1-026"
+  ],
+  [
+   "C1-027",
+   "in_class",
+   "class:graphql"
+  ],
+  [
+   "C1-027",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "C1-027"
+  ],
+  [
+   "C1-027",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "C1-027"
+  ],
+  [
+   "C1-028",
+   "in_class",
+   "class:web"
+  ],
+  [
+   "C1-029",
+   "in_class",
+   "class:web"
+  ],
+  [
+   "C1-030",
+   "in_class",
+   "class:api"
+  ],
+  [
+   "C1-030",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "C1-030"
+  ],
+  [
+   "C1-030",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "C1-030"
+  ],
+  [
+   "C1-031",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "C1-031",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "C1-031"
+  ],
+  [
+   "C1-031",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "C1-031"
+  ],
+  [
+   "C1-031",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "C1-031"
+  ],
+  [
+   "C1-031",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "C1-031"
+  ],
+  [
+   "C1-032",
+   "in_class",
+   "class:auth"
+  ],
+  [
+   "F1-001",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-002",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-003",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-004",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-005",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-006",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-007",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-008",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-009",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-010",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-011",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-012",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-013",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-014",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-015",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-016",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-017",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-018",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-019",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-020",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-021",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-022",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-023",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-024",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-025",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-026",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-027",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-028",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-029",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-030",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-031",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-032",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-033",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-034",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-035",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-036",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-037",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-038",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-039",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-040",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-041",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-042",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-043",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-044",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-045",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-046",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-047",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-048",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-049",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-050",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-051",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-052",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-053",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-054",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-055",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-056",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-057",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-058",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "F1-059",
+   "in_class",
+   "class:forged"
+  ],
+  [
+   "W1-001",
+   "in_class",
+   "class:web"
+  ],
+  [
+   "W1-002",
+   "in_class",
+   "class:web"
+  ],
+  [
+   "W1-003",
+   "in_class",
+   "class:web"
+  ],
+  [
+   "W1-004",
+   "in_class",
+   "class:web"
+  ],
+  [
+   "W1-005",
+   "in_class",
+   "class:web"
+  ],
+  [
+   "W1-006",
+   "in_class",
+   "class:web"
+  ],
+  [
+   "W1-007",
+   "in_class",
+   "class:web"
+  ],
+  [
+   "W1-008",
+   "in_class",
+   "class:web"
+  ],
+  [
+   "W1-009",
+   "in_class",
+   "class:web"
+  ],
+  [
+   "W1-010",
+   "in_class",
+   "class:auth"
+  ],
+  [
+   "W1-011",
+   "in_class",
+   "class:auth"
+  ],
+  [
+   "W1-012",
+   "in_class",
+   "class:auth"
+  ],
+  [
+   "W1-013",
+   "in_class",
+   "class:auth"
+  ],
+  [
+   "W1-014",
+   "in_class",
+   "class:auth"
+  ],
+  [
+   "W1-015",
+   "in_class",
+   "class:auth"
+  ],
+  [
+   "W1-016",
+   "in_class",
+   "class:auth"
+  ],
+  [
+   "W1-017",
+   "in_class",
+   "class:auth"
+  ],
+  [
+   "W1-018",
+   "in_class",
+   "class:ssrf"
+  ],
+  [
+   "W1-018",
+   "exploits_weakness",
+   "CWE-918"
+  ],
+  [
+   "CWE-918",
+   "enables",
+   "W1-018"
+  ],
+  [
+   "W1-019",
+   "in_class",
+   "class:ssrf"
+  ],
+  [
+   "W1-019",
+   "exploits_weakness",
+   "CWE-918"
+  ],
+  [
+   "CWE-918",
+   "enables",
+   "W1-019"
+  ],
+  [
+   "W1-020",
+   "in_class",
+   "class:graphql"
+  ],
+  [
+   "W1-020",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "W1-020"
+  ],
+  [
+   "W1-020",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "W1-020"
+  ],
+  [
+   "W1-021",
+   "in_class",
+   "class:graphql"
+  ],
+  [
+   "W1-021",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "W1-021"
+  ],
+  [
+   "W1-021",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "W1-021"
+  ],
+  [
+   "W1-022",
+   "in_class",
+   "class:graphql"
+  ],
+  [
+   "W1-022",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "W1-022"
+  ],
+  [
+   "W1-022",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "W1-022"
+  ],
+  [
+   "W1-023",
+   "in_class",
+   "class:graphql"
+  ],
+  [
+   "W1-023",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "W1-023"
+  ],
+  [
+   "W1-023",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "W1-023"
+  ],
+  [
+   "W1-024",
+   "in_class",
+   "class:websocket"
+  ],
+  [
+   "W1-024",
+   "exploits_weakness",
+   "CWE-1385"
+  ],
+  [
+   "CWE-1385",
+   "enables",
+   "W1-024"
+  ],
+  [
+   "W1-025",
+   "in_class",
+   "class:websocket"
+  ],
+  [
+   "W1-025",
+   "exploits_weakness",
+   "CWE-1385"
+  ],
+  [
+   "CWE-1385",
+   "enables",
+   "W1-025"
+  ],
+  [
+   "W1-026",
+   "in_class",
+   "class:websocket"
+  ],
+  [
+   "W1-026",
+   "exploits_weakness",
+   "CWE-1385"
+  ],
+  [
+   "CWE-1385",
+   "enables",
+   "W1-026"
+  ],
+  [
+   "W1-027",
+   "in_class",
+   "class:cache"
+  ],
+  [
+   "W1-027",
+   "exploits_weakness",
+   "CWE-524"
+  ],
+  [
+   "CWE-524",
+   "enables",
+   "W1-027"
+  ],
+  [
+   "W1-028",
+   "in_class",
+   "class:cache"
+  ],
+  [
+   "W1-028",
+   "exploits_weakness",
+   "CWE-524"
+  ],
+  [
+   "CWE-524",
+   "enables",
+   "W1-028"
+  ],
+  [
+   "W1-029",
+   "in_class",
+   "class:cache"
+  ],
+  [
+   "W1-029",
+   "exploits_weakness",
+   "CWE-524"
+  ],
+  [
+   "CWE-524",
+   "enables",
+   "W1-029"
+  ],
+  [
+   "W1-030",
+   "in_class",
+   "class:cache"
+  ],
+  [
+   "W1-030",
+   "exploits_weakness",
+   "CWE-524"
+  ],
+  [
+   "CWE-524",
+   "enables",
+   "W1-030"
+  ],
+  [
+   "W1-031",
+   "in_class",
+   "class:race"
+  ],
+  [
+   "W1-031",
+   "exploits_weakness",
+   "CWE-362"
+  ],
+  [
+   "CWE-362",
+   "enables",
+   "W1-031"
+  ],
+  [
+   "W1-032",
+   "in_class",
+   "class:race"
+  ],
+  [
+   "W1-032",
+   "exploits_weakness",
+   "CWE-362"
+  ],
+  [
+   "CWE-362",
+   "enables",
+   "W1-032"
+  ],
+  [
+   "W1-033",
+   "in_class",
+   "class:xss"
+  ],
+  [
+   "W1-033",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "W1-033"
+  ],
+  [
+   "W1-034",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "W1-034",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "W1-034"
+  ],
+  [
+   "W1-034",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "W1-034"
+  ],
+  [
+   "W1-034",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "W1-034"
+  ],
+  [
+   "W1-034",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "W1-034"
+  ],
+  [
+   "W1-035",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "W1-035",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "W1-035"
+  ],
+  [
+   "W1-035",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "W1-035"
+  ],
+  [
+   "W1-035",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "W1-035"
+  ],
+  [
+   "W1-035",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "W1-035"
+  ],
+  [
+   "W1-036",
+   "in_class",
+   "class:deserialization"
+  ],
+  [
+   "W1-037",
+   "in_class",
+   "class:business_logic"
+  ],
+  [
+   "W1-037",
+   "exploits_weakness",
+   "CWE-840"
+  ],
+  [
+   "CWE-840",
+   "enables",
+   "W1-037"
+  ],
+  [
+   "W1-037",
+   "exploits_weakness",
+   "CWE-841"
+  ],
+  [
+   "CWE-841",
+   "enables",
+   "W1-037"
+  ],
+  [
+   "W1-038",
+   "in_class",
+   "class:authorization"
+  ],
+  [
+   "W1-038",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "W1-038"
+  ],
+  [
+   "W1-038",
+   "exploits_weakness",
+   "CWE-285"
+  ],
+  [
+   "CWE-285",
+   "enables",
+   "W1-038"
+  ],
+  [
+   "W1-038",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "W1-038"
+  ],
+  [
+   "W1-039",
+   "in_class",
+   "class:crypto"
+  ],
+  [
+   "W1-039",
+   "exploits_weakness",
+   "CWE-327"
+  ],
+  [
+   "CWE-327",
+   "enables",
+   "W1-039"
+  ],
+  [
+   "W1-039",
+   "exploits_weakness",
+   "CWE-798"
+  ],
+  [
+   "CWE-798",
+   "enables",
+   "W1-039"
+  ],
+  [
+   "W1-040",
+   "in_class",
+   "class:api"
+  ],
+  [
+   "W1-040",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "W1-040"
+  ],
+  [
+   "W1-040",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "W1-040"
+  ],
+  [
    "JWT-01",
    "in_class",
    "class:crypto"
@@ -4495,8 +7427,8 @@
   ]
  ],
  "stats": {
-  "techniques": 143,
+  "techniques": 311,
   "weaknesses": 33,
-  "classes": 29
+  "classes": 35
  }
 }
