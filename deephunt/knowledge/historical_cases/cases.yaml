@@ -416,3 +416,42 @@
   detection_clue: "Test reset handlers in every stored state (normal, mid-reset, expired) — the common empty state is the one developers forget to guard."
   why_scanners_missed_it: "Scanners test with tokens present/absent but rarely model the server-side stored state (activation key empty vs set) that gates the validation branch."
   source: "CVE-2026-14364, 1dayexploit analysis, Sep 2026."
+
+- id: CASE-34
+  application_type: "Cloudflare Containers / Sandboxes (serverless container platform)"
+  architecture: "Multi-tenant container runtime backed by a shared dm-thin thin-provisioned block pool"
+  initial_observation: "Each customer's container gets its own block storage; the pool is shared for efficiency."
+  attacker_assumption: "Block reuse across tenants is safe because the storage layer zeroes freed blocks."
+  unexpected_behavior: "The shared dm-thin pool skipped zeroing reused 64 KiB blocks. A Workers Paid customer writing small 4 KiB blocks into free space could read back the leftover 60 KiB — data written by other customers."
+  chain_of_events: ["Attacker provisions a Workers Paid container", "Writes small 4 KiB blocks into free space of the shared pool", "Reads back full 64 KiB blocks", "Leftover 60 KiB contains prior tenants' data (secrets, PII, credentials)", "No compute or network isolation bypass needed — the leak is below both"]
+  root_cause: "Storage-layer isolation failure: freed blocks reused without zeroing (CWE-200); isolation rigor applied to compute/network was not applied to block storage."
+  impact: "Cross-tenant data exposure for any customer of the container/sandbox platform; reported via HackerOne 2026-09-04 by Oren Yomtov (Accomplish); runtime fix merged same day; fleet-wide remediation (disk retirement, cache clearing) completed 2026-09-19; no CVE assigned; no evidence of exploitation beyond the reporter's controlled testing."
+  detection_clue: "Test the storage layer like a trust boundary: write canary as tenant A, release, read back as tenant B. Never-allocated blocks should read zeroed."
+  why_scanners_missed_it: "Scanners test API/auth boundaries; almost none model block-reuse semantics of the underlying storage pool."
+  source: "Cloudflare disclosure via HackerOne, reported 2026-09-04, disclosed 2026-09-27."
+
+- id: CASE-35
+  application_type: "IBM Financial Transaction Manager (FTM) AI agent server for RedHat OpenShift"
+  architecture: "Autonomous payment workflow agent: vector DB of runbooks + MCP tool-call layer"
+  initial_observation: "The agent's runbook vector store is an internal knowledge base the agent reads for decision context."
+  attacker_assumption: "Writing to the knowledge base requires the agent's privileges or an authenticated session."
+  unexpected_behavior: "The runbook upsert endpoint (api.vectordb.runbooks.js:51) was reachable over the network with NO authentication. An attacker could inject arbitrary runbooks; the agent then retrieved the poisoned content as trusted context and its MCP tool calls were steered — unauthorized payment actions, financial data exfiltration."
+  chain_of_events: ["Attacker finds unauthenticated upsert on the vector-store API", "Injects malicious runbook content into the agent's vector DB", "Agent retrieves the poisoned runbook as legitimate decision context", "Poisoned context steers MCP tool calls", "Authorized agent executes unauthorized payment actions / exfiltrates financial data"]
+  root_cause: "RAG write-path without authentication: the retrieval pipeline trusted store content, but the store's write API had no auth (CWE-306); poisoned retrieval then drove privileged tool calls (CWE-1427/1428 class)."
+  impact: "Unauthenticated compromise of an AI financial-transaction agent's decisions; CVE-2026-18875, CVSS 7.3; one of 47 vulnerabilities in IBM Security Bulletin node/7288641 (2026-09-23)."
+  detection_clue: "Enumerate every write/upsert API on the agent's knowledge stores and test them unauthenticated — then check whether retrieved content can steer tool calls, not just chat answers."
+  why_scanners_missed_it: "Scanners test the agent's chat surface; the vector-store write API looks like internal infrastructure and is rarely in scope, and the read-to-tool-call steering link needs a two-stage test."
+  source: "IBM Security Bulletin node/7288641, CVE-2026-18875, 2026-09-23."
+
+- id: CASE-36
+  application_type: "Brainstorm Force ConvertPlus WordPress plugin (<= 3.6.3)"
+  architecture: "WordPress plugin AJAX action cp_display_preview_modal; style parameter flows into do_shortcode() then smile_modal_popup() → maybe_unserialize()"
+  initial_observation: "The preview-modal AJAX action checks a nonce before doing anything privileged."
+  attacker_assumption: "The nonce check runs for every request, and sanitize_text_field() makes the style parameter safe."
+  unexpected_behavior: "The nonce guard was wrapped in isset(): omitting cp_admin_page_nonce skipped verification entirely (fail-open), and there was no capability check at all. Then sanitize_text_field() left shortcode delimiters intact, so a second attacker-controlled [smile_modal] was injected into the string do_shortcode() evaluated — and smile_modal_popup() passed attacker base64-decoded bytes to maybe_unserialize() with no allowed_classes: PHP object injection."
+  chain_of_events: ["Attacker omits cp_admin_page_nonce → nonce check never runs", "No capability check on the AJAX callback", "style parameter carries an injected [smile_modal] with attacker shortcode attributes", "sanitize_text_field() preserves the [ ] delimiters", "do_shortcode() evaluates the injected shortcode", "smile_modal_popup() base64-decodes attacker bytes → maybe_unserialize() with no allowed_classes → PHP object injection (Subscriber+)"]
+  root_cause: "Three stacked flaws: presence-gated check failing open (CWE-287), missing capability check (CWE-862), and a sanitizer that does not strip the downstream parser's delimiters feeding an unrestricted deserialization sink (CWE-502)."
+  impact: "Authenticated (Subscriber+) PHP object injection; with a POP chain in another installed plugin/theme: arbitrary file deletion, data retrieval, or code execution. CVE-2026-87741, CVSS 8.8, published 2026-09-28 (Wordfence)."
+  detection_clue: "For every security check, test three variants: correct value, wrong value, omitted parameter. For every sanitizer, ask which downstream parser consumes the output — and whether its delimiters survive."
+  why_scanners_missed_it: "Scanners fuzz values but rarely OMIT security parameters; and sanitize_text_field() passing looks safe until you trace the value into do_shortcode() and then into maybe_unserialize()."
+  source: "CVE-2026-87741, Wordfence threat intel, published 2026-09-28."

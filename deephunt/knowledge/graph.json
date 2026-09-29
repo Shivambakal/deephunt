@@ -898,6 +898,44 @@
    "klass": "injection",
    "impact": "High \u2014 web-request code execution with web-server privileges on affected configu"
   },
+  "S29-AI-01": {
+   "type": "technique",
+   "name": "Unauthenticated vector-store upsert steering MCP tool calls (RAG write-path poisoning)",
+   "klass": "ai_llm",
+   "impact": "High \u2014 unauthenticated RAG write-path lets an attacker steer an authorized agent"
+  },
+  "S29-SMG-01": {
+   "type": "technique",
+   "name": "LLM-spec-driven HTTP desync vector synthesis (http-terminator four-stage loop)",
+   "klass": "smuggling",
+   "impact": "High \u2014 novel desync primitives enable request queue poisoning, cache poisoning, "
+  },
+  "class:smuggling": {
+   "type": "class",
+   "name": "smuggling"
+  },
+  "CWE-444": {
+   "type": "weakness",
+   "name": "HTTP Request Smuggling"
+  },
+  "S29-CLD-01": {
+   "type": "technique",
+   "name": "Cross-tenant data bleed via unzeroed reused blocks in shared thin-provisioned storage",
+   "klass": "cloud",
+   "impact": "Critical \u2014 cross-tenant confidentiality breach at the storage layer; secrets, PI"
+  },
+  "S29-AUTH-01": {
+   "type": "technique",
+   "name": "Presence-gated authorization checks fail open on omitted parameter",
+   "klass": "authentication",
+   "impact": "High \u2014 authentication/authorization checks that fail open on omission hand privi"
+  },
+  "S29-INJ-01": {
+   "type": "technique",
+   "name": "Delimiter-preserving sanitizer enables downstream parser injection (shortcode smuggling to object-injection sink)",
+   "klass": "injection",
+   "impact": "High \u2014 sanitizer/parser disagreement yields shortcode injection; where the chain"
+  },
   "A1-001": {
    "type": "technique",
    "name": "Self-replicating adversarial prompt worm across agent ecosystems",
@@ -1983,14 +2021,6 @@
    "name": "HTTP request smuggling (CL.TE / TE.CL)",
    "klass": "smuggling",
    "impact": "Critical."
-  },
-  "class:smuggling": {
-   "type": "class",
-   "name": "smuggling"
-  },
-  "CWE-444": {
-   "type": "weakness",
-   "name": "HTTP Request Smuggling"
   },
   "PROTO-01": {
    "type": "technique",
@@ -4966,6 +4996,121 @@
    "S28-WEB-01"
   ],
   [
+   "S29-AI-01",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "S29-SMG-01",
+   "in_class",
+   "class:smuggling"
+  ],
+  [
+   "S29-SMG-01",
+   "exploits_weakness",
+   "CWE-444"
+  ],
+  [
+   "CWE-444",
+   "enables",
+   "S29-SMG-01"
+  ],
+  [
+   "S29-CLD-01",
+   "in_class",
+   "class:cloud"
+  ],
+  [
+   "S29-CLD-01",
+   "exploits_weakness",
+   "CWE-200"
+  ],
+  [
+   "CWE-200",
+   "enables",
+   "S29-CLD-01"
+  ],
+  [
+   "S29-AUTH-01",
+   "in_class",
+   "class:authentication"
+  ],
+  [
+   "S29-AUTH-01",
+   "exploits_weakness",
+   "CWE-287"
+  ],
+  [
+   "CWE-287",
+   "enables",
+   "S29-AUTH-01"
+  ],
+  [
+   "S29-AUTH-01",
+   "exploits_weakness",
+   "CWE-307"
+  ],
+  [
+   "CWE-307",
+   "enables",
+   "S29-AUTH-01"
+  ],
+  [
+   "S29-AUTH-01",
+   "exploits_weakness",
+   "CWE-613"
+  ],
+  [
+   "CWE-613",
+   "enables",
+   "S29-AUTH-01"
+  ],
+  [
+   "S29-INJ-01",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "S29-INJ-01",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "S29-INJ-01"
+  ],
+  [
+   "S29-INJ-01",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "S29-INJ-01"
+  ],
+  [
+   "S29-INJ-01",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "S29-INJ-01"
+  ],
+  [
+   "S29-INJ-01",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "S29-INJ-01"
+  ],
+  [
    "A1-001",
    "in_class",
    "class:ai_llm"
@@ -7427,7 +7572,7 @@
   ]
  ],
  "stats": {
-  "techniques": 311,
+  "techniques": 316,
   "weaknesses": 33,
   "classes": 35
  }

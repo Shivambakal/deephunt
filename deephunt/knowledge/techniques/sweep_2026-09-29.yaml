@@ -1,0 +1,278 @@
+# DEEPHUNT technique cards — daily intel sweep 2026-09-29
+# Schema v2: preconditions/required_state/hypothesis_generator/
+# request_strategy/mutation_strategy/expected_signal/positive_oracle/
+# negative_evidence/false_positive_rules/followup_experiment/
+# regression_test/difficulty_estimate. 5 cards.
+# Sources: PortSwigger http-terminator (2026-09-28), IBM FTM CVE-2026-18875
+# (2026-09-23), Cloudflare Containers dm-thin cross-tenant (disclosed 2026-09-27),
+# ConvertPlus CVE-2026-87741 (published 2026-09-28).
+
+- id: S29-AI-01
+  name: Unauthenticated vector-store upsert steering MCP tool calls (RAG write-path poisoning)
+  klass: ai_llm
+  requires:
+  - http_observation
+  signals:
+  - rag
+  - vector
+  - vectordb
+  - runbook
+  - mcp
+  - agent
+  - upsert
+  questions:
+  - Is the agent's vector store writable over the network without authentication?
+  - Does retrieved poisoned content steer the agent's MCP tool-call decisions?
+  - Is the write path (upsert) separated from the read path's trust assumptions?
+  evidence:
+    positive:
+    - unauthenticated upsert of a canary runbook succeeds (2xx, retrievable)
+    - agent's subsequent MCP tool call reflects canary content or target
+    - 'CVE-2026-18875 (IBM Financial Transaction Manager AI agent server, CVSS 7.3, IBM bulletin node/7288641, 2026-09-23): api.vectordb.runbooks.js:51 allowed unauthenticated network-based runbook upsert into the agent vector DB; poisoned retrieval steered MCP tool calls, enabling unauthorized payment actions and financial data exfiltration'
+    negative:
+    - upsert endpoint requires authentication or is not network-reachable
+    - retrieval pipeline validates provenance / tenant-isolates the index
+    - poisoned content retrieved but never influences tool-call planning
+  followups:
+  - probe vector-store write APIs for missing auth
+  - test whether poisoned retrieval crosses into tool-call arguments
+  test: 'Against an owned lab agent with a vector-backed runbook store, attempt an
+    unauthenticated upsert of a canary runbook via the store''s write API. Then issue
+    the agent a benign task that triggers runbook retrieval. A hold requires the
+    agent''s MCP tool call to reflect the canary (target, argument, or skipped
+    safeguard) while the control (no canary upserted) behaves normally.'
+  impact_hint: 'High — unauthenticated RAG write-path lets an attacker steer an authorized agent''s tool calls: unauthorized payments, data exfiltration.'
+  preconditions:
+  - http_observation
+  required_state: agent retrieves runbooks/context from a network-reachable vector store with a write/upsert API
+  hypothesis_generator: 'When signals [''vectordb'', ''runbook'', ''upsert'', ''mcp'']
+    are observed, hypothesize: the vector store''s write path is unauthenticated and
+    poisoned retrieval steers the agent''s privileged tool calls.'
+  request_strategy: unauthenticated upsert probe (canary document) followed by a retrieval-triggering agent task; control/test pair
+  mutation_strategy: vary upsert payload (runbook vs instruction vs tool-call-shaped JSON); vary retrieval trigger phrasing
+  expected_signal: canary content surfaces in the agent's tool-call choice or arguments
+  positive_oracle: unauthenticated canary upsert is retrievable AND the agent's MCP tool call reflects the canary while the control does not
+  negative_evidence:
+  - upsert requires auth or is unreachable
+  - retrieval never feeds tool-call planning (retrieval is display-only)
+  false_positive_rules:
+  - a stored canary that is never retrieved is not poisoning — require the retrieval-to-tool-call link
+  - lab agents only; never poison a third-party production vector store
+  followup_experiment: test whether poisoned entries persist across sessions and spread via shared/collaborative corpora
+  regression_test: replay unauthenticated upsert after patch; expect 401/403 and no canary in retrieval
+  difficulty_estimate: 0.55
+
+- id: S29-SMG-01
+  name: LLM-spec-driven HTTP desync vector synthesis (http-terminator four-stage loop)
+  klass: smuggling
+  requires:
+  - http_observation
+  signals:
+  - desync
+  - smuggling
+  - chunked
+  - content-length
+  - transfer-encoding
+  - burp
+  questions:
+  - Can an LLM derive novel desync vectors from the HTTP spec that the classic CL.TE/TE.CL battery misses?
+  - Does the target's front-end/back-end pair disagree on a synthesized malformed request?
+  - Do Burp-validated differentials reproduce manually?
+  evidence:
+    positive:
+    - LLM-synthesized malformed request produces front-end/back-end parsing disagreement
+    - Burp confirms the differential; manual replay reproduces it
+    - 'PortSwigger http-terminator (published open source 2026-09-28; James Kettle, Black Hat USA 2026): four-stage loop — Claude derives vectors from specifications, generates malformed requests, validates through Burp, investigates confirmed findings; autonomously developed novel desync attacks used against live enterprise websites including financial-services organizations'
+    negative:
+    - front-end and back-end normalize the synthesized request identically
+    - LLM-proposed vectors are all covered by the existing probe battery (SMUG-02/03/04)
+  followups:
+  - feed target-specific stack docs/specs to the synthesizer
+  - confirm novel differentials with manual Burp Repeater replay
+  test: 'Feed the HTTP/1.1 framing spec plus the target stack''s known parser quirks
+    to an LLM and ask for candidate desync vectors outside the classic battery.
+    Generate the malformed requests, send them through Burp against an owned lab
+    front-end/back-end pair, and diff parsing. A hold requires a Burp-confirmed,
+    manually reproducible differential that the classic CL.TE/TE.CL/TE.TE probes did
+    not catch.'
+  impact_hint: 'High — novel desync primitives enable request queue poisoning, cache poisoning, and credential theft past signature-based WAFs.'
+  preconditions:
+  - http_observation
+  required_state: target sits behind a front-end/back-end (or CDN/origin) HTTP parsing pair
+  hypothesis_generator: 'When signals [''desync'', ''chunked'', ''transfer-encoding'']
+    are observed, hypothesize: spec-derived malformed requests reveal parser
+    disagreements the standard smuggling battery misses.'
+  request_strategy: LLM synthesis from spec text → generated malformed request set → Burp validation → manual confirmation
+  mutation_strategy: vary the spec section fed to the LLM (framing, chunk extensions, header folding); vary malformed-request generation temperature
+  expected_signal: Burp-confirmed differential on a vector absent from the classic battery
+  positive_oracle: a synthesized vector yields a manually reproducible front-end/back-end parsing disagreement that classic probes missed
+  negative_evidence:
+  - all synthesized vectors reproduce known differentials only
+  - differentials do not survive manual replay (LLM hallucination / Burp artifact)
+  false_positive_rules:
+  - an LLM-proposed vector is not a finding until Burp-confirmed AND manually reproduced
+  - lab parsing pairs only; never desync-test live third-party sites
+  followup_experiment: feed the confirmed differential back as a seed and ask for neighboring vectors (mutation around the confirmed gap)
+  regression_test: re-run the synthesized vector set after parser hardening; expect uniform normalization
+  difficulty_estimate: 0.7
+
+- id: S29-CLD-01
+  name: Cross-tenant data bleed via unzeroed reused blocks in shared thin-provisioned storage
+  klass: cloud
+  requires:
+  - http_observation
+  signals:
+  - container
+  - sandbox
+  - storage
+  - block
+  - thin
+  - multi-tenant
+  - dm-thin
+  questions:
+  - Does the platform reuse storage blocks across tenants without zeroing?
+  - Can a tenant write small blocks into free space and read back another tenant's leftover data?
+  - Is the storage layer isolated with the same rigor as compute and network?
+  evidence:
+    positive:
+    - reading back blocks the tenant never wrote returns non-zero, foreign data
+    - small writes into free space surface leftover content from reused blocks
+    - 'Cloudflare Containers/Sandboxes (disclosed 2026-09-27): shared dm-thin storage pool skipped zeroing reused 64 KiB blocks; any Workers Paid customer could write small 4 KiB blocks into free space and read back the leftover 60 KiB of a reused block. Reported via HackerOne 2026-09-04 by Oren Yomtov (Accomplish); runtime fix merged same day; fleet-wide remediation (disk retirement, cache clearing) completed 2026-09-19; no CVE assigned; no evidence of exploitation beyond the reporter''s controlled testing'
+    negative:
+    - freed blocks are zeroed before reuse (read-back is all zeros)
+    - storage pools are per-tenant, not shared
+  followups:
+  - map which storage primitives share block pools across tenants
+  - test snapshot/clone paths for the same zeroing gap
+  test: 'In an owned lab multi-tenant container platform (or a provider sandbox with
+    explicit permission), write a canary pattern as tenant A, release the blocks,
+    then as tenant B write small blocks into free space and read back the full
+    block range. A hold requires tenant B''s read-back to contain tenant A''s canary
+    — proving reuse without zeroing. Control: read-back of never-allocated blocks
+    is zeroed.'
+  impact_hint: 'Critical — cross-tenant confidentiality breach at the storage layer; secrets, PII, and credentials of other customers readable.'
+  preconditions:
+  - http_observation
+  required_state: multi-tenant container/sandbox platform with shared thin-provisioned block storage
+  hypothesis_generator: 'When signals [''container'', ''sandbox'', ''storage'', ''multi-tenant'']
+    are observed, hypothesize: freed storage blocks are reused across tenants
+    without zeroing, leaking prior tenants'' data.'
+  request_strategy: canary-write as tenant A → release → small-block writes as tenant B → full-block read-back; control/test pair
+  mutation_strategy: vary write sizes (sub-block vs full-block), release paths (delete vs snapshot-restore), and read offsets
+  expected_signal: tenant B reads tenant A's canary from blocks B never wrote
+  positive_oracle: cross-tenant canary recovery from reused blocks while never-allocated blocks read back zeroed
+  negative_evidence:
+  - all read-back of foreign blocks is zeroed
+  - per-tenant storage pools with no shared block device
+  false_positive_rules:
+  - reading back your own prior writes is not a finding — require a second tenant's canary
+  - only test platforms you own or have explicit permission to test
+  followup_experiment: test whether snapshots, clones, and cache layers carry the same unzeroed-block gap
+  regression_test: replay the canary test after the zeroing fix; expect all foreign read-back zeroed
+  difficulty_estimate: 0.6
+
+- id: S29-AUTH-01
+  name: Presence-gated authorization checks fail open on omitted parameter
+  klass: authentication
+  requires:
+  - http_observation
+  signals:
+  - nonce
+  - ajax
+  - action
+  - capability
+  - check_ajax_referer
+  questions:
+  - Is the nonce/capability check wrapped in an isset()/presence gate on an attacker-controlled parameter?
+  - Does omitting the parameter skip the check entirely instead of denying?
+  - Are privileged AJAX/admin actions missing capability checks independent of the nonce?
+  evidence:
+    positive:
+    - request with nonce param present-but-wrong is denied; identical request with the param omitted executes the privileged action
+    - privileged action reachable with no capability check at all
+    - 'CVE-2026-87741 (Brainstorm Force ConvertPlus <= 3.6.3, published 2026-09-28, CVSS 8.8): the cp_display_preview_modal AJAX action''s nonce guard was gated behind an isset() check on cp_admin_page_nonce and failed open when the parameter was omitted entirely; no capability check on the callback — Subscriber+ (and via omission, weaker) attackers reached the deserialization sink'
+    negative:
+    - omitted parameter yields denial (fail-closed default)
+    - check runs unconditionally before the privileged action
+  followups:
+  - test every privileged parameter for omission-vs-wrong-value divergence
+  - check whether the fail-open path also skips logging/audit
+  test: 'Against an owned lab install, send the privileged request three ways:
+    (1) correct nonce (expect success), (2) wrong nonce value (expect denial),
+    (3) nonce parameter omitted entirely. A hold requires (2) denied while (3)
+    executes the privileged action — proving the check is presence-gated and fails
+    open. Confirm server-side effect, not just a 200.'
+  impact_hint: 'High — authentication/authorization checks that fail open on omission hand privileged actions to low-privilege or unauthenticated callers.'
+  preconditions:
+  - http_observation
+  required_state: privileged endpoint whose security check reads an attacker-controlled parameter
+  hypothesis_generator: 'When signals [''nonce'', ''ajax'', ''action''] are observed,
+    hypothesize: the authorization check only runs when its parameter is present,
+    so omitting the parameter skips it.'
+  request_strategy: three-way differential — correct value / wrong value / omitted parameter — against the privileged action
+  mutation_strategy: vary which parameter is omitted (nonce, token, capability flag); try empty-string vs absent vs null
+  expected_signal: wrong-value denied but omitted-parameter executes
+  positive_oracle: omitted-parameter request executes the privileged action while wrong-value is denied, with server-side effect confirmed
+  negative_evidence:
+  - omission is denied identically to wrong-value (fail-closed)
+  - check executes unconditionally regardless of parameter presence
+  false_positive_rules:
+  - a 200 without server-side effect is not execution — require the privileged state change
+  - lab installs only; never hammer live third-party admin AJAX endpoints
+  followup_experiment: test whether the omission path also bypasses rate limiting or audit logging on the same endpoint
+  regression_test: replay the three-way differential after patch; expect omission denied
+  difficulty_estimate: 0.35
+
+- id: S29-INJ-01
+  name: Delimiter-preserving sanitizer enables downstream parser injection (shortcode smuggling to object-injection sink)
+  klass: injection
+  requires:
+  - http_observation
+  signals:
+  - shortcode
+  - sanitize
+  - unserialize
+  - base64
+  - wordpress
+  - plugin
+  questions:
+  - Does the sanitizer strip the dangerous characters of the DOWNSTREAM parser, or only its own?
+  - Can attacker-controlled delimiters ([ ], shortcode tags) survive sanitization into a string the parser evaluates?
+  - Does the injected parser output reach a deserialization sink without allowed_classes?
+  evidence:
+    positive:
+    - injected shortcode delimiters survive sanitization and the shortcode executes
+    - attacker-controlled bytes reach maybe_unserialize() with no allowed_classes restriction
+    - 'CVE-2026-87741 (Brainstorm Force ConvertPlus <= 3.6.3, published 2026-09-28, CVSS 8.8): sanitize_text_field() applied to the $style value did not strip shortcode delimiters, allowing injection of a second fully attacker-controlled [smile_modal] invocation into a string evaluated by do_shortcode(); smile_modal_popup() then passed attacker-supplied base64-decoded bytes to maybe_unserialize() with no allowed_classes — PHP object injection for Subscriber+ (no known POP chain in the plugin itself; impact depends on a chain in another installed plugin/theme)'
+    negative:
+    - sanitizer strips or encodes the downstream parser's delimiters
+    - deserialization sink enforces allowed_classes or a signature
+  followups:
+  - enumerate other shortcode-evaluated strings fed by sanitized input
+  - hunt installed plugins/themes for a POP chain to complete the primitive
+  test: 'Against an owned lab install, submit the style parameter with an injected
+    [shortcode]canary[/shortcode] wrapped so the application''s sanitizer runs first.
+    A hold requires the canary shortcode to execute (its output in the response)
+    while a direct <script> or SQL probe is neutralized — proving the sanitizer
+    preserves the downstream parser''s delimiters. Confirm object-injection reach
+    with a canary class in the lab only.'
+  impact_hint: 'High — sanitizer/parser disagreement yields shortcode injection; where the chain reaches unserialize without allowed_classes, PHP object injection (file delete, data theft, or RCE with a POP chain).'
+  preconditions:
+  - http_observation
+  required_state: user-influenced value passes through a sanitizer into a string evaluated by a secondary parser (shortcode engine, template engine)
+  hypothesis_generator: 'When signals [''shortcode'', ''sanitize'', ''unserialize'']
+    are observed, hypothesize: the sanitizer does not strip the downstream
+    parser''s delimiters, so injected parser syntax survives into evaluation.'
+  request_strategy: delimiter-injection ladder — inject parser delimiters through the sanitizer and observe whether the downstream parser evaluates them
+  mutation_strategy: vary delimiters ([shortcode], nested, encoded brackets), vary sink reach (shortcode output → unserialize/base64/eval)
+  expected_signal: injected parser syntax executes despite sanitization
+  positive_oracle: canary shortcode executes after passing the sanitizer while non-delimiter probes are neutralized
+  negative_evidence:
+  - sanitizer strips/encodes downstream delimiters
+  - evaluated string never reaches a dangerous sink
+  false_positive_rules:
+  - shortcode execution alone is not object injection — require the unserialize-sink link for the injection claim, and a POP chain for impact beyond it
+  - lab installs only; never inject shortcodes into live third-party sites
+  followup_experiment: map every do_shortcode()/eval-adjacent call fed by sanitized input; inventory installed plugins for POP gadgets
+  regression_test: replay the delimiter ladder after patch; expect delimiters stripped and no canary execution
+  difficulty_estimate: 0.45

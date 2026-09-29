@@ -83,7 +83,7 @@ def test_target_model():
 # ---------- 2. technique dir loading ----------
 def test_technique_loading():
     cards = kb.load_techniques()
-    check("cards_count_311", len(cards) == 311, f"got {len(cards)}")
+    check("cards_count_316", len(cards) == 316, f"got {len(cards)}")
     ids = [c["id"] for c in cards]
     check("cards_unique_ids", len(set(ids)) == len(ids))
     required = ("id", "name", "klass", "requires", "signals", "questions",
@@ -127,9 +127,15 @@ def test_technique_loading():
                  "S28-AUTH-01", "S28-AUTH-02", "S28-AUTH-03", "S28-AUTH-04",
                  "S28-INJ-01", "S28-CLD-01", "S28-WEB-01"):
         check(f"card_sweep_{must}", kb.get_card(must) is not None)
+    # sweep-2026-09-29 cards (daily intel sweep: IBM FTM RAG write-path,
+    # http-terminator desync synthesis, Cloudflare dm-thin bleed,
+    # ConvertPlus fail-open nonce + shortcode smuggling)
+    for must in ("S29-AI-01", "S29-SMG-01", "S29-CLD-01",
+                 "S29-AUTH-01", "S29-INJ-01"):
+        check(f"card_sweep29_{must}", kb.get_card(must) is not None)
     import train
     tcards = train.load_techniques()
-    check("train_loads_311", len(tcards) == 311, f"got {len(tcards)}")
+    check("train_loads_316", len(tcards) == 316, f"got {len(tcards)}")
     seeds = train.recommend(
         [{"title": "/api/orders/{id}", "detail": "user_id param order invoice", "evidence": ""}],
         {"tech_terms": [], "vuln_classes": []}, {"rejected": [], "seen": []}, limit=5)

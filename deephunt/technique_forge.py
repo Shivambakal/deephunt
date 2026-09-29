@@ -817,6 +817,118 @@ COMBO_RULES: list[dict] = [
         "difficulty_delta": 0,
         "impact": "High - arbitrary file write outside the upload directory, potential webshell.",
     },
+    {
+        "rule_id": "R-S29-WRITEPIPE",
+        "parents": [("ai_llm", "S29-AI-01"), ("ai_llm", "S28-AI-02")],
+        "name": "Poisoned runbook becomes standing permission: {a_short} x {b_short}",
+        "why_non_obvious": (
+            "An unauthenticated vector-store upsert alone is a one-shot: the attacker must keep "
+            "re-poisoning retrieval to steer the agent. Agent-memory authorization laundering "
+            "changes the persistence model - a single poisoned runbook plants an approval-asserting "
+            "memory entry, and from then on the agent treats the attacker's goal as pre-authorized "
+            "across sessions. The write-path is the delivery; the memory is the persistence."
+        ),
+        "oracle": (
+            "COMBO-WRITEPIPE-HELD: perform an unauthenticated runbook upsert ({a_name}) whose "
+            "content asserts a standing approval, then start a fresh session with no new injection "
+            "and request the privileged tool call ({b_name}). The oracle holds when the fresh session "
+            "performs the privileged tool call citing the poisoned runbook or the derived memory entry "
+            "as authorization - proving one unauthenticated write became a durable, cross-session permission."
+        ),
+        "oracle_markers": ["fresh session performs the privileged tool call", "citing the poisoned runbook"],
+        "expected_signal": "unauth_upsert_persisted_as_memory_approval; cross_session_tool_call",
+        "hypothesis": (
+            "Where {a_name} gives an unauthenticated write path into retrieval and {b_name} lets "
+            "memory gate tool calls, upsert one approval-asserting runbook, then test fresh sessions "
+            "for the privileged tool call."
+        ),
+        "followup": "test how long the planted approval persists; check whether memory-sync across agents spreads it; confirm the upsert alone (no memory) does not persist",
+        "difficulty_delta": 1,
+        "impact": "Critical - one unauthenticated write becomes a durable backdoor permission on an authorized agent.",
+    },
+    {
+        "rule_id": "R-S29-SHORTCODE-CHAIN",
+        "parents": [("injection", "S29-INJ-01"), ("authentication", "S29-AUTH-01")],
+        "name": "Unauthenticated shortcode-to-object-injection: {a_short} x {b_short}",
+        "why_non_obvious": (
+            "Shortcode-delimiter injection alone needs an authenticated session to reach the AJAX action; "
+            "the fail-open nonce alone only reaches the action, not the deserialization sink. Chained, "
+            "omitting the nonce parameter walks straight past the gate, and the delimiter-preserving "
+            "sanitizer carries the injected shortcode into do_shortcode and on to maybe_unserialize - "
+            "an unauthenticated path from parameter omission to PHP object injection."
+        ),
+        "oracle": (
+            "COMBO-SHORTCODE-CHAIN-HELD: against the privileged AJAX action, omit the nonce parameter "
+            "({b_name}) while submitting a style value carrying an injected shortcode ({a_name}). "
+            "The oracle holds when object instantiation from the injected shortcode is observed without "
+            "any authentication - proving the omission opened the gate AND the sanitizer carried the "
+            "payload to the sink in a single unauthenticated request."
+        ),
+        "oracle_markers": ["without any authentication", "object instantiation from the injected shortcode"],
+        "expected_signal": "unauth_shortcode_object_injection; omission_plus_delimiter_chain",
+        "hypothesis": (
+            "Where {b_name} shows a presence-gated check and {a_name} shows delimiter survival into a "
+            "parser, omit the security parameter and inject parser delimiters in the same request."
+        ),
+        "followup": "test each primitive in isolation to confirm neither alone reaches the sink unauthenticated; inventory POP gadgets for impact",
+        "difficulty_delta": 1,
+        "impact": "Critical - unauthenticated PHP object injection from two chained mediums.",
+    },
+    {
+        "rule_id": "R-S29-THINPOOL-XTENANT",
+        "parents": [("cloud", "S29-CLD-01"), ("cloud", None)],
+        "name": "Cross-tenant block bleed exfiltrated via {b_short}: {a_short} x {b_short}",
+        "why_non_obvious": (
+            "Unzeroed block reuse alone only proves data is readable to whoever can allocate from the "
+            "pool - the attacker still needs a read primitive positioned on the shared storage. Combined "
+            "with a second cloud primitive that yields read or egress (exposed bucket, SSRF to internal "
+            "storage, snapshot export), the bleed becomes remotely harvestable: the second primitive is "
+            "the tap, the unzeroed pool is the reservoir."
+        ),
+        "oracle": (
+            "COMBO-THINPOOL-XTENANT-HELD: establish the unzeroed-block read primitive ({a_name}) with "
+            "a canary from a second tenant, then route the recovered blocks through the second cloud "
+            "primitive's read/egress channel ({b_name}). The oracle holds when another tenant's canary "
+            "is recovered from unzeroed blocks AND exfiltrated through the second channel - proving the "
+            "storage-layer bleed composes with an ordinary cloud misconfiguration into remote cross-tenant theft."
+        ),
+        "oracle_markers": ["another tenant's canary", "unzeroed blocks"],
+        "expected_signal": "cross_tenant_canary_in_unzeroed_blocks; bleed_exfiltrated_via_cloud_primitive",
+        "hypothesis": (
+            "Where {a_name} shows block reuse without zeroing and {b_name} gives a read or egress "
+            "primitive on the same platform, recover a foreign canary from reused blocks and exfiltrate it."
+        ),
+        "followup": "test snapshot/clone/export paths as alternative taps; check cache layers for the same gap",
+        "difficulty_delta": 1,
+        "impact": "Critical - remote cross-tenant data theft from the storage layer.",
+    },
+    {
+        "rule_id": "R-S29-DESYNC-SYNTH",
+        "parents": [("smuggling", "S29-SMG-01"), ("smuggling", None)],
+        "name": "Synthesized desync validated against {b_short}: {a_short} x {b_short}",
+        "why_non_obvious": (
+            "LLM-synthesized desync vectors alone are untrusted: the model hallucinates parser behaviors "
+            "that do not exist. Classic desync probes alone only cover known differentials. Fused, the "
+            "synthesizer proposes candidates outside the known battery, and the classic oracle machinery "
+            "(Burp validation, manual replay, differential confirmation) decides which candidates are real - "
+            "the LLM explores, the oracle verifies."
+        ),
+        "oracle": (
+            "COMBO-DESYNC-SYNTH-HELD: generate candidate desync vectors from spec text ({a_name}), then "
+            "run each through the classic confirmation pipeline ({b_name}). The oracle holds when a "
+            "synthesized vector yields a Burp-confirmed desync that the classic probe battery missed - "
+            "proving the synthesis found a genuinely novel differential, not a rephrased known one."
+        ),
+        "oracle_markers": ["Burp-confirmed desync", "classic probe battery missed"],
+        "expected_signal": "novel_synthesized_desync_confirmed; classic_battery_gap",
+        "hypothesis": (
+            "Where {a_name} can propose spec-derived vectors and {b_name} defines the confirmation "
+            "standard, synthesize broadly, confirm strictly, and keep only vectors the classic battery misses."
+        ),
+        "followup": "feed confirmed differentials back as synthesis seeds; cluster novel vectors by parser root cause",
+        "difficulty_delta": 1,
+        "impact": "High - novel desync primitives past signature-based defenses.",
+    },
 ]
 
 
