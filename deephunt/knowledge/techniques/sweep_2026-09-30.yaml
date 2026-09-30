@@ -1,0 +1,516 @@
+# DEEPHUNT technique cards — daily intel sweep 2026-09-30
+# Schema v2: preconditions/required_state/hypothesis_generator/
+# request_strategy/mutation_strategy/expected_signal/positive_oracle/
+# negative_evidence/false_positive_rules/followup_experiment/
+# regression_test/difficulty_estimate. 11 cards.
+# Sources: CERT/CC VU#762428 Authlib CVE-2026-96760 (2026-09-29/30, unpatched);
+# watchTowr Citrix CVE-2026-88771 + CVE-2026-88772 (2026-09-29);
+# watchTowr F5 BIG-IP CVE-2026-94127 (2026-09-27); WatchGuard AP
+# CVE-2026-86102/101891/87969 (2026-09-28); 1dayexploit WordPress wp2shell
+# CVE-2026-63030, vm2 CVE-2026-47686, Podlove CVE-2026-13001 (2026-09-25);
+# Huntress ChatGPT Custom GPT ClickFix chain (2026-09-30); Lasso Security
+# MaxKB CVE-2026-77521 (~2026-09-22); SGLang CVE-2026-102634 (2026-09-29).
+
+- id: S30-AUTH-01
+  name: Empty JWS 'signatures' array treated as verified (Authlib fail-open on empty signature set)
+  klass: auth
+  requires:
+  - http_observation
+  signals:
+  - jws
+  - jwt
+  - authlib
+  - deserialize
+  - signature
+  - oauth
+  questions:
+  - Does the verifier reject a JWS JSON-serialization object whose 'signatures' array is empty?
+  - Is the 'verified' assumption made before the signature loop runs, so an empty loop leaves it true?
+  - Do both deserialize_json() and deserialize() share the same fail-open path?
+  evidence:
+    positive:
+    - a JWS submitted as '{"payload":"<b64>","signatures":[]}' is accepted as verified and its claims are trusted
+    - 'CERT/CC VU#762428 (2026-09-29): Authlib <=1.7.2 JsonWebSignature.deserialize_json() accepts a JWS object with an empty "signatures" array and treats the payload as successfully verified — the function assumes signatures are valid, then skips verification entirely when the array is empty; both jws.deserialize_json({"payload":"...","signatures":[]}) and the deserialize() loader are affected'
+    - 'CVE-2026-96760; no vendor patch released as of 2026-09-30 — exploitation needs no key material and no credentials'
+    - 'Same fail-open family as CVE-2026-28498 (at_hash/c_hash unknown-alg fail-open, fixed 1.6.9) and CVE-2026-28802/27962 (alg:none empty signature) — but a distinct primitive: the empty signature SET, not algorithm confusion'
+    negative:
+    - empty signatures array is rejected with an error before any trust is granted
+    - the verified flag defaults to false and requires at least one passing signature
+  followups:
+  - test the compact-serialization path on the same consumer
+  - check the joserfc JWTClaimsRegistry for array-valued iss/sub handling (CVE-2026-75509, fixed 1.7.3)
+  test: 'Against an owned lab app that verifies JWS with Authlib <=1.7.2, submit a JSON-serialization JWS with "signatures":[] carrying forged claims (e.g. role=admin). A hold requires the app to accept the token and act on the forged claims while a control JWS with a genuinely invalid non-empty signature is rejected.'
+  impact_hint: 'Critical — signature verification bypass with no key material: forged privilege claims, microservice message forgery, full integrity bypass on any Authlib-backed OAuth/OIDC/JWT consumer.'
+  preconditions:
+  - http_observation
+  required_state: target verifies JWS/JWT with a library exposing JSON-serialization deserialization
+  hypothesis_generator: 'When signals [''jws'', ''authlib'', ''deserialize''] are observed, hypothesize: the verifier fails open on an empty signature set — submit {"payload":"...","signatures":[]} and check whether forged claims are trusted.'
+  request_strategy: submit JWS JSON serialization with an empty signatures array; compare against an invalid-signature control
+  mutation_strategy: vary payload claims (role, sub, iss); vary serialization (JSON vs compact); vary empty vs whitespace-padded arrays
+  expected_signal: forged claims accepted as verified
+  positive_oracle: empty-signatures JWS is accepted AND acted upon while a tampered non-empty-signature JWS is rejected
+  negative_evidence:
+  - empty set is rejected with an explicit error
+  - verified flag defaults false and requires a passing signature
+  false_positive_rules:
+  - a token that fails closed on an empty signature set is not vulnerable — require the accept-and-trust behavior
+  - lab apps only; never submit forged tokens to a third-party production verifier
+  followup_experiment: test the same consumer's compact-serialization path and the joserfc claims registry for array-valued iss/sub (CVE-2026-75509)
+  regression_test: after upgrading past the fix, an empty-signatures JWS must be rejected
+  difficulty_estimate: 0.3
+
+- id: S30-AUTH-02
+  name: Oversized OAuth Authorization Bearer header triggers heap overflow to RCE (F5 BIG-IP CVE-2026-94127)
+  klass: auth
+  requires:
+  - http_observation
+  signals:
+  - f5
+  - big-ip
+  - oauth
+  - authorization
+  - bearer
+  - heap
+  - overflow
+  questions:
+  - Does the OAuth endpoint's Authorization header parser run in native code with a fixed-size assumption?
+  - What happens when the Bearer value exceeds parser expectations — truncation, error, or heap corruption?
+  - After corruption, do post-exploitation guardrails (SELinux, sandboxing) have bypassable finish steps?
+  evidence:
+    positive:
+    - 'watchTowr Labs "Is This A Joke? In The Auth Header?" (2026-09-27): an oversized Authorization Bearer value (16,640 bytes) sent to the F5 BIG-IP /f5-oauth2/v1/u... endpoint triggers a heap-based buffer overflow leading to unauthenticated RCE; the published chain includes a tmm.finish step that bypasses SELinux; working PoC released and mirrored on public exploit indexes (Vulners/KitPloit, Sploitus); exploited as a zero-day in the wild; CVSS 9.8'
+    - oversized Bearer reproducibly corrupts heap state on the target build
+    negative:
+    - overlong Bearer values are rejected with 400/413 before reaching the native parser
+    - header length is capped at the edge (proxy/WAF) and never reaches the vulnerable code
+  followups:
+  - walk header sizes from 4 KiB to 64 KiB to map the corruption threshold
+  - check whether the SELinux-bypass step generalizes to sibling builds
+  test: 'Against an owned lab BIG-IP, replay the oversized Bearer header against the OAuth endpoint under a debugger and observe heap state. A hold requires the published PoC''s crash-to-control primitive to reproduce in the lab. Never replay the exploit chain against production appliances.'
+  impact_hint: 'Critical — unauthenticated RCE on the ADC/Gateway management plane from a single HTTP request header.'
+  preconditions:
+  - http_observation
+  required_state: target exposes an OAuth/token endpoint whose Authorization header is parsed in native code
+  hypothesis_generator: 'When signals [''f5'', ''big-ip'', ''oauth'', ''authorization''] are observed, hypothesize: the Authorization header parser in native code (tmm) mishandles overlong Bearer values — walk header sizes upward and watch for heap corruption.'
+  request_strategy: size-ladder probes of the Authorization Bearer value against the OAuth endpoint; debugger-attached lab observation
+  mutation_strategy: vary Bearer length (4 KiB–64 KiB); vary header name casing and whitespace folding; vary endpoint path
+  expected_signal: heap corruption or crash correlated with Bearer length past a threshold
+  positive_oracle: an overlong Bearer reproducibly corrupts the heap in the lab AND the published SELinux-bypass step applies to the lab build
+  negative_evidence:
+  - overlong values rejected cleanly at 400/413 with no corruption
+  - corruption does not reproduce outside the exact vulnerable build
+  false_positive_rules:
+  - a 500 on an overlong header is not a finding without heap-corruption evidence under a debugger
+  - lab appliances only; never fuzz a production ADC/Gateway
+  followup_experiment: test sibling native parsers (SAML, WebSocket upgrade) for the same length assumption
+  regression_test: after patching, overlong Bearer values are rejected and heap state stays clean
+  difficulty_estimate: 0.9
+
+- id: S30-AUTH-03
+  name: Management-API access-control bypass chained to command injection (WatchGuard AP CVE-2026-101891 + CVE-2026-86102)
+  klass: auth
+  requires:
+  - http_observation
+  signals:
+  - watchguard
+  - access-point
+  - wifi
+  - management-api
+  - session
+  questions:
+  - Does the internal management API issue sessions without any credential?
+  - Do session-gated management endpoints pass string parameters to shell?
+  - Is the management API reachable from untrusted network segments?
+  evidence:
+    positive:
+    - 'WatchGuard PSIRT (2026-09-28): CVE-2026-101891 (CWE-284/CWE-923) — improper access control in the internal API service lets an unauthenticated network attacker obtain a valid API session; CVE-2026-86102 (CWE-78/CWE-863) — OS command injection in the internal management API service allows an unauthenticated attacker with network access to execute arbitrary shell commands on the AP OS; both CVSS v4.0 9.3 critical; AP firmware 1.0–3.4.7 affected, fixed in 3.4.8'
+    - session issued with no credentials, then a session-gated endpoint executes injected shell metacharacters
+    negative:
+    - session issuance requires valid credentials
+    - session-gated endpoints reject or safely handle metacharacters
+  followups:
+  - enumerate all session-gated management endpoints for shell-adjacent parameters
+  - check the third flaw (CVE-2026-87969) for a complementary primitive
+  test: 'Against an owned lab WatchGuard AP (firmware <3.4.8), first request an API session with no credentials; then exercise session-gated management endpoints with shell metacharacters in string parameters. A hold requires unauthenticated session issuance AND command execution through a session-gated endpoint.'
+  impact_hint: 'Critical — unauthenticated OS command execution on wireless infrastructure; a compromised AP becomes a network foothold.'
+  preconditions:
+  - http_observation
+  required_state: target is a network appliance exposing an internal management API
+  hypothesis_generator: 'When signals [''management-api'', ''access-point''] are observed, hypothesize: the internal API''s access control is decorative — request a session with no credentials, then test session-gated endpoints for shell injection.'
+  request_strategy: unauthenticated session request first; then metacharacter probes on session-gated endpoints
+  mutation_strategy: vary session-request fields (empty, omitted, default creds); vary metacharacters (; | $() backticks)
+  expected_signal: valid session without credentials, then command execution
+  positive_oracle: a no-credential session is issued AND a session-gated endpoint executes injected shell commands
+  negative_evidence:
+  - sessions require credentials
+  - endpoints neutralize metacharacters
+  false_positive_rules:
+  - command output must be distinguishable from error echo — require a time-delay or canary-file oracle
+  - lab appliances only; never touch production wireless infrastructure
+  followup_experiment: test whether the session from the access-control bypass reaches privileged firmware-update or config-restore endpoints
+  regression_test: after upgrading to 3.4.8+, session issuance requires credentials and metacharacters are neutralized
+  difficulty_estimate: 0.5
+
+- id: S30-INJ-01
+  name: Shell-wrapped find on unvalidated crash-core filename gives pre-auth RCE (Citrix NetScaler CVE-2026-88771)
+  klass: injection
+  requires:
+  - http_observation
+  signals:
+  - netscaler
+  - citrix
+  - find
+  - core
+  - shell
+  - command-injection
+  questions:
+  - Are diagnostic artifact filenames constructed from request-influenced fields?
+  - Is the filename passed to a system utility through a shell rather than execve-style argv?
+  - Which filename fields are validated, and which pass through raw?
+  evidence:
+    positive:
+    - 'watchTowr Labs "Oh look, the foot-gun went off again" (2026-09-29): the crash-core filename was constructed from unvalidated fields and handed to find through a shell, giving unauthenticated remote command injection on NetScaler ADC/Gateway; the patch constructs the core name from strictly validated fields and executes find without involving a shell; CISA KEV with a 2026-09-30 federal fix deadline; active exploitation observed (web shells, tunneling, credential theft)'
+    - metacharacters in the name-bearing fields produce shell execution (sleep differential / canary output)
+    negative:
+    - filename fields are allowlist-validated before use
+    - the utility is invoked without a shell (argv array)
+  followups:
+  - map every diagnostic artifact path (cores, traces, tech-support bundles) for the same pattern
+  - check whether the filename fields are reachable pre-authentication
+  test: 'Against an owned lab NetScaler (vulnerable firmware), submit requests carrying shell metacharacters in the fields that feed the crash-core filename, then trigger core collection. A hold requires command execution evidenced by a time delay or canary file, with a validated-field control showing no execution.'
+  impact_hint: 'Critical — unauthenticated RCE on perimeter ADC/Gateway appliances; the standard initial-access primitive for ransomware operators (CitrixBleed playbook).'
+  preconditions:
+  - http_observation
+  required_state: target generates diagnostic artifacts whose names derive from request-influenced fields
+  hypothesis_generator: 'When signals [''netscaler'', ''core'', ''find''] are observed, hypothesize: diagnostic artifact names built from request-influenced fields are passed through a shell — inject metacharacters into the name-bearing fields.'
+  request_strategy: metacharacter injection into filename-bearing fields, then trigger artifact generation
+  mutation_strategy: vary metacharacters (; | && $()); vary which field carries them; vary quoting contexts
+  expected_signal: shell command execution tied to the crafted filename
+  positive_oracle: a metacharacter-bearing core name causes shell command execution in the lab while the validated-field control does not
+  negative_evidence:
+  - fields are allowlist-validated
+  - utility invoked via argv with no shell
+  false_positive_rules:
+  - require a timing or canary oracle — error text alone is not execution
+  - lab appliances only; never trigger core collection on production
+  followup_experiment: apply the same filename-field audit to tech-support bundle and trace-file generation paths
+  regression_test: after patching, metacharacters in filename fields are stripped and find runs shell-free
+  difficulty_estimate: 0.6
+
+- id: S30-INJ-02
+  name: DTLS pre-authentication buffer overflow to RCE (Citrix NetScaler CVE-2026-88772)
+  klass: injection
+  requires:
+  - http_observation
+  signals:
+  - netscaler
+  - citrix
+  - dtls
+  - vpn
+  - overflow
+  - gateway
+  questions:
+  - Does the DTLS gateway reassemble records before authentication with a fixed-size assumption?
+  - What record-count/size combination crosses the reassembly boundary?
+  - Is the overflow reachable without any credential or session?
+  evidence:
+    positive:
+    - 'watchTowr Labs "Here We Go Again" (2026-09-29): pre-authentication memory overflow in the NetScaler DTLS gateway; the published Detection Artefact Generator delivers 120 DTLS records (176,640 bytes) to trigger the overflow, yielding RCE; KEV-listed with active exploitation; CISA federal fix deadline 2026-09-30'
+    - the 120-record/176,640-byte pattern reproducibly corrupts memory on the target build
+    negative:
+    - DTLS record batches are length-capped before reassembly
+    - overflow does not reproduce outside the vulnerable firmware range
+  followups:
+  - bisect the record count to find the minimal triggering batch
+  - test sibling DTLS/UDP services on the same appliance family
+  test: 'Against an owned lab NetScaler DTLS gateway (vulnerable firmware), replay the published record batch under observation. A hold requires reproducible memory corruption tied to the record batch. Detection-only: use the published Detection Artefact Generator to confirm exposure, never weaponize.'
+  impact_hint: 'Critical — pre-authentication RCE on the VPN gateway; no credentials, no user interaction.'
+  preconditions:
+  - http_observation
+  required_state: target exposes a DTLS/UDP gateway service
+  hypothesis_generator: 'When signals [''dtls'', ''vpn'', ''netscaler''] are observed, hypothesize: DTLS record reassembly mishandles record-count/size combinations before authentication — flood the handshake with oversized record batches.'
+  request_strategy: DTLS record-batch flooding with size ladders; lab-only crash observation
+  mutation_strategy: vary record count and per-record size; vary handshake phase; vary cipher suites
+  expected_signal: memory corruption or crash correlated with the batch size
+  positive_oracle: the 120-record/176,640-byte pattern reproducibly crashes or corrupts memory on an owned lab gateway build
+  negative_evidence:
+  - batches are capped before reassembly
+  - no corruption across the size ladder
+  false_positive_rules:
+  - a dropped connection is not a finding without corruption evidence
+  - lab gateways only; detection artifacts only against production
+  followup_experiment: test whether the corruption primitive reaches adjacent UDP services on the same appliance
+  regression_test: after patching, oversized batches are rejected and memory stays clean
+  difficulty_estimate: 0.9
+
+- id: S30-INJ-03
+  name: REST batch endpoint handler desynchronization chains to SQLi webshell (WordPress wp2shell CVE-2026-63030)
+  klass: injection
+  requires:
+  - http_observation
+  signals:
+  - wordpress
+  - rest
+  - batch
+  - route
+  - sqli
+  - desync
+  questions:
+  - Is the batch endpoint registered with a permission_callback, or does it accept unauthenticated requests?
+  - Are sub-requests dispatched to handlers by index — and can the index mapping desynchronize?
+  - Does a desynced handler skip its route's permission check?
+  evidence:
+    positive:
+    - '1dayexploit analysis (2026-09-25): WordPress 6.9.0–6.9.4 and 7.0.0–7.0.1; the REST batch endpoint (/wp-json/batch/v1) is registered with no permission_callback, so it accepts unauthenticated requests; an off-by-one array desynchronization in serve_batch_request_v1() dispatches sub-request i with handler i+1, bypassing per-route permission checks; chained with a SQL injection in WP_Query''s author__not_in parameter (CVE-2026-60137) to write a PHP webshell via SELECT ... INTO OUTFILE; a single unauthenticated HTTP request yields full shell as www-data; CVSS 9.8; CISA KEV with active in-the-wild exploitation'
+    - unauthenticated batch request reaches a handler that requires authentication
+    negative:
+    - batch endpoint requires authentication or is disabled
+    - sub-request/handler index mapping is validated and cannot desynchronize
+  followups:
+  - test other batch-capable frameworks (GraphQL batching, JSON-RPC batches) for index desync
+  - check whether the desynced handler also skips object-level authorization
+  test: 'Against an owned lab WordPress (vulnerable range), POST a batch request pairing a low-privilege sub-request with a privileged handler index; confirm the permission bypass; then exercise the author__not_in SQLi to SELECT ... INTO OUTFILE. A hold requires both legs — permission bypass AND webshell write — from one unauthenticated request.'
+  impact_hint: 'Critical — single unauthenticated HTTP request to full RCE on WordPress core; KEV-listed with active exploitation.'
+  preconditions:
+  - http_observation
+  required_state: target exposes a REST/GraphQL/JSON-RPC batch endpoint that dispatches sub-requests to per-route handlers
+  hypothesis_generator: 'When signals [''wordpress'', ''rest'', ''batch''] are observed, hypothesize: batch sub-requests are dispatched to the wrong handlers — craft a batch where sub-request i lands on handler i+1 and inherits its weaker permission check.'
+  request_strategy: unauthenticated batch POST with shifted sub-request/handler pairing; then SQLi-to-OUTFILE leg
+  mutation_strategy: vary the index shift (+1, -1, larger offsets); vary sub-request ordering; vary SQLi payload toward INTO OUTFILE
+  expected_signal: permission bypass on the desynced handler, then webshell write
+  positive_oracle: an unauthenticated batch request reaches a handler that requires auth (permission bypass confirmed) AND the SQLi-to-OUTFILE leg writes a webshell in the lab
+  negative_evidence:
+  - batch endpoint requires auth
+  - index mapping validated; desync impossible
+  false_positive_rules:
+  - require the permission bypass to be demonstrated, not just the SQLi — the novelty is the desync
+  - lab WordPress only; never test live sites
+  followup_experiment: apply the batch-desync probe to GraphQL query batching and JSON-RPC batch endpoints on the same target
+  regression_test: after upgrading to 6.9.5/7.0.2+, batch sub-requests dispatch to the correct handlers with permission checks intact
+  difficulty_estimate: 0.7
+
+- id: S30-INJ-04
+  name: Unsanitized Error.cause leaks host objects into the sandbox (vm2 escape CVE-2026-47686)
+  klass: injection
+  requires:
+  - http_observation
+  signals:
+  - vm2
+  - sandbox
+  - nodejs
+  - error
+  - escape
+  questions:
+  - Does the sandbox's error sanitizer cover every error-chaining property in the language spec?
+  - Can an embedder-exposed host function be made to throw with a host object attached?
+  - Does the leaked reference reach a module-loader primitive (require/process)?
+  evidence:
+    positive:
+    - '1dayexploit analysis (2026-09-25): vm2 <=3.11.5; handleException() in lib/setup-sandbox.js strips host-realm references from errors but only recognized SuppressedError.{error,suppressed} and AggregateError.errors[] — not the ES2022 Error.cause property; an embedder-exposed host function that throws an error carrying a powerful host object on .cause leaks the reference straight into the sandbox; from there process.mainModule.require() (or an equivalent loader primitive) gives arbitrary command execution as the host user; CVSS 9.9, network-reachable, no auth; fixed in 3.11.6; GHSA-m283-3h24-438v'
+    - an Error thrown from a host function is catchable inside the sandbox with the host reference intact on .cause
+    negative:
+    - error sanitizer walks all chaining properties including cause
+    - no host function is exposed that can be made to throw attacker-influenced errors
+  followups:
+  - audit other sandbox libraries for the same spec-lag on newer error properties
+  - check whether the leaked reference reaches require chains on the target vm2 version
+  test: 'Against an owned lab app embedding vm2 <=3.11.5, submit sandbox code that calls an exposed host function which throws with a host object on .cause; catch it inside the sandbox and inspect the reference. A hold requires the host object to be reachable from inside the sandbox, with a control using AggregateError showing the sanitizer working.'
+  impact_hint: 'Critical — sandbox escape to host RCE from untrusted script input; CVSS 9.9.'
+  preconditions:
+  - http_observation
+  required_state: target evaluates untrusted JavaScript inside vm2 (or a similar error-sanitizing sandbox)
+  hypothesis_generator: 'When signals [''vm2'', ''sandbox''] are observed, hypothesize: error sanitization lags the language spec — throw errors carrying host objects on newer chaining properties (cause) and check whether the reference survives into the sandbox.'
+  request_strategy: sandbox code that triggers host-function throws with host objects on .cause; inspect caught errors
+  mutation_strategy: vary the chaining property (cause vs suppressed vs errors[]); vary the host object (process, require, fs)
+  expected_signal: host reference intact on the caught error inside the sandbox
+  positive_oracle: an Error with a host object on .cause thrown from an exposed host function is catchable inside the sandbox with the host reference intact
+  negative_evidence:
+  - sanitizer covers cause
+  - no throwable host function is exposed
+  false_positive_rules:
+  - the reference must be a live host object, not a sanitized copy — verify it reaches a loader primitive
+  - lab apps only; never submit escape payloads to third-party sandboxes
+  followup_experiment: test newer error-chaining proposals and custom error subclasses for the same sanitization gap
+  regression_test: after upgrading to 3.11.6+, .cause is sanitized and no host reference survives
+  difficulty_estimate: 0.6
+
+- id: S30-UPD-01
+  name: Dual-parser file-extension confusion writes a polyglot as executable (Podlove CVE-2026-13001)
+  klass: upload
+  requires:
+  - http_observation
+  signals:
+  - wordpress
+  - plugin
+  - upload
+  - polyglot
+  - extension
+  - podcast
+  questions:
+  - Do validation and storage derive the file extension from the same input with different parsers?
+  - Does the validator check the tail of the full URL while storage parses only the path?
+  - Is the stored file web-servable and executable?
+  evidence:
+    positive:
+    - '1dayexploit analysis (2026-09-25): Podlove Podcast Publisher <=4.5.1; the image cache handler derives the file extension from the same attacker-supplied URL using two different parsers — one checks the tail of the full URL string, so shell.php?.gif passes validation as a GIF, while the other parses only the path and records .php; a GIF/PHP polyglot is written to a web-served cache directory with a .php extension and direct HTTP requests execute the embedded code; CVSS 9.8; fixed in 4.5.2'
+    - stored file carries the .php extension while the validator logged it as an image
+    negative:
+    - a single canonical parser derives the extension for both validation and storage
+    - stored files land outside the web root or with a forced safe extension
+  followups:
+  - test query-suffix and fragment-suffix names on every upload/cache endpoint
+  - check whether the polyglot survives any image re-encoding step
+  test: 'Against an owned lab WordPress with Podlove <=4.5.1, upload a GIF/PHP polyglot via a URL ending in shell.php?.gif; inspect the stored filename and request it directly. A hold requires the file stored with a .php extension AND direct-request execution, with a plain .gif control stored safely.'
+  impact_hint: 'Critical — unauthenticated RCE via file upload; CVSS 9.8.'
+  preconditions:
+  - http_observation
+  required_state: target accepts file uploads or caches remote files with extension-based validation
+  hypothesis_generator: 'When signals [''upload'', ''extension''] are observed, hypothesize: validation and storage derive the extension with different parsers — submit shell.php?.gif-style names and check which extension the stored file gets.'
+  request_strategy: upload/cache requests with query-suffixed filenames; compare validator verdict vs stored extension
+  mutation_strategy: vary the suffix (?.gif, #.gif, ;.gif); vary the executable extension (.php, .phtml, .phar); vary polyglot type
+  expected_signal: validator approves as image while storage writes an executable extension
+  positive_oracle: the stored file carries the executable extension while the validator logged it as an image type
+  negative_evidence:
+  - single canonical parser for both stages
+  - stored outside web root or extension forced safe
+  false_positive_rules:
+  - execution must be demonstrated by direct request — a .php filename alone is not RCE
+  - lab WordPress only; never upload polyglots to live sites
+  followup_experiment: test fragment (#.gif) and semicolon (;.gif) suffixes against the same dual-parser pair
+  regression_test: after upgrading to 4.5.2+, the stored extension matches the validated type
+  difficulty_estimate: 0.4
+
+- id: S30-AI-01
+  name: Trusted-platform Custom GPT as the ClickFix lure (chatgpt.com-hosted social engineering chain)
+  klass: ai_llm
+  requires:
+  - http_observation
+  signals:
+  - custom-gpt
+  - clickfix
+  - chatgpt
+  - social-engineering
+  - captcha
+  questions:
+  - Can an attacker publish a Custom GPT whose instructions social-engineer victims off-platform?
+  - Does hosting the lure on the platform's own trusted domain defeat user suspicion and domain-based detection?
+  - How quickly can a taken-down lure be replaced with a functionally identical one?
+  evidence:
+    positive:
+    - 'Huntress (2026-09-30): attackers built a Custom GPT titled "Plus 5.6" on chatgpt.com, promoted through sponsored Google results for "chatgpt"; whatever the victim types, the GPT replies with a fake "Service Availability Notice" directing them to a "backup domain" on Google Sites; the page poses as a Cloudflare CAPTCHA and runs a ClickFix (paste a command into the terminal); the PowerShell references its server as a decimal-encoded IP (evading dotted-IP rules) and pulls an obfuscated script that silently installs a malicious MSI; the MSI sideloads a patched Canon logging DLL through the legitimately signed Canon CaptureOnTouch executable; the DLL loads a helper that extracts the loader from a WAV audio file (real audio overwritten with encrypted shellcode); the loader carries an AMSI bypass, ntdll unhooking, and anti-VM checks, then unpacks the RAT from "monitor.raw" — a bespoke encrypted archive of 806 files plus a persistence script in the malware''s own scripting language; Huntress SOC handled 40+ incidents tied to the Google Sites domain, 2 confirmed through the Custom GPT; OpenAI removed the first GPT on 2026-09-25, a replacement appeared 2026-09-27'
+    - a platform-hosted GPT is found whose instructions steer users to an off-platform paste-command action
+    negative:
+    - platform-hosted GPTs cannot include off-platform redirect instructions (policy-enforced)
+    - takedowns propagate faster than replacements (no repeatable playbook observed)
+  followups:
+  - inventory other trusted AI surfaces abused the same way (Claude Artifacts, shared conversations)
+  - track the replacement cadence after takedowns
+  test: 'In a lab, publish a benign Custom GPT that returns a canary "service notice" with a tracking link; measure how trusted-domain hosting changes user trust signals versus a lookalike-domain control. Never publish deceptive lures publicly.'
+  impact_hint: 'High — the trusted platform domain is the trust amplifier: 40+ incidents from one campaign, with takedowns treated as a minor inconvenience (replacement live within 2 days).'
+  preconditions:
+  - http_observation
+  required_state: a platform lets users publish executable/shareable AI artifacts (Custom GPTs, artifacts, skills) on the platform's own trusted domain
+  hypothesis_generator: 'When signals [''custom-gpt'', ''chatgpt''] are observed, hypothesize: the lure lives on the trusted platform domain itself — check Custom GPTs/skills/artifacts for social-engineering instructions that redirect victims off-platform to credential or command-execution pages.'
+  request_strategy: enumerate public Custom GPTs/artifacts for off-platform redirect instructions; sandbox the off-platform pages
+  mutation_strategy: vary the impersonated product (model upgrade, availability notice, quota warning); vary the off-platform host (Sites, docs, forms)
+  expected_signal: platform-hosted artifact whose instructions drive victims to a malicious off-platform action
+  positive_oracle: a platform-hosted GPT/artifact is found whose instructions steer users to an off-platform action (fake notice, backup domain, pasted command) — with the off-platform page confirmed malicious in a sandbox
+  negative_evidence:
+  - redirect instructions are policy-blocked on the platform
+  - no off-platform steering found in sampled artifacts
+  false_positive_rules:
+  - a GPT that links off-platform for legitimate reasons is not a lure — require the deceptive pretext (fake notice, fake CAPTCHA, pasted command)
+  - research-only; never interact with live malicious lures beyond sandboxed fetching
+  followup_experiment: measure takedown-to-replacement latency across several campaigns to model the defender''s window
+  regression_test: platform policy blocks off-platform redirect instructions in published artifacts
+  difficulty_estimate: 0.3
+
+- id: S30-AI-02
+  name: Exposed agent execution path turns prompt injection into host shell (MaxKB CVE-2026-77521)
+  klass: ai_llm
+  requires:
+  - http_observation
+  signals:
+  - maxkb
+  - agent
+  - shell
+  - prompt-injection
+  - root
+  questions:
+  - Is the agent's execution endpoint reachable over the network without authentication?
+  - Does the agent's tool loop include shell/command execution?
+  - Are injected instructions able to reach the tool-call planner (not just the chat surface)?
+  evidence:
+    positive:
+    - 'Lasso Security via cyberpress.org (~2026-09-22): MaxKB <=2.10.3-lts (fixed 2.10.5-lts); an exposed agent execution path with tools, MCP integrations, skills, or sub-applications lets an attacker prompt-inject the agent into issuing arbitrary shell commands on the underlying host — as root in containerized deployments; CVSS 10.0; network-reachable, no authentication, no user interaction'
+    - unauthenticated input to the agent endpoint results in shell command execution on the host
+    negative:
+    - the execution endpoint requires authentication
+    - the shell tool is absent, sandboxed, or requires human approval per invocation
+  followups:
+  - enumerate the agent's tool list via its API/docs to confirm shell presence
+  - check container breakout potential beyond the host shell
+  test: 'Against an owned lab MaxKB (<=2.10.3-lts), submit prompt-injection content to the exposed execution path that instructs the agent to run a benign canary shell command. A hold requires the canary command to execute on the host with the command originating from the agent''s tool-call loop — not from a direct parameter — while an authenticated-only control endpoint refuses the same input.'
+  impact_hint: 'Critical — CVSS 10.0: unauthenticated prompt injection becomes root shell on the agent host.'
+  preconditions:
+  - http_observation
+  required_state: target runs an AI agent with a network-reachable execution endpoint and shell-capable tools
+  hypothesis_generator: 'When signals [''agent'', ''execution'', ''tools''] are observed, hypothesize: the agent''s execution endpoint is network-reachable without auth and its tool loop includes shell — inject instructions that turn a benign task into shell command issuance.'
+  request_strategy: unauthenticated prompt-injection probes against the agent execution endpoint; canary shell commands
+  mutation_strategy: vary the injection carrier (direct prompt, tool result, retrieved doc); vary the canary (sleep, file write, dns)
+  expected_signal: host shell command execution triggered by agent tool calls
+  positive_oracle: unauthenticated input to the agent endpoint results in shell command execution on the host (lab), with the command originating from the agent''s tool-call loop, not a direct parameter
+  negative_evidence:
+  - execution endpoint requires auth
+  - shell tool absent or sandboxed with no host escape
+  false_positive_rules:
+  - a chat answer describing a command is not execution — require host-side effects
+  - lab agents only; never inject against third-party production agents
+  followup_experiment: test whether MCP/skills expand the reachable tool surface beyond the built-in shell
+  regression_test: after upgrading to 2.10.5-lts+, the execution path requires auth and injection no longer reaches shell
+  difficulty_estimate: 0.4
+
+- id: S30-AI-03
+  name: Duplicate bootstrap_room fields bypass validation in disaggregated inference (SGLang CVE-2026-102634)
+  klass: ai_llm
+  requires:
+  - http_observation
+  signals:
+  - sglang
+  - inference
+  - disaggregation
+  - mooncake
+  - kv
+  questions:
+  - Does the disaggregation handshake validate that routing fields appear exactly once?
+  - Do duplicate bootstrap_room values desynchronize prefill/decode KV routing?
+  - Is the /generate endpoint reachable without authentication?
+  evidence:
+    positive:
+    - 'TheHackerWire (2026-09-29): SGLang through 0.5.20 in prefill/decode disaggregation mode fails to validate duplicate bootstrap_room fields in /generate requests with the Mooncake KV transfer backend; unauthenticated attackers can send crafted requests; CVSS 7.5'
+    - duplicate bootstrap_room values are accepted and cause validation bypass or KV confusion
+    negative:
+    - duplicate fields are rejected or deduplicated deterministically
+    - disaggregation mode is not enabled on the target
+  followups:
+  - test other duplicated handshake fields (session ids, transfer backends)
+  - check whether KV confusion crosses tenant/request boundaries
+  test: 'Against an owned lab SGLang (<=0.5.20) in prefill/decode disaggregation mode with the Mooncake backend, submit /generate requests carrying duplicate bootstrap_room fields with conflicting values. A hold requires the duplicates to be accepted with observable validation-bypass or KV-routing confusion versus a single-field control.'
+  impact_hint: 'Medium-high — authentication bypass on LLM inference infrastructure; duplicate-field desync is a reusable primitive against disaggregated serving.'
+  preconditions:
+  - http_observation
+  required_state: target serves LLM inference with prefill/decode disaggregation and a KV-transfer handshake
+  hypothesis_generator: 'When signals [''sglang'', ''disaggregation'', ''mooncake''] are observed, hypothesize: the disaggregation handshake trusts duplicated routing fields — submit /generate requests with duplicate bootstrap_room values and check whether validation or KV routing desynchronizes.'
+  request_strategy: /generate requests with duplicated bootstrap_room fields; conflicting values
+  mutation_strategy: vary duplication count and value conflicts; vary the transfer backend; vary request ordering
+  expected_signal: duplicates accepted; validation bypass or KV confusion
+  positive_oracle: duplicate bootstrap_room values are accepted and cause validation bypass or cross-request KV confusion in the lab
+  negative_evidence:
+  - duplicates rejected or deterministically deduplicated
+  - disaggregation not enabled
+  false_positive_rules:
+  - benign duplicate tolerance (last-wins) without security impact is not a finding — require the bypass or confusion
+  - lab inference servers only
+  followup_experiment: extend the duplicate-field probe to vLLM and TensorRT-LLM disaggregation handshakes
+  regression_test: after upgrading past 0.5.20, duplicate bootstrap_room fields are rejected
+  difficulty_estimate: 0.6

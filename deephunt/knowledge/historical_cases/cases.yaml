@@ -455,3 +455,81 @@
   detection_clue: "For every security check, test three variants: correct value, wrong value, omitted parameter. For every sanitizer, ask which downstream parser consumes the output — and whether its delimiters survive."
   why_scanners_missed_it: "Scanners fuzz values but rarely OMIT security parameters; and sanitize_text_field() passing looks safe until you trace the value into do_shortcode() and then into maybe_unserialize()."
   source: "CVE-2026-87741, Wordfence threat intel, published 2026-09-28."
+
+- id: CASE-37
+  application_type: "Dutch Institute for Vulnerability Disclosure (DIVD) infrastructure"
+  architecture: "Nonprofit coordinated-disclosure org; internet-scanning infrastructure and volunteer tooling"
+  initial_observation: "DIVD had run seven years without a breach; its infrastructure is operated by volunteer security researchers."
+  attacker_assumption: "Post-exploitation would be careful, quiet, and human-paced."
+  unexpected_behavior: "The intrusion was carried out autonomously by an AI agent after an initial technical vulnerability was exploited (explicitly not the Citrix NetScaler flaw). The agent decided its next step after every action at machine speed, interfered with its own adversary-in-the-middle attack via password spraying, and commented on its own decisions — leaving an abundant forensic trail."
+  chain_of_events: ["Attacker exploits an undisclosed technical vulnerability in DIVD infrastructure", "An automated AI agent takes over post-exploitation", "Agent acts autonomously step-by-step at high speed with sloppy logic", "Agent interferes with its own AitM attack through password spraying", "Agent's self-commentary leaves a rich forensic trail", "DIVD detects, isolates, and notifies police, Autoriteit Persoonsgegevens, and the NCSC"]
+  root_cause: "Initial access via an undisclosed technical vulnerability; post-exploitation fully delegated to an autonomous agent (first documented agentic-AI post-exploitation against a security organization)."
+  impact: "Breach of a coordinated-disclosure nonprofit; purpose and full impact still under investigation as of 2026-09-29; technical update promised 2026-10-01. Demonstrates agentic AI is now an in-the-wild post-exploitation actor."
+  detection_clue: "Look for machine-speed action sequences with self-narrating tool output and self-defeating tactics (e.g. password spraying that breaks the attacker's own AitM) — the forensic signature of an autonomous agent, not a human operator."
+  why_scanners_missed_it: "No scanner models the operator: the initial vulnerability was conventional, but the post-exploitation tradecraft (speed, self-interference, self-commentary) is a new detection surface."
+  source: "DIVD disclosure via LinkedIn; BleepingComputer and databreaches.net coverage, 2026-09-25/29."
+
+- id: CASE-38
+  application_type: "ChatGPT Custom GPTs abused as ClickFix lure (Huntress-tracked campaign)"
+  architecture: "Custom GPT 'Plus 5.6' hosted on chatgpt.com, promoted via sponsored Google results; Google Sites 'backup domain'; fake Cloudflare CAPTCHA ClickFix page"
+  initial_observation: "Victims searching Google for 'chatgpt' were served a sponsored result leading to a Custom GPT on OpenAI's own legitimate domain."
+  attacker_assumption: "Content hosted on chatgpt.com is trustworthy; a CAPTCHA page asking to paste a command is a routine verification step."
+  unexpected_behavior: "The Custom GPT answered every prompt with a fake 'Service Availability Notice' pushing victims to a Google Sites 'backup domain', which served a fake Cloudflare CAPTCHA delivering a ClickFix (paste a command into the terminal). The PowerShell referenced its server as a decimal-encoded IP, pulled an obfuscated script installing a malicious MSI, which sideloaded a patched Canon logging DLL through the signed Canon CaptureOnTouch executable; the loader was extracted from a WAV audio file (encrypted shellcode over real audio), carried an AMSI bypass, ntdll unhooking, and anti-VM checks, then unpacked the RAT from 'monitor.raw'."
+  chain_of_events: ["Sponsored Google result for 'chatgpt' -> malicious Custom GPT on chatgpt.com", "GPT returns fake Service Availability Notice with 'backup domain' link", "Google Sites page poses as Cloudflare CAPTCHA -> ClickFix terminal paste", "PowerShell with decimal-encoded IP pulls obfuscated script", "Malicious MSI installed silently", "Canon-signed executable sideloads patched Canon DLL", "WAV-embedded encrypted shellcode extracted", "AMSI bypass + ntdll unhooking + anti-VM", "RAT unpacked from 'monitor.raw' (806 files, bespoke persistence script)"]
+  root_cause: "Trusted-platform domain (chatgpt.com) used as the lure: the AI artifact itself is the social engineer. Takedown of the first GPT (2026-09-25) was followed by a replacement within 2 days (2026-09-27) — a repeatable playbook."
+  impact: "40+ incidents tied to the Google Sites domain handled by the Huntress SOC; 2 confirmed originating from the Custom GPT lure. Eight hops between the ClickFix command and the final RAT."
+  detection_clue: "Treat sponsored AI-tool search results and any 'verification' page that asks for shell commands as high-risk; flag decimal-encoded IPs in PowerShell and audio-file carriers."
+  why_scanners_missed_it: "No malicious attachment or executable to scan — the victim is the delivery mechanism; the initial lure sits on a trusted domain that allowlists and reputation systems bless."
+  source: "Huntress research, 2026-09-30; SecurityWeek and Help Net Security coverage."
+
+- id: CASE-39
+  application_type: "Citrix NetScaler ADC/Gateway fleet (perimeter appliances)"
+  architecture: "NetScaler ADC/Gateway 13.1 and 14.1 at the network edge: access, load balancing, authentication, VPN"
+  initial_observation: "Citrix released fixes on 2026-09-27 for a tranche of flaws including two critical zero-days already under targeted exploitation."
+  attacker_assumption: "Default deployments without a VPN virtual server or Gateway license are less exposed."
+  unexpected_behavior: "CVE-2026-88771 (improper input validation -> unauthenticated command injection via shell-wrapped find on an unvalidated crash-core name) affects every default deployment regardless of VPN configuration; CVE-2026-88772 (memory overflow -> DTLS pre-auth RCE) gives a second independent pre-auth path. Exploitation playbook mirrors CitrixBleed (2023) and CVE-2026-19490: web shells, tunneling, root, credential theft, internal spread."
+  chain_of_events: ["Citrix publishes advisory 2026-09-27 for CVE-2026-88771/88772 plus six lesser bugs", "watchTowr Labs publishes root-cause analyses with working payloads (2026-09-29)", "UK NCSC, Dutch NCSC, and US CISA issue alerts; CISA adds both to KEV with a 2026-09-30 federal fix deadline", "Active global exploitation confirmed: web shells, tunneling, credential harvesting, lateral movement"]
+  root_cause: "Two independent pre-auth RCE primitives on the perimeter appliance: shell metacharacter injection into a diagnostic filename (CWE-78) and DTLS record-reassembly memory corruption."
+  impact: "Tens of thousands of enterprise perimeters exposed; every hour unpatched invites active exploitation attempts. 48-hour CISA federal deadline."
+  detection_clue: "Hunt for unexpected find/shell child processes on the appliance and DTLS record floods; use watchTowr's Detection Artefact Generators to test exposure."
+  why_scanners_missed_it: "The 88771 flaw hid in plain sight in diagnostic code paths scanners do not model; DTLS pre-auth parsing is outside typical web-scan coverage."
+  source: "watchTowr Labs analyses 2026-09-29; Computer Weekly, Decipher, CISA KEV; Citrix advisory CTX697096."
+
+- id: CASE-40
+  application_type: "F5 BIG-IP APM (application delivery / access policy manager)"
+  architecture: "BIG-IP APM with OAuth endpoints (/f5-oauth2/v1/u...) terminating Authorization Bearer headers in native tmm code"
+  initial_observation: "A 16,640-byte Authorization Bearer value to the OAuth endpoint — far beyond any legitimate token — was processed by the native parser."
+  attacker_assumption: "Overlong headers are rejected or truncated before reaching heap allocation logic."
+  unexpected_behavior: "The oversized Bearer triggered a heap-based buffer overflow leading to unauthenticated RCE; the published chain includes a tmm.finish step that bypasses SELinux. watchTowr published the full technical breakdown with working PoC on 2026-09-27; the flaw was already being exploited as a zero-day."
+  chain_of_events: ["Oversized Authorization Bearer (16,640 bytes) sent to /f5-oauth2/v1/u...", "Heap overflow in the native tmm OAuth parser", "RCE primitive established pre-authentication", "tmm.finish step bypasses SELinux confinement", "Weaponized PoC mirrored on Vulners/KitPloit and Sploitus"]
+  root_cause: "Missing length validation on the Authorization header in native code (CWE-122 heap overflow); SELinux bypass via a legitimate finish/teardown path."
+  impact: "Unauthenticated RCE on F5 BIG-IP APM, CVSS 9.8, exploited as a zero-day before disclosure."
+  detection_clue: "Alert on Authorization headers exceeding sane token lengths at the edge; the 16,640-byte Bearer is the published trigger size."
+  why_scanners_missed_it: "Header-length fuzzing rarely reaches 16 KiB+ on auth endpoints, and the vulnerable code is native (tmm), not the web tier scanners exercise."
+  source: "watchTowr Labs 'Is This A Joke? In The Auth Header?' 2026-09-27; Threadlinqs TL-2026-2632; Picus Security corroborating analysis."
+
+- id: CASE-41
+  application_type: "Kiteworks (managed file transfer platform, formerly Accellion)"
+  architecture: "MFT platform handling regulated data for healthcare, legal, financial, and government customers; Advanced Forms capability enabled for <1% of customers"
+  initial_observation: "On 2026-09-25 Kiteworks told customers to take production systems offline for a six-hour window after receiving federal threat intelligence about a potential imminent attack."
+  attacker_assumption: "A vendor would only order a mass shutdown for a confirmed, actively exploited breach."
+  unexpected_behavior: "The shutdown was precautionary, based on unverified intelligence — and during the window, Kiteworks' own investigation with federal authorities discovered a previously unknown critical vulnerability in the Advanced Forms capability. A fix was developed and deployed during the shutdown (release 9.5.1), an additional protective layer was applied fleet-wide, and the advisory was lifted 2026-09-27. No CVE, no technical detail, and no evidence of exploitation have been published."
+  chain_of_events: ["Federal intelligence warns of a possible imminent attack (2026-09-25)", "Kiteworks orders customers to take systems offline for ~6 hours (2026-09-26)", "Joint investigation discovers an unknown critical flaw in Advanced Forms (<1% of customers)", "Fix developed and deployed during the window; extra protective layer added", "Advisory lifted 2026-09-27 with no evidence of exploitation"]
+  root_cause: "Unknown — the vulnerability class was never disclosed; the incident is notable for the response model, not the bug."
+  impact: "No confirmed breach; first known case of a vendor ordering a precautionary mass shutdown on intelligence alone and finding a real critical flaw during the window. MFT platforms remain prime targets (MOVEit/GoAnywhere precedent)."
+  detection_clue: "Kiteworks customers should confirm 9.5.1+, review logs from before and during the shutdown window, and watch for the forthcoming advisory/CVE."
+  why_scanners_missed_it: "The flaw was unknown to everyone including the vendor until the shutdown investigation; no signature or CVE existed."
+  source: "Kiteworks press release 2026-09-28; The Hacker News, CyberScoop, Threadlinqs TL-2026-2690."
+
+- id: CASE-42
+  application_type: "WatchGuard wireless access points (AP firmware)"
+  architecture: "WatchGuard APs with an internal management API service bridging wireless clients and internal infrastructure"
+  initial_observation: "WatchGuard disclosed three AP firmware flaws on 2026-09-28, two of them critical."
+  attacker_assumption: "The internal management API is internal — it requires credentials and is not attacker-reachable."
+  unexpected_behavior: "CVE-2026-101891 (improper access control, CWE-284/CWE-923) lets an unauthenticated network attacker obtain a valid API session from the internal API service; CVE-2026-86102 (OS command injection, CWE-78) lets a network attacker execute arbitrary shell commands through the same service with no authentication at all; both CVSS v4.0 9.3. Firmware 1.0 through 3.4.7 affected, fixed in 3.4.8."
+  chain_of_events: ["WatchGuard publishes PSIRT advisories 2026-09-28", "CVE-2026-101891: unauthenticated API session issuance", "CVE-2026-86102: unauthenticated OS command injection via the management API", "CVE-2026-87969 (high, 8.6) rounds out the trio", "Fix: upgrade to 3.4.8+"]
+  root_cause: "'Internal' management services exposed to the network with broken access control and shell-adjacent parameter handling."
+  impact: "Unauthenticated OS command execution on wireless infrastructure; compromised APs become network footholds. APs sit at the wireless/internal boundary, amplifying blast radius."
+  detection_clue: "Restrict network access to the AP management API; inventory AP firmware versions fleet-wide; watch for unexpected shell child processes on APs."
+  why_scanners_missed_it: "'Internal' API services on embedded devices are rarely in scan scope, and the access-control bypass removes the authentication gate scanners assume."
+  source: "WatchGuard PSIRT advisories (psirt.watchguard.com); Undercode News and Cyber Security News coverage, 2026-09-28/29."

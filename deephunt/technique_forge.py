@@ -929,6 +929,142 @@ COMBO_RULES: list[dict] = [
         "difficulty_delta": 1,
         "impact": "High - novel desync primitives past signature-based defenses.",
     },
+    {
+        "rule_id": "R-S30-SIGSET",
+        "parents": [("auth", "S30-AUTH-01"), ("auth", None)],
+        "name": "Empty signature set generalizes the fail-open family: {a_short} x {b_short}",
+        "why_non_obvious": (
+            "Algorithm-confusion tests probe which algorithm strings skip verification; the empty-signatures "
+            "primitive probes whether verification runs at all. Fused, every JWS consumer gets a two-axis "
+            "fail-open battery: the algorithm axis (unknown/none) crossed with the signature-set axis (empty "
+            "array). The Authlib instance proves the axes are independent - a library can pin algorithms "
+            "correctly and still fail open on an empty set."
+        ),
+        "oracle": (
+            "COMBO-SIGSET-HELD: against the JWS consumer, submit the empty-signatures variant ({a_name}) "
+            "and the algorithm-confusion variants from the family battery ({b_name}). The oracle holds when "
+            "the consumer rejects every algorithm-confusion variant yet accepts the empty signature set - "
+            "proving the fail-open lives in the signature-set handling, not the algorithm negotiation."
+        ),
+        "oracle_markers": ["accepts the empty signature set", "fail-open lives in the signature-set handling"],
+        "expected_signal": "empty_signatures_accepted; alg_variants_rejected",
+        "hypothesis": (
+            "Where {a_name} shows empty-set fail-open and {b_name} enumerates algorithm-confusion vectors, "
+            "run both axes against each JWS consumer and keep only consumers that fail exactly one axis."
+        ),
+        "followup": "test compact serialization and the claims registry on consumers that fail the set axis",
+        "difficulty_delta": 0,
+        "impact": "Critical - forged tokens with no key material wherever the set axis fails open.",
+    },
+    {
+        "rule_id": "R-S30-BATCH-ROUTE",
+        "parents": [("injection", "S30-INJ-03"), ("authorization", None)],
+        "name": "Batch handler desync opens authz-gated endpoints: {a_short} x {b_short}",
+        "why_non_obvious": (
+            "The wp2shell desync alone yields an unauthenticated route; authorization cards alone test "
+            "object-level checks from an authenticated seat. Fused, the desynced handler becomes an "
+            "unauthenticated vantage point against the authorization primitives - IDOR/BOLA probes that "
+            "normally need a session can be fired through the desynced route, testing whether the handler's "
+            "object checks survive when its authentication check is skipped."
+        ),
+        "oracle": (
+            "COMBO-BATCH-ROUTE-HELD: shift a batch sub-request onto an authorization-gated handler ({a_name}), "
+            "then run the object-level probe from the authorization card ({b_name}) through the desynced route. "
+            "The oracle holds when the object-level check is bypassed from the unauthenticated desynced route "
+            "while it holds from a normal authenticated request - proving the desync stripped the auth layer "
+            "the authz check assumed."
+        ),
+        "oracle_markers": ["object-level check is bypassed", "desync stripped the auth layer"],
+        "expected_signal": "authz_bypass_via_desynced_route; auth_layer_stripped",
+        "hypothesis": (
+            "Where {a_name} gives an unauthenticated desynced route and {b_name} gives an object-level probe, "
+            "fire the probe through the desynced route and compare against the authenticated baseline."
+        ),
+        "followup": "test whether the desynced handler also skips rate limits and audit logging",
+        "difficulty_delta": 1,
+        "impact": "Critical - unauthenticated object-level access through handler desynchronization.",
+    },
+    {
+        "rule_id": "R-S30-HEADER-HEAP",
+        "parents": [("auth", "S30-AUTH-02"), ("injection", None)],
+        "name": "Oversized auth headers as heap-corruption probes: {a_short} x {b_short}",
+        "why_non_obvious": (
+            "The F5 primitive alone is one appliance's parser bug; injection cards alone probe for command/SQL "
+            "sinks. Fused, the size-ladder technique becomes a general probe: wherever an Authorization header "
+            "(or its siblings) is parsed in native code - ADCs, WAFs, proxies, API gateways - walk the header "
+            "length past parser expectations and watch for heap corruption instead of injection. The SELinux-bypass "
+            "step shows post-corruption guardrails have reusable finish-path bypasses."
+        ),
+        "oracle": (
+            "COMBO-HEADER-HEAP-HELD: run a header size ladder (4 KiB-64 KiB) against native-code auth-header "
+            "parsers ({a_name}), applying the injection card's sink-detection discipline ({b_name}). The oracle "
+            "holds when a parser past a length threshold shows heap corruption under a debugger while shorter "
+            "values are handled cleanly - proving the length assumption, not the header content, is the vulnerability."
+        ),
+        "oracle_markers": ["heap corruption under a debugger", "length assumption, not the header content"],
+        "expected_signal": "header_length_threshold_corruption; native_parser_heap",
+        "hypothesis": (
+            "Where {a_name} shows overlong headers corrupting a native parser and {b_name} defines "
+            "sink-detection rigor, ladder header sizes on every native auth parser and confirm corruption "
+            "under a debugger."
+        ),
+        "followup": "test sibling headers (Cookie, X-Forwarded-For) and sibling native parsers (SAML, WebSocket)",
+        "difficulty_delta": 1,
+        "impact": "Critical - pre-auth RCE wherever a native parser trusts header length.",
+    },
+    {
+        "rule_id": "R-S30-DUALPARSE",
+        "parents": [("upload", "S30-UPD-01"), ("upload", None)],
+        "name": "Dual-parser disagreement generalized across upload flows: {a_short} x {b_short}",
+        "why_non_obvious": (
+            "The Podlove instance alone is one plugin's cache handler; upload cards alone test single-parser "
+            "validation. Fused, the dual-parser audit becomes systematic: for every upload/cache flow, identify "
+            "which parser the validator uses and which parser the storage layer uses, then submit names the two "
+            "parsers classify differently (query suffixes, fragments, semicolons). The disagreement - not any "
+            "single parser's bug - is the vulnerability."
+        ),
+        "oracle": (
+            "COMBO-DUALPARSE-HELD: for the upload flow ({b_name}), submit the query-suffixed filename from the "
+            "Podlove pattern ({a_name}). The oracle holds when the validator logs the file as a safe type while "
+            "storage writes it with an executable extension - proving the two parsers disagreed about the same name."
+        ),
+        "oracle_markers": ["validator logs the file as a safe type", "two parsers disagreed"],
+        "expected_signal": "validator_storage_extension_disagreement; executable_stored",
+        "hypothesis": (
+            "Where {a_name} shows two parsers disagreeing on one filename and {b_name} gives an upload flow, "
+            "map both parsers and submit names they classify differently."
+        ),
+        "followup": "test fragment (#) and semicolon (;) suffixes; check whether re-encoding normalizes the disagreement away",
+        "difficulty_delta": 0,
+        "impact": "High - arbitrary file write with executable extension past type validation.",
+    },
+    {
+        "rule_id": "R-S30-AGENT-SHELL",
+        "parents": [("ai_llm", "S30-AI-02"), ("ai_llm", None)],
+        "name": "Exposed agent execution plus injection corpus: {a_short} x {b_short}",
+        "why_non_obvious": (
+            "The MaxKB primitive alone is one product's exposed endpoint; injection cards alone target chat "
+            "surfaces. Fused, the methodology is: first find the agent's execution endpoint and confirm it is "
+            "network-reachable without auth, then aim the whole injection corpus (indirect, stored, encoded) at "
+            "the tool-call planner rather than the chat model. The endpoint is the attack surface; the corpus "
+            "is the ammunition."
+        ),
+        "oracle": (
+            "COMBO-AGENT-SHELL-HELD: locate the agent execution endpoint ({a_name}) and confirm unauthenticated "
+            "reachability, then deliver the injection variants ({b_name}) and watch the tool-call loop. The oracle "
+            "holds when an injected instruction - not a direct parameter - causes the agent's tool loop to execute "
+            "a host shell command, with an authenticated-only control endpoint refusing the same input."
+        ),
+        "oracle_markers": ["injected instruction", "agent's tool loop to execute a host shell command"],
+        "expected_signal": "unauth_agent_endpoint; injection_to_shell_via_tool_loop",
+        "hypothesis": (
+            "Where {a_name} exposes an unauthenticated execution path and {b_name} supplies injection variants, "
+            "enumerate the endpoint, then fire the corpus at the planner and watch for shell tool calls."
+        ),
+        "followup": "enumerate the tool list via API/docs; test MCP and skills for expanded tool surface",
+        "difficulty_delta": 1,
+        "impact": "Critical - unauthenticated prompt injection to host shell on agent infrastructure.",
+    },
 ]
 
 

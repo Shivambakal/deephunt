@@ -83,7 +83,7 @@ def test_target_model():
 # ---------- 2. technique dir loading ----------
 def test_technique_loading():
     cards = kb.load_techniques()
-    check("cards_count_316", len(cards) == 316, f"got {len(cards)}")
+    check("cards_count_327", len(cards) == 327, f"got {len(cards)}")
     ids = [c["id"] for c in cards]
     check("cards_unique_ids", len(set(ids)) == len(ids))
     required = ("id", "name", "klass", "requires", "signals", "questions",
@@ -135,7 +135,7 @@ def test_technique_loading():
         check(f"card_sweep29_{must}", kb.get_card(must) is not None)
     import train
     tcards = train.load_techniques()
-    check("train_loads_316", len(tcards) == 316, f"got {len(tcards)}")
+    check("train_loads_327", len(tcards) == 327, f"got {len(tcards)}")
     seeds = train.recommend(
         [{"title": "/api/orders/{id}", "detail": "user_id param order invoice", "evidence": ""}],
         {"tech_terms": [], "vuln_classes": []}, {"rejected": [], "seen": []}, limit=5)

@@ -936,6 +936,84 @@
    "klass": "injection",
    "impact": "High \u2014 sanitizer/parser disagreement yields shortcode injection; where the chain"
   },
+  "S30-AUTH-01": {
+   "type": "technique",
+   "name": "Empty JWS 'signatures' array treated as verified (Authlib fail-open on empty signature set)",
+   "klass": "auth",
+   "impact": "Critical \u2014 signature verification bypass with no key material: forged privilege "
+  },
+  "class:auth": {
+   "type": "class",
+   "name": "auth"
+  },
+  "S30-AUTH-02": {
+   "type": "technique",
+   "name": "Oversized OAuth Authorization Bearer header triggers heap overflow to RCE (F5 BIG-IP CVE-2026-94127)",
+   "klass": "auth",
+   "impact": "Critical \u2014 unauthenticated RCE on the ADC/Gateway management plane from a single"
+  },
+  "S30-AUTH-03": {
+   "type": "technique",
+   "name": "Management-API access-control bypass chained to command injection (WatchGuard AP CVE-2026-101891 + CVE-2026-86102)",
+   "klass": "auth",
+   "impact": "Critical \u2014 unauthenticated OS command execution on wireless infrastructure; a co"
+  },
+  "S30-INJ-01": {
+   "type": "technique",
+   "name": "Shell-wrapped find on unvalidated crash-core filename gives pre-auth RCE (Citrix NetScaler CVE-2026-88771)",
+   "klass": "injection",
+   "impact": "Critical \u2014 unauthenticated RCE on perimeter ADC/Gateway appliances; the standard"
+  },
+  "S30-INJ-02": {
+   "type": "technique",
+   "name": "DTLS pre-authentication buffer overflow to RCE (Citrix NetScaler CVE-2026-88772)",
+   "klass": "injection",
+   "impact": "Critical \u2014 pre-authentication RCE on the VPN gateway; no credentials, no user in"
+  },
+  "S30-INJ-03": {
+   "type": "technique",
+   "name": "REST batch endpoint handler desynchronization chains to SQLi webshell (WordPress wp2shell CVE-2026-63030)",
+   "klass": "injection",
+   "impact": "Critical \u2014 single unauthenticated HTTP request to full RCE on WordPress core; KE"
+  },
+  "S30-INJ-04": {
+   "type": "technique",
+   "name": "Unsanitized Error.cause leaks host objects into the sandbox (vm2 escape CVE-2026-47686)",
+   "klass": "injection",
+   "impact": "Critical \u2014 sandbox escape to host RCE from untrusted script input; CVSS 9.9."
+  },
+  "S30-UPD-01": {
+   "type": "technique",
+   "name": "Dual-parser file-extension confusion writes a polyglot as executable (Podlove CVE-2026-13001)",
+   "klass": "upload",
+   "impact": "Critical \u2014 unauthenticated RCE via file upload; CVSS 9.8."
+  },
+  "class:upload": {
+   "type": "class",
+   "name": "upload"
+  },
+  "CWE-434": {
+   "type": "weakness",
+   "name": "Unrestricted Upload"
+  },
+  "S30-AI-01": {
+   "type": "technique",
+   "name": "Trusted-platform Custom GPT as the ClickFix lure (chatgpt.com-hosted social engineering chain)",
+   "klass": "ai_llm",
+   "impact": "High \u2014 the trusted platform domain is the trust amplifier: 40+ incidents from on"
+  },
+  "S30-AI-02": {
+   "type": "technique",
+   "name": "Exposed agent execution path turns prompt injection into host shell (MaxKB CVE-2026-77521)",
+   "klass": "ai_llm",
+   "impact": "Critical \u2014 CVSS 10.0: unauthenticated prompt injection becomes root shell on the"
+  },
+  "S30-AI-03": {
+   "type": "technique",
+   "name": "Duplicate bootstrap_room fields bypass validation in disaggregated inference (SGLang CVE-2026-102634)",
+   "klass": "ai_llm",
+   "impact": "Medium-high \u2014 authentication bypass on LLM inference infrastructure; duplicate-f"
+  },
   "A1-001": {
    "type": "technique",
    "name": "Self-replicating adversarial prompt worm across agent ecosystems",
@@ -1105,10 +1183,6 @@
    "name": "JWT kid SQL injection for key confusion",
    "klass": "auth",
    "impact": "Full JWT forgery; impersonate any user, escalate to admin."
-  },
-  "class:auth": {
-   "type": "class",
-   "name": "auth"
   },
   "C1-006": {
    "type": "technique",
@@ -1957,14 +2031,6 @@
    "name": "Unrestricted file upload (type/extension/content bypass)",
    "klass": "upload",
    "impact": "High."
-  },
-  "class:upload": {
-   "type": "class",
-   "name": "upload"
-  },
-  "CWE-434": {
-   "type": "weakness",
-   "name": "Unrestricted Upload"
   },
   "CORS-01": {
    "type": "technique",
@@ -5111,6 +5177,231 @@
    "S29-INJ-01"
   ],
   [
+   "S30-AUTH-01",
+   "in_class",
+   "class:auth"
+  ],
+  [
+   "S30-AUTH-02",
+   "in_class",
+   "class:auth"
+  ],
+  [
+   "S30-AUTH-03",
+   "in_class",
+   "class:auth"
+  ],
+  [
+   "S30-INJ-01",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "S30-INJ-01",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "S30-INJ-01"
+  ],
+  [
+   "S30-INJ-01",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "S30-INJ-01"
+  ],
+  [
+   "S30-INJ-01",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "S30-INJ-01"
+  ],
+  [
+   "S30-INJ-01",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "S30-INJ-01"
+  ],
+  [
+   "S30-INJ-02",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "S30-INJ-02",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "S30-INJ-02"
+  ],
+  [
+   "S30-INJ-02",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "S30-INJ-02"
+  ],
+  [
+   "S30-INJ-02",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "S30-INJ-02"
+  ],
+  [
+   "S30-INJ-02",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "S30-INJ-02"
+  ],
+  [
+   "S30-INJ-03",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "S30-INJ-03",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "S30-INJ-03"
+  ],
+  [
+   "S30-INJ-03",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "S30-INJ-03"
+  ],
+  [
+   "S30-INJ-03",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "S30-INJ-03"
+  ],
+  [
+   "S30-INJ-03",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "S30-INJ-03"
+  ],
+  [
+   "S30-INJ-04",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "S30-INJ-04",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "S30-INJ-04"
+  ],
+  [
+   "S30-INJ-04",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "S30-INJ-04"
+  ],
+  [
+   "S30-INJ-04",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "S30-INJ-04"
+  ],
+  [
+   "S30-INJ-04",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "S30-INJ-04"
+  ],
+  [
+   "S30-UPD-01",
+   "in_class",
+   "class:upload"
+  ],
+  [
+   "S30-UPD-01",
+   "exploits_weakness",
+   "CWE-434"
+  ],
+  [
+   "CWE-434",
+   "enables",
+   "S30-UPD-01"
+  ],
+  [
+   "S30-AI-01",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "S30-AI-02",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "S30-AI-03",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
    "A1-001",
    "in_class",
    "class:ai_llm"
@@ -7572,7 +7863,7 @@
   ]
  ],
  "stats": {
-  "techniques": 316,
+  "techniques": 327,
   "weaknesses": 33,
   "classes": 35
  }
