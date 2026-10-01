@@ -311,7 +311,8 @@ class HttpxTool(ToolAdapter):
         rc, _, _ = sh(
             f"{OPS}/httpx -l /tmp/dh_targets.txt -silent -json "
             f"-o /tmp/dh_httpx.jsonl -title -tech-detect -status-code "
-            f"-tls-probe -cname -retries 1 -timeout 8 -threads 40",
+            f"-tls-probe -cname -retries 1 -timeout 8 -threads 40 "
+            f"< /dev/null",  # httpx also ingests stdin; close it or it hangs
             timeout=420)
         live, techs = [], {}
         try:

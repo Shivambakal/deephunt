@@ -69,7 +69,7 @@ def _make_adapter(entry):
         return _which(_b) is not None
 
     def run(self, ctx, _e=entry):
-        _name, _cat, _phase, _binary, _takes, _args_t, _install, _desc, _ = _e
+        _name, _cat, _phase, _binary, _takes, _args_t, _install, _desc = _e[:8]
         exe = _which(_binary)
         if not exe:
             return []

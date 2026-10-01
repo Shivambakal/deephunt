@@ -48,7 +48,8 @@ class NucleiTool(ToolAdapter):
             rc, so, se = sh(
                 f"{NUCLEI} -u '{target}' -severity '{sev}' {tagflag} "
                 f"-silent -jsonl -o /tmp/dh_nuclei.jsonl -timeout 10 "
-                f"-rate-limit 20 -retries 1", timeout=600)
+                f"-rate-limit 20 -retries 1 -duc -nm < /dev/null",
+                timeout=600)
             hits = []
             try:
                 with open("/tmp/dh_nuclei.jsonl") as f:
@@ -87,9 +88,11 @@ class NmapTool(ToolAdapter):
             return [self.finding("gated", "nmap BLOCKED", reason)]
         out = []
         for host in ctx["authorization"]["scope_hosts"][:6]:
+            # -sT connect scan: raw SYN needs root/raw sockets (blocked in
+            # sandboxes); -Pn skips ping (ICMP often filtered)
             rc, so, _ = sh(
-                f"nmap -sV --top-ports 100 -T3 --max-retries 2 "
-                f"--host-timeout 120s {host}", timeout=400)
+                f"nmap -sT -Pn --top-ports 100 -T3 --max-retries 2 "
+                f"--host-timeout 120s {host} < /dev/null", timeout=400)
             open_ports = [l.strip() for l in so.splitlines()
                           if "/tcp" in l and "open" in l][:30]
             out.append(self.finding(
