@@ -1014,6 +1014,40 @@
    "klass": "ai_llm",
    "impact": "Medium-high \u2014 authentication bypass on LLM inference infrastructure; duplicate-f"
   },
+  "S01-AI-01": {
+   "type": "technique",
+   "name": "GhostSplice \u2014 malicious MCP server splits exfiltration instructions across benign fragments (tool description + tool result)",
+   "klass": "ai_llm",
+   "impact": "High \u2014 silent exfiltration of SSH keys, env secrets, source code and customer da"
+  },
+  "S01-AI-02": {
+   "type": "technique",
+   "name": "Function Hijacking Attack (FHA) \u2014 force invocation of an attacker-chosen function regardless of query semantics",
+   "klass": "ai_llm",
+   "impact": "High \u2014 the attacker gains reliable control of which tool runs, not just what tex"
+  },
+  "S01-AI-03": {
+   "type": "technique",
+   "name": "ECLIPSE \u2014 stealthy long-horizon prompt injection via static workflow encoding (SWE) + dynamic trajectory correction (DTC)",
+   "klass": "ai_llm",
+   "impact": "Critical \u2014 defeats the classic dilemma of injection attacks (explicit = detectab"
+  },
+  "S01-AI-04": {
+   "type": "technique",
+   "name": "SAVOR \u2014 one-shot indirect prompt injection from offline strategy distillation via outcome-conditioned reflection",
+   "klass": "ai_llm",
+   "impact": "High \u2014 removes the defender's main advantage (detecting iterative probing): the "
+  },
+  "S01-WEB-01": {
+   "type": "technique",
+   "name": "Zero-click RCE via search/content-indexing engine parsing a crafted attachment (Exchange Visio, CVE-2026-55007)",
+   "klass": "web",
+   "impact": "Critical \u2014 zero-click unauthenticated RCE on on-prem Exchange: the victim does n"
+  },
+  "class:web": {
+   "type": "class",
+   "name": "web"
+  },
   "A1-001": {
    "type": "technique",
    "name": "Self-replicating adversarial prompt worm across agent ecosystems",
@@ -1253,10 +1287,6 @@
    "name": "CL.TE / TE.CL desync detection via timing differential",
    "klass": "web",
    "impact": "Request smuggling: cache poisoning, credential capture, front-end control bypass"
-  },
-  "class:web": {
-   "type": "class",
-   "name": "web"
   },
   "C1-017": {
    "type": "technique",
@@ -5402,6 +5432,31 @@
    "class:ai_llm"
   ],
   [
+   "S01-AI-01",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "S01-AI-02",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "S01-AI-03",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "S01-AI-04",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "S01-WEB-01",
+   "in_class",
+   "class:web"
+  ],
+  [
    "A1-001",
    "in_class",
    "class:ai_llm"
@@ -7863,7 +7918,7 @@
   ]
  ],
  "stats": {
-  "techniques": 327,
+  "techniques": 332,
   "weaknesses": 33,
   "classes": 35
  }

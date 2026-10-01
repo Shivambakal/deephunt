@@ -533,3 +533,29 @@
   detection_clue: "Restrict network access to the AP management API; inventory AP firmware versions fleet-wide; watch for unexpected shell child processes on APs."
   why_scanners_missed_it: "'Internal' API services on embedded devices are rarely in scan scope, and the access-control bypass removes the authentication gate scanners assume."
   source: "WatchGuard PSIRT advisories (psirt.watchguard.com); Undercode News and Cyber Security News coverage, 2026-09-28/29."
+
+- id: CASE-43
+  application_type: "Citrix NetScaler ADC / Gateway (edge appliances under active zero-day campaign)"
+  architecture: "NetScaler ADC and Gateway with DTLS enabled (default on VPN virtual servers); NSPPE packet-processing engine handling DTLS handshakes pre-auth"
+  initial_observation: "Mandiant and Google Threat Intelligence Group (GTIG), reporting 2026-09-30, found active exploitation of CVE-2026-88771 + CVE-2026-88772 ongoing since at least early September 2026 — before Citrix patched over the weekend of Sep 26-27. Targeted orgs in government, financial services, education, legal and professional services across North America and Europe."
+  attacker_assumption: "A zero-day is burned for initial access, then commodity tooling holds the foothold."
+  unexpected_behavior: "Attackers deployed previously unseen custom malware: WHIPSHOT (PHP web shell) and SLAPSHOT (Python-based tunneling tool), working together to pivot from the appliance into the internal network. They modified the appliance web-server configuration to plant web shells and run them with root privileges, concealed C2 inside HTTP headers, and in at least one intrusion manually explored the internal network and stole credentials. Mandiant saw signs of the same actor managing similar web shells in multiple compromised environments."
+  chain_of_events: ["Pre-auth DTLS heap overflow (CVE-2026-88772) gives root on FreeBSD-based appliance", "Web-server config modified to host WHIPSHOT PHP web shell as root", "SLAPSHOT Python tunnel pivots into the internal network", "Internal reconnaissance, lateral movement, credential theft", "C2 concealed inside HTTP headers; web shells managed across multiple victims"]
+  root_cause: "Edge appliance at the trust boundary treated as a perimeter device rather than a crown-jewel server; DTLS pre-auth memory corruption handed root on the first packet."
+  impact: "Weeks-long root-level compromise of internet-facing gateways; edge appliances converted into persistent backdoors with internal-network pivot."
+  detection_clue: "Audit NetScaler web-server configuration for unauthorized modifications; hunt for PHP/Python processes spawned by the appliance web server; inspect HTTP headers for covert C2 channels; look for lateral movement originating from appliance IPs."
+  why_scanners_missed_it: "The initial-access primitive was a true zero-day; the post-exploitation tooling was custom and header-concealed, invisible to signature-based edge monitoring."
+  source: "Mandiant/GTIG report 2026-09-30 via SecurityWeek and Undercode News; CISA KEV additions 2026-09-27."
+
+- id: CASE-44
+  application_type: "Apple iOS / iPadOS / macOS (CoreGraphics image parsing)"
+  architecture: "CoreGraphics media pipeline processing files on iOS 26.7 and earlier (pre-iOS 27), iPadOS 26.7, macOS Tahoe 26.7.1-era and macOS Sequoia 15.8.1-era builds"
+  initial_observation: "2026-09-30: CISA added CVE-2026-86950 (CVSS 8.8) to the KEV catalog; Apple shipped iOS 26.7.1, iPadOS 26.7.1, macOS Tahoe 26.7.1, macOS Sequoia 15.8.1 the same week."
+  attacker_assumption: "A bounds-checked media framework on a current OS is a hard target for file-format attacks."
+  unexpected_behavior: "An out-of-bounds write in CoreGraphics allows arbitrary code execution when the system processes a specially crafted file; Apple is 'aware of a report that this issue may have been exploited in an extremely sophisticated attack against specific targeted individuals' on iOS versions before iOS 27. Apple disclosed no targets, no delivery vector, and no timeline — the full attack chain remains unknown."
+  chain_of_events: ["Unknown delivery of a maliciously crafted file", "CoreGraphics OOB write triggered during file processing", "Arbitrary code execution on the device", "Apple emergency patch (iOS 26.7.1 etc.) + CISA KEV listing (2026-09-30)"]
+  root_cause: "Missing bounds checking in the CoreGraphics file-processing path (CWE-787 out-of-bounds write)."
+  impact: "Targeted-device compromise via file processing; attack chain unknown, suggesting an advanced actor."
+  detection_clue: "Devices not yet on iOS 27 / patched point releases are at risk; Apple gave no IOCs — patch immediately and treat pre-patch devices as potentially compromised for high-value targets."
+  why_scanners_missed_it: "Zero-day image-parser bug in a closed OS component; no public PoC or technical writeup as of 2026-09-30."
+  source: "Apple security advisory via securityaffairs.com 2026-09-30; CISA KEV catalog."
