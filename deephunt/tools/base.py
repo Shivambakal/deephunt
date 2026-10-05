@@ -43,6 +43,51 @@ def now():
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
+_EGRESS_PROFILE = None
+
+
+def egress_profile(refresh=False):
+    """Detect sandbox-egress reality once per process. Never raises.
+
+    In the sandbox, the system resolver is SHIMMED (fake 198.18.x.x answers)
+    while DNS-over-HTTPS through the egress proxy returns real data. Outside
+    the sandbox the two agree and dns_shimmed stays False. Adapters use this
+    to pick a working DNS path and to emit an explicit 'env' finding instead
+    of silently producing garbage from shimmed answers.
+    """
+    global _EGRESS_PROFILE
+    if _EGRESS_PROFILE is not None and not refresh:
+        return _EGRESS_PROFILE
+    prof = {"dns_shimmed": False, "system_answer": None,
+            "doh_answer": None, "doh_provider": None}
+    sys_a = None
+    try:
+        import socket as _s
+        sys_a = _s.gethostbyname("example.com")
+        prof["system_answer"] = sys_a
+    except Exception:  # noqa: BLE001
+        pass
+    doh_a = []
+    try:
+        import doh_dns as _d
+        r = _d.resolve("example.com", "A", timeout=15)
+        doh_a = sorted(x["data"] for x in r["answers"] if x["type"] == "A")
+        prof["doh_answer"] = ",".join(doh_a) or None
+        prof["doh_provider"] = r.get("provider")
+    except Exception:  # noqa: BLE001
+        pass
+    if sys_a and doh_a and sys_a not in doh_a:
+        try:
+            import ipaddress as _ip
+            ip = _ip.ip_address(sys_a)
+            if ip.is_private or ip.is_reserved or ip.is_loopback:
+                prof["dns_shimmed"] = True
+        except Exception:  # noqa: BLE001
+            pass
+    _EGRESS_PROFILE = prof
+    return prof
+
+
 class ToolAdapter:
     """One weapon. Subclass, set metadata, implement run(ctx) -> [finding]."""
     name = "base"

@@ -454,7 +454,7 @@ class JsSecrets(ToolAdapter):
 class TakeoverCheck(ToolAdapter):
     name = "takeover"
     phase = "passive"
-    description = "Dangling-CNAME subdomain takeover screen (passive DNS + fingerprints)"
+    description = "Dangling-CNAME subdomain takeover screen (proxy-aware DoH DNS + fingerprints)"
 
     FINGERPRINTS = [
         ("github.io", "There isn't a GitHub Pages site here"),
@@ -465,40 +465,86 @@ class TakeoverCheck(ToolAdapter):
         ("myshopify.com", "Sorry, this shop is currently unavailable"),
     ]
 
+    @staticmethod
+    def fingerprint_hit(body, cname):
+        """Return (service, phrase) if a takeover fingerprint matches the
+        fetched body for this CNAME, else None. Pure logic: unit-testable."""
+        bl = (body or "").lower()
+        for svc, fp in TakeoverCheck.FINGERPRINTS:
+            if svc in cname and fp.lower() in bl:
+                return svc, fp
+        return None
+
     def run(self, ctx):
-        import re as _re
+        from .base import egress_profile
+        try:
+            import doh_dns
+        except ImportError:
+            return [self.finding(
+                "broken", "takeover: doh_dns module unavailable",
+                "proxy-aware DNS resolver not importable; DNS path would be "
+                "shimmed garbage — refusing to run", evidence="doh_dns-missing")]
+        out = []
+        env = egress_profile()
+        if env.get("dns_shimmed"):
+            out.append(self.finding(
+                "env", "system DNS shimmed -> using DoH via egress proxy",
+                detail=f"system resolver said example.com = "
+                       f"{env.get('system_answer')}; DoH ({env.get('doh_provider')}) "
+                       f"said {env.get('doh_answer')}",
+                evidence="dns-shim-detected"))
         subs = ctx["state"].get("all_subdomains", [])[:150]
         if not subs:
-            return [self.finding("inventory", "takeover: no subdomains yet")]
-        # parallel CNAME resolution (xargs -P), one line per sub
-        with open("/tmp/dh_tosubs.txt", "w") as f:
-            f.write("\n".join(subs))
-        rc, so, _ = sh(
-            "xargs -a /tmp/dh_tosubs.txt -P 20 -I{} sh -c "
-            "'c=$(dig +short {} CNAME +time=5 +tries=1 | head -1); "
-            "echo \"{} $c\"'", timeout=300)
+            return out + [self.finding("inventory",
+                                       "takeover: no subdomains yet")]
+        # passive only: DoH queries hit public resolvers, never the targets
+        results = doh_dns.resolve_bulk(subs, qtype="CNAME", delay=0.5)
+        failed = [r["name"] for r in results if r["error"]]
+        if len(failed) == len(results):
+            return out + [self.finding(
+                "broken", "takeover: all DoH queries failed",
+                detail=results[0].get("error") or "unknown",
+                evidence="doh-all-failed")]
         cnames = {}
-        for line in so.splitlines():
-            parts = line.split()
-            if len(parts) == 2 and parts[1]:
-                cnames[parts[0]] = parts[1].rstrip(".")
-        cands = []
+        for r in results:
+            if r["error"]:
+                continue
+            for a in r["answers"]:
+                if a["type"] == "CNAME":
+                    cnames[r["name"]] = a["data"].rstrip(".")
+                    break
+        cands, checked = [], []
         for sub, cname in cnames.items():
-            for svc, fp in self.FINGERPRINTS:
-                if svc in cname:
-                    st, body = fetch(f"https://{sub}/", timeout=15)
-                    if fp.lower() in body.lower():
-                        cands.append(f"{sub} -> {cname} [{svc} FINGERPRINT HIT]")
-                    else:
-                        cands.append(f"{sub} -> {cname} [{svc} check manually]")
+            svc = next((s for s, _ in self.FINGERPRINTS if s in cname), None)
+            if not svc:
+                continue
+            chain = doh_dns.resolve_cname_chain(sub)
+            chain_txt = " -> ".join(chain["chain"])
+            st, body = fetch(f"https://{sub}/", timeout=15)
+            hit = self.fingerprint_hit(body, cname)
+            if hit:
+                svc, fp = hit
+                cands.append(
+                    f"{sub} -> {cname} [{svc} FINGERPRINT HIT: {fp!r}] "
+                    f"(chain: {chain_txt}; http={st})")
+            else:
+                checked.append(f"{sub} -> {cname} [{svc} no fingerprint "
+                               f"(http={st})]")
+        if failed:
+            out.append(self.finding(
+                "env", f"takeover: {len(failed)}/{len(subs)} DoH lookups failed",
+                detail="\n".join(failed[:20]),
+                evidence="partial-doh-failure"))
         if cands:
-            return [self.finding(
+            return out + [self.finding(
                 "vuln-candidate", f"{len(cands)} possible dangling CNAMEs",
                 detail="\n".join(cands[:40]) +
                        "\nCLAIM ONLY with program permission.",
                 severity_hint="high")]
-        return [self.finding("clean", "takeover: no dangling CNAMEs found",
-                             f"{len(subs)} subs checked")]
+        return out + [self.finding(
+            "clean", "takeover: no dangling CNAMEs found",
+            f"{len(cnames)} cnames resolved of {len(subs)} subs checked; "
+            f"{len(checked)} fingerprinted services re-verified clean")]
 
 
 @register
