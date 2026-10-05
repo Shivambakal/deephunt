@@ -1048,6 +1048,66 @@
    "type": "class",
    "name": "web"
   },
+  "S05-WEB-01": {
+   "type": "technique",
+   "name": "Rejetto HFS xorshift128+ PRNG state recovery -> forged admin session cookie -> RCE (CVE-2026-61500)",
+   "klass": "authentication",
+   "impact": "Critical \u2014 deterministic full admin auth bypass plus RCE; exploitation observed "
+  },
+  "S05-WEB-02": {
+   "type": "technique",
+   "name": "SConnect native host uninitialized-memory heap-spray signature bypass -> LoadLibrary drive-by RCE (CVE-2026-18397)",
+   "klass": "injection",
+   "impact": "Critical \u2014 drive-by RCE into banking-authentication software from any website th"
+  },
+  "S05-AI-01": {
+   "type": "technique",
+   "name": "GitLab AI Gateway flow-template sandbox escape -> pre-LLM code execution RCE (CVE-2026-90970)",
+   "klass": "ai_llm",
+   "impact": "Critical \u2014 authenticated RCE on AI infrastructure with no user interaction; the "
+  },
+  "S05-AI-02": {
+   "type": "technique",
+   "name": "JSFuck-obfuscated indirect prompt injection defeats agent prompt-inspection -> server-side code execution",
+   "klass": "ai_llm",
+   "impact": "High \u2014 turns any email the agent reads into potential server-side code execution"
+  },
+  "S05-WEB-03": {
+   "type": "technique",
+   "name": "xray-core pinnedPeerCertSha256 certificate-verification bypass -> full MitM collapse",
+   "klass": "authentication",
+   "impact": "High \u2014 complete TLS verification collapse for users who enabled pinning precisel"
+  },
+  "S05-WEB-04": {
+   "type": "technique",
+   "name": "FortiMail unauthenticated path traversal + NULL-byte bypass -> arbitrary file write (CVE-2026-104286)",
+   "klass": "injection",
+   "impact": "Critical \u2014 unauthenticated arbitrary file write on a mail gateway, already weapo"
+  },
+  "S05-AUTH-01": {
+   "type": "technique",
+   "name": "Cisco Catalyst SD-WAN Manager URI-encoding differential-decoding auth bypass (CVE-2026-76504)",
+   "klass": "authentication",
+   "impact": "Critical \u2014 single-request unauthenticated admin on network-management infrastruc"
+  },
+  "S05-AUTH-02": {
+   "type": "technique",
+   "name": "Dell CSM authorization cluster \u2014 unauthenticated gRPC credential extraction + hardcoded JWT key token forgery (CVE-2026-63688/63692/61421/54472/67269/67273)",
+   "klass": "authentication",
+   "impact": "Critical \u2014 unauthenticated extraction of every registered storage array's admin "
+  },
+  "S05-WEB-05": {
+   "type": "technique",
+   "name": "Dockhand null webhook-secret guard -> unauthenticated forced redeploy / container escape (CVE-2026-53988)",
+   "klass": "authentication",
+   "impact": "Critical \u2014 unauthenticated remote trigger of arbitrary redeploys (DoS) escalatin"
+  },
+  "S05-INJ-01": {
+   "type": "technique",
+   "name": "libmariadb prepared-statement alloca() stack exhaustion via server-controlled field length (HackerOne 3766217)",
+   "klass": "injection",
+   "impact": "Medium \u2014 client-side DoS via a hostile or impersonated database server; wide bla"
+  },
   "A1-001": {
    "type": "technique",
    "name": "Self-replicating adversarial prompt worm across agent ecosystems",
@@ -5457,6 +5517,326 @@
    "class:web"
   ],
   [
+   "S05-WEB-01",
+   "in_class",
+   "class:authentication"
+  ],
+  [
+   "S05-WEB-01",
+   "exploits_weakness",
+   "CWE-287"
+  ],
+  [
+   "CWE-287",
+   "enables",
+   "S05-WEB-01"
+  ],
+  [
+   "S05-WEB-01",
+   "exploits_weakness",
+   "CWE-307"
+  ],
+  [
+   "CWE-307",
+   "enables",
+   "S05-WEB-01"
+  ],
+  [
+   "S05-WEB-01",
+   "exploits_weakness",
+   "CWE-613"
+  ],
+  [
+   "CWE-613",
+   "enables",
+   "S05-WEB-01"
+  ],
+  [
+   "S05-WEB-02",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "S05-WEB-02",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "S05-WEB-02"
+  ],
+  [
+   "S05-WEB-02",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "S05-WEB-02"
+  ],
+  [
+   "S05-WEB-02",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "S05-WEB-02"
+  ],
+  [
+   "S05-WEB-02",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "S05-WEB-02"
+  ],
+  [
+   "S05-AI-01",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "S05-AI-02",
+   "in_class",
+   "class:ai_llm"
+  ],
+  [
+   "S05-WEB-03",
+   "in_class",
+   "class:authentication"
+  ],
+  [
+   "S05-WEB-03",
+   "exploits_weakness",
+   "CWE-287"
+  ],
+  [
+   "CWE-287",
+   "enables",
+   "S05-WEB-03"
+  ],
+  [
+   "S05-WEB-03",
+   "exploits_weakness",
+   "CWE-307"
+  ],
+  [
+   "CWE-307",
+   "enables",
+   "S05-WEB-03"
+  ],
+  [
+   "S05-WEB-03",
+   "exploits_weakness",
+   "CWE-613"
+  ],
+  [
+   "CWE-613",
+   "enables",
+   "S05-WEB-03"
+  ],
+  [
+   "S05-WEB-04",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "S05-WEB-04",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "S05-WEB-04"
+  ],
+  [
+   "S05-WEB-04",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "S05-WEB-04"
+  ],
+  [
+   "S05-WEB-04",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "S05-WEB-04"
+  ],
+  [
+   "S05-WEB-04",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "S05-WEB-04"
+  ],
+  [
+   "S05-AUTH-01",
+   "in_class",
+   "class:authentication"
+  ],
+  [
+   "S05-AUTH-01",
+   "exploits_weakness",
+   "CWE-287"
+  ],
+  [
+   "CWE-287",
+   "enables",
+   "S05-AUTH-01"
+  ],
+  [
+   "S05-AUTH-01",
+   "exploits_weakness",
+   "CWE-307"
+  ],
+  [
+   "CWE-307",
+   "enables",
+   "S05-AUTH-01"
+  ],
+  [
+   "S05-AUTH-01",
+   "exploits_weakness",
+   "CWE-613"
+  ],
+  [
+   "CWE-613",
+   "enables",
+   "S05-AUTH-01"
+  ],
+  [
+   "S05-AUTH-02",
+   "in_class",
+   "class:authentication"
+  ],
+  [
+   "S05-AUTH-02",
+   "exploits_weakness",
+   "CWE-287"
+  ],
+  [
+   "CWE-287",
+   "enables",
+   "S05-AUTH-02"
+  ],
+  [
+   "S05-AUTH-02",
+   "exploits_weakness",
+   "CWE-307"
+  ],
+  [
+   "CWE-307",
+   "enables",
+   "S05-AUTH-02"
+  ],
+  [
+   "S05-AUTH-02",
+   "exploits_weakness",
+   "CWE-613"
+  ],
+  [
+   "CWE-613",
+   "enables",
+   "S05-AUTH-02"
+  ],
+  [
+   "S05-WEB-05",
+   "in_class",
+   "class:authentication"
+  ],
+  [
+   "S05-WEB-05",
+   "exploits_weakness",
+   "CWE-287"
+  ],
+  [
+   "CWE-287",
+   "enables",
+   "S05-WEB-05"
+  ],
+  [
+   "S05-WEB-05",
+   "exploits_weakness",
+   "CWE-307"
+  ],
+  [
+   "CWE-307",
+   "enables",
+   "S05-WEB-05"
+  ],
+  [
+   "S05-WEB-05",
+   "exploits_weakness",
+   "CWE-613"
+  ],
+  [
+   "CWE-613",
+   "enables",
+   "S05-WEB-05"
+  ],
+  [
+   "S05-INJ-01",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "S05-INJ-01",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "S05-INJ-01"
+  ],
+  [
+   "S05-INJ-01",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "S05-INJ-01"
+  ],
+  [
+   "S05-INJ-01",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "S05-INJ-01"
+  ],
+  [
+   "S05-INJ-01",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "S05-INJ-01"
+  ],
+  [
    "A1-001",
    "in_class",
    "class:ai_llm"
@@ -7918,7 +8298,7 @@
   ]
  ],
  "stats": {
-  "techniques": 332,
+  "techniques": 342,
   "weaknesses": 33,
   "classes": 35
  }

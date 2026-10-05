@@ -1174,6 +1174,159 @@ COMBO_RULES: list[dict] = [
         "difficulty_delta": 1,
         "impact": "Critical - generalizes the Exchange primitive into a zero-click RCE battery across every auto-indexed format.",
     },
+    {
+        "rule_id": "R-S05-PRNG-STATE",
+        "parents": [("authentication", "S05-WEB-01"), ("authentication", None)],
+        "name": "PRNG-output leakage crossed with session/token forgery: {a_short} x {b_short}",
+        "why_non_obvious": (
+            "S05-WEB-01 alone recovers one server's signing key from leaked xorshift128+ outputs; session-forgery "
+            "cards alone guess tokens. Fused, the methodology is a generic battery: enumerate every unauthenticated "
+            "endpoint that returns PRNG-derived values (session ids, CSRF tokens, password-reset tokens), run Z3 "
+            "state recovery on each stream, and test whether any stream predicts a signing key or a future token. "
+            "The oracle is deterministic — a recovered state either predicts or it does not."
+        ),
+        "oracle": (
+            "COMBO-PRNG-STATE-HELD: against the target, harvest PRNG-derived values ({a_name}) from unauthenticated "
+            "endpoints and run Z3 recovery per stream, then test predicted values against session/token acceptance "
+            "({b_name}). The oracle holds when a recovered state predicts a subsequently issued secret."
+        ),
+        "oracle_markers": ["recovered state predicts", "subsequently issued secret"],
+        "expected_signal": "prng_stream_harvested; state_recovered; predicted_secret_accepted",
+        "hypothesis": (
+            "Where {a_name} proves PRNG outputs leak and {b_name} supplies the forgery targets, treat every "
+            "unauthenticated PRNG-derived value as a potential key-recovery oracle and solve each stream."
+        ),
+        "followup": "check whether distinct endpoints share one generator instance (state reuse across streams)",
+        "difficulty_delta": 1,
+        "impact": "Critical - deterministic admin auth bypass wherever Math.random() keys sessions.",
+    },
+    {
+        "rule_id": "R-S05-UNINIT-SPRAY",
+        "parents": [("injection", "S05-WEB-02"), ("injection", None)],
+        "name": "Uninitialized-memory verification bypass via heap shaping: {a_short} x {b_short}",
+        "why_non_obvious": (
+            "S05-WEB-02 alone sprays one native host's heap to fake a PKCS#1 block; memory-corruption cards alone "
+            "need a crash. Fused, the methodology targets verification failure paths as oracles: force crypto/parse "
+            "failures with malformed inputs, shape the heap so the uninitialized read lands on attacker-chosen "
+            "bytes, and check whether the failure path ACCEPTS instead of rejecting. Acceptance-without-crash is "
+            "the new oracle."
+        ),
+        "oracle": (
+            "COMBO-UNINIT-SPRAY-HELD: force the verification failure path ({a_name}) with oversized/malformed "
+            "inputs while shaping heap state, then feed attacker-chosen bytes into the uninitialized read "
+            "({b_name}). The oracle holds when the verifier accepts a signature it should reject."
+        ),
+        "oracle_markers": ["verifier accepts", "should reject"],
+        "expected_signal": "failure_path_forced; heap_shaped; verifier_accepted_invalid",
+        "hypothesis": (
+            "Where {a_name} shows failure paths read uninitialized memory and {b_name} supplies the shaping "
+            "primitives, hunt verification routines whose failure path is attacker-observable and heap-influenced."
+        ),
+        "followup": "test allocator determinism — does the spray layout survive across restarts",
+        "difficulty_delta": 2,
+        "impact": "Critical - turns signature verification into attacker-controlled acceptance in banking/auth software.",
+    },
+    {
+        "rule_id": "R-S05-TEMPLATE-AI",
+        "parents": [("ai_llm", "S05-AI-01"), ("injection", "SSTI-01")],
+        "name": "Template sandbox escape inside AI agent infrastructure: {a_short} x {b_short}",
+        "why_non_obvious": (
+            "S05-AI-01 alone breaks one gateway's flow-template sandbox; SSTI-01 alone tests classic web template "
+            "engines. Fused, the methodology is a regression battery for AI infra: every user-controlled config "
+            "rendered through a 'sandboxed' template engine in agent platforms (flow builders, prompt editors, "
+            "tool schemas) gets the full SSTI gadget set plus novel boundary probes, because the same CWE-1336 "
+            "class already regressed once in this exact component (CVE-2026-1868 -> CVE-2026-90970)."
+        ),
+        "oracle": (
+            "COMBO-TEMPLATE-AI-HELD: submit agent-platform configs with template expressions ({a_name}) using the "
+            "classic SSTI gadget battery ({b_name}). The oracle holds when an expression evaluates on the AI "
+            "infrastructure host."
+        ),
+        "oracle_markers": ["expression evaluates", "AI infrastructure host"],
+        "expected_signal": "template_expression_evaluated; sandbox_attribute_leak",
+        "hypothesis": (
+            "Where {a_name} proves AI flow rendering is host-reachable and {b_name} supplies the escape gadgets, "
+            "run the SSTI battery against every template-rendering surface of the agent platform."
+        ),
+        "followup": "check whether prompt-level guardrails ever see the pre-LLM execution path",
+        "difficulty_delta": 1,
+        "impact": "Critical - pre-LLM RCE on AI infrastructure, invisible to prompt guardrails.",
+    },
+    {
+        "rule_id": "R-S05-OBFUS-GUARD",
+        "parents": [("ai_llm", "S05-AI-02"), ("ai_llm", None)],
+        "name": "Obfuscation-layer evasion of agent guardrails: {a_short} x {b_short}",
+        "why_non_obvious": (
+            "S05-AI-02 alone defeats one inspector with JSFuck; agent-attack cards alone assume the guardrail sees "
+            "the payload. Fused, the methodology is an encoding battery against every agent defense layer: for "
+            "each injection primitive, generate minimal-dialect encodings (JSFuck, whitespace languages, nested "
+            "encodings) and test inspection-verdict vs execution-outcome divergence per layer. The oracle is the "
+            "divergence itself — pass at inspection, execute at action."
+        ),
+        "oracle": (
+            "COMBO-OBFUS-GUARD-HELD: encode the injection ({a_name}) so per-layer inspectors ({b_name}) cannot "
+            "parse it while the agent can decode it. The oracle holds when inspection passes and the decoded "
+            "instruction executes."
+        ),
+        "oracle_markers": ["inspection passes", "decoded instruction executes"],
+        "expected_signal": "inspection_passed; payload_decoded; instruction_executed",
+        "hypothesis": (
+            "Where {a_name} proves agents decode what inspectors cannot parse and {b_name} supplies the injection "
+            "primitives, build the encoding battery and measure the inspection/execution divergence per defense layer."
+        ),
+        "followup": "test whether encoding survives the carrier sanitizers (email HTML, markdown) intact",
+        "difficulty_delta": 1,
+        "impact": "High - systematic guardrail-evasion methodology for agent red-teaming.",
+    },
+    {
+        "rule_id": "R-S05-DECODE-AUTH",
+        "parents": [("authentication", "S05-AUTH-01"), ("authentication", None)],
+        "name": "Differential-decoding battery across auth gates: {a_short} x {b_short}",
+        "why_non_obvious": (
+            "S05-AUTH-01 alone bypasses one j_security_check rule with %6a; auth-bypass cards alone try canonical "
+            "paths. Fused, the methodology enumerates every auth-gated path and, per path, per character, tries "
+            "single/double/case-variant/overlong encodings, comparing the rule's verdict against the backend's "
+            "response. The oracle is the verdict mismatch — rule misses, backend serves."
+        ),
+        "oracle": (
+            "COMBO-DECODE-AUTH-HELD: request auth-gated paths ({b_name}) with per-character encoding variants "
+            "({a_name}). The oracle holds when an encoded request bypasses the auth rule but the backend serves "
+            "it as authenticated."
+        ),
+        "oracle_markers": ["bypasses the auth rule", "serves it as authenticated"],
+        "expected_signal": "rule_missed; backend_served; session_granted",
+        "hypothesis": (
+            "Where {a_name} proves decode-count mismatches exist and {b_name} supplies the gated paths, run the "
+            "full encoding battery per path character and diff rule verdicts against backend responses."
+        ),
+        "followup": "check WAF/CDN layers for their own decode counts — triple differentials",
+        "difficulty_delta": 0,
+        "impact": "Critical - single-request unauthenticated admin wherever rule and handler decode differently.",
+    },
+    {
+        "rule_id": "R-S05-NULLSECRET",
+        "parents": [("authentication", "S05-WEB-05"), ("authentication", None)],
+        "name": "Empty-config fail-open battery: {a_short} x {b_short}",
+        "why_non_obvious": (
+            "S05-WEB-05 alone finds one null-secret fail-open; auth cards alone test configured secrets. Fused, "
+            "the methodology inverts the question: for every security control with an optional secret/config "
+            "(webhook signatures, API keys, allowlists, webhook secrets), test the UNSET state explicitly. "
+            "Null/empty/missing must fail closed — the oracle is acceptance in the unset state."
+        ),
+        "oracle": (
+            "COMBO-NULLSECRET-HELD: exercise security controls ({b_name}) with their secret/config unset "
+            "({a_name}). The oracle holds when the control accepts in the unset state."
+        ),
+        "oracle_markers": ["accepts in the unset state"],
+        "expected_signal": "control_unset; unsigned_request_accepted",
+        "hypothesis": (
+            "Where {a_name} proves null secrets fail open and {b_name} supplies the controls, enumerate every "
+            "optional-secret gate and test the unset/default configuration for fail-open behavior."
+        ),
+        "followup": "check whether the fail-open is documented as a 'feature' (then it is a design finding, not a bug)",
+        "difficulty_delta": 0,
+        "impact": "High - unauthenticated triggers wherever defaults are fail-open; trivially scannable.",
+    },
 ]
 
 

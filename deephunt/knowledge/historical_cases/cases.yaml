@@ -559,3 +559,42 @@
   detection_clue: "Devices not yet on iOS 27 / patched point releases are at risk; Apple gave no IOCs — patch immediately and treat pre-patch devices as potentially compromised for high-value targets."
   why_scanners_missed_it: "Zero-day image-parser bug in a closed OS component; no public PoC or technical writeup as of 2026-09-30."
   source: "Apple security advisory via securityaffairs.com 2026-09-30; CISA KEV catalog."
+
+- id: CASE-45
+  application_type: "Rejetto HFS HTTP file server (3.0.0-3.2.0)"
+  architecture: "Node.js file server with login-cookie sessions signed by a Math.random()-derived key; login flow discloses raw PRNG outputs to unauthenticated clients"
+  initial_observation: "Horizon3.ai published a writeup on 2026-10-02 (bug originally found by Anthropic's Mythos bug-hunting model): HFS derives its session-signing key with V8's xorshift128+ Math.random() and leaks raw generator outputs during unauthenticated login attempts."
+  attacker_assumption: "A disclosed auth-bypass writeup takes days to weaponize — patching can wait for the normal cycle."
+  unexpected_behavior: "VulnCheck observed live exploitation on 2026-10-03 — one day after the writeup — against servers in the US and Japan, from China-hosted IPs (later US proxies). Attackers harvested leaked PRNG outputs, reconstructed the 128-bit xorshift128+ state with the Z3 SMT solver, predicted the signing key, forged administrator session cookies, and reached code execution via HFS's server_code setting. EPSS was 0.75% before the writeup. CVE-2026-61500 (CVSS 9.3-9.8)."
+  chain_of_events: ["Mythos AI model finds Math.random()-keyed session signing", "Horizon3.ai writeup published 2026-10-02 with Z3 state-recovery method", "Mass scanning and exploitation begins 2026-10-03 (US/Japan targets)", "Forged admin cookies -> server_code RCE"]
+  root_cause: "Session secrets derived from a predictable userspace PRNG (CWE-338) combined with observable PRNG outputs — deterministic key recovery, not guessing."
+  impact: "Unauthenticated admin takeover and RCE on exposed HFS instances within 24h of disclosure; an AI-found bug weaponized at machine speed."
+  detection_clue: "Unauthenticated login attempts harvesting PRNG outputs at scale; admin sessions from IPs with no prior auth flow; server_code changes outside maintenance windows."
+  why_scanners_missed_it: "The primitive is cryptographic state recovery, not a payload signature — scanners see a normal login flow until the forged cookie arrives."
+  source: "Horizon3.ai writeup 2026-10-02; VulnCheck advisory; The Register coverage."
+
+- id: CASE-46
+  application_type: "Fortinet FortiMail secure email gateway (management interface)"
+  architecture: "FortiMail appliance with an HTTPS management interface resolving user-influenced paths to the filesystem"
+  initial_observation: "Fortinet published FG-IR-26-175 on 2026-10-01 for CVE-2026-104286 (CVSS 9.8, CWE-22 + CWE-158): path validation defeated by traversal + NULL-byte/double-encoding, yielding unauthenticated arbitrary file write. CISA added it to KEV the same day."
+  attacker_assumption: "A path-traversal advisory without a patch is a future problem — the gateway is not directly RCE-able."
+  unexpected_behavior: "Active zero-day exploitation was already underway at disclosure: attackers wrote webshells and tampered with mail-scanner configuration, then established persistence via LD_PRELOAD hijacking (modified /data/lib/liblog.so). Observed IOCs: unexpected binaries (smit, webconsole) in /data/bin, ld.so.preload presence, outbound C2 to 79.141.169.187 / 45.129.0.192. Federal remediation deadline 2026-10-04; no patch had shipped as of publication."
+  chain_of_events: ["Zero-day exploitation of traversal+%00 file write", "Webshell drop + mail-scanner config tampering", "LD_PRELOAD persistence via trojanized liblog.so", "C2 to 79.141.169.187 / 45.129.0.192", "CISA KEV 2026-10-01; patch still pending"]
+  root_cause: "Path validation that misses NULL-byte and double-encoding variants (CWE-158), on an unauthenticated management endpoint with filesystem-write reach."
+  impact: "Full appliance compromise of mail gateways with kernel-adjacent persistence (LD_PRELOAD), on devices that see all inbound/outbound mail."
+  detection_clue: "Requests with %2e%2e/%252e/%00 in URI paths in FortiMail access logs; unexpected binaries in /data/bin; ld.so.preload presence; outbound connections to the two C2 IPs."
+  why_scanners_missed_it: "The bypass is encoding-specific — single-encoding traversal probes pass the validator, so standard traversal checks report the endpoint clean."
+  source: "Fortinet FG-IR-26-175 (2026-10-01); CISA KEV; decryptiondigest.com analysis."
+
+- id: CASE-47
+  application_type: "Cisco Catalyst SD-WAN Manager (vManage)"
+  architecture: "SD-WAN management plane with path-based auth rules in front of a j_security_check endpoint that the backend decodes separately"
+  initial_observation: "Cisco advisory cisco-sa-sdwan-webauth-xr8beuuU (2026-09-30) disclosed CVE-2026-76504 (CVSS 9.8): percent-encoding a matched character (/%6a_security_check) slips past the auth rule while the backend decodes and serves it as an authenticated admin session. Horizon3.ai published reverse-engineered analysis; CISA added it to KEV on 2026-09-30."
+  attacker_assumption: "URL-encoding bypasses are a 2000s problem — modern WAFs and frameworks normalize before matching."
+  unexpected_behavior: "Cisco PSIRT confirmed active exploitation in September 2026 — attackers were using the differential-decoding bypass before the advisory. One crafted request yields API access as the netadmin-role admin. No workarounds exist; patch only. Detection: POSTs to j_security_check with hex-encoded chars (%6a) from unknown IPs in serviceproxy-access.log/vmanage-server.log; activity from viptela-reserved-* internal accounts."
+  chain_of_events: ["Active exploitation in September 2026 (pre-advisory)", "Cisco advisory + KEV 2026-09-30", "Horizon3.ai publishes exploit analysis", "Single-request unauthenticated admin sessions observed"]
+  root_cause: "Auth rule and request handler disagree on URL decoding count (CWE-177/CWE-288) — the rule matches the raw path, the backend serves the decoded one."
+  impact: "Unauthenticated admin on SD-WAN management infrastructure — the control plane for enterprise WANs; a foothold with network-wide reconfiguration power."
+  detection_clue: "Hex-encoded j_security_check requests from unknown IPs; viptela-reserved-* account activity; admin API calls without preceding login flow."
+  why_scanners_missed_it: "Scanners test the canonical path (blocked) and common bypass lists; a single-character percent-encoding of the protected endpoint name is outside most auth-bypass wordlists."
+  source: "Cisco advisory cisco-sa-sdwan-webauth-xr8beuuU; Horizon3.ai analysis; CISA KEV."

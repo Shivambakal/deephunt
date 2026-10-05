@@ -1,0 +1,458 @@
+# DEEPHUNT technique cards — daily intel sweep 2026-10-05
+# Schema v2: preconditions/required_state/hypothesis_generator/
+# request_strategy/mutation_strategy/expected_signal/positive_oracle/
+# negative_evidence/false_positive_rules/followup_experiment/
+# regression_test/difficulty_estimate. 10 cards.
+# Sources: Horizon3.ai Rejetto HFS writeup + The Register + VulnCheck (2026-10-02/03);
+# Bay Area Labs SConnect writeup (2026-10-02); GitLab security advisory + THN (2026-10-02);
+# Salt Labs via SCWorld (2026-10-03); net4people bbs#672 (surfaced 2026-10-04);
+# Fortinet FG-IR-26-175 + CISA KEV (2026-10-01); Cisco advisory + Horizon3.ai
+# reverse-engineering + CISA KEV (2026-09-30/2026-10-01); Dell advisory + THN/BleepingComputer
+# (2026-10-01/02); VulnCheck + threataft Dockhand advisory (2026-09-29/2026-10-01);
+# HackerOne report 3766217 (2026-10-04).
+
+- id: S05-WEB-01
+  name: Rejetto HFS xorshift128+ PRNG state recovery -> forged admin session cookie -> RCE (CVE-2026-61500)
+  klass: authentication
+  requires:
+  - http_observation
+  signals:
+  - math_random
+  - session_cookie
+  - signature_key
+  - xorshift128
+  - prng_state
+  questions:
+  - Is the session-signing key derived from a userspace PRNG (Math.random) rather than a CSPRNG?
+  - Does the server leak raw PRNG outputs to unauthenticated clients (e.g. during login attempts)?
+  - Can leaked outputs be fed to an SMT solver (Z3) to recover the full 128-bit internal state and predict future keys?
+  evidence:
+    positive:
+    - 'Horizon3.ai writeup (2026-10-02): Rejetto HFS (3.0.0-3.2.0) derives its login-cookie signing key with Math.random(). The server also discloses raw outputs of the same generator to unauthenticated clients during login. V8 Math.random() is xorshift128+ — deterministic given enough outputs. Collecting leaked outputs, reconstructing the 128-bit internal PRNG state with the Z3 SMT solver, and predicting future outputs recovers the exact signing key, enabling a forged administrator session cookie and then code execution via HFS''s own server_code setting.'
+    - 'VulnCheck advisory: CVE-2026-61500 (CVSS 9.3-9.8). EPSS was 0.75% before the writeup; live exploitation observed 2026-10-03 (one day after disclosure) against US and Japanese servers from China-hosted IPs (later US proxies).'
+    - 'The Register: the bug was found by Anthropic''s Mythos bug-hunting model — an AI-found vuln exploited in the wild within 24h of public disclosure.'
+    negative:
+    - the session key is generated with a CSPRNG (crypto.randomBytes) and no PRNG outputs are observable
+    - the cookie signature uses a server-side secret never derived from observable output
+  followups:
+  - test whether sampled PRNG outputs are sufficient for Z3 state recovery (need ~3 consecutive 64-bit outputs for xorshift128+)
+  - check for the same Math.random()-keyed session pattern in other Node.js web UIs
+  test: 'Against an owned HFS 3.0.0-3.2.0 instance, harvest Math.random() outputs from unauthenticated login responses, run Z3 state recovery, and forge an admin session cookie. A hold requires the forged cookie to authenticate as administrator and server_code execution to fire.'
+  impact_hint: 'Critical — deterministic full admin auth bypass plus RCE; exploitation observed in the wild 24h after disclosure. Precondition: HFS reachable over HTTP, unauthenticated.'
+  preconditions:
+  - http_observation
+  required_state: web app deriving session/crypto secrets from a predictable userspace PRNG with observable outputs
+  hypothesis_generator: 'When signals [''math_random'', ''session_cookie'', ''signature_key''] are observed, hypothesize: the session-signing key is recoverable via PRNG state reconstruction — harvest observable generator outputs and run Z3 recovery.'
+  request_strategy: make unauthenticated login attempts capturing PRNG outputs; solve for internal state; predict the signing key and forge an admin cookie
+  mutation_strategy: vary output sample count; vary harvest endpoint (login, password-reset tokens, CSRF tokens)
+  expected_signal: forged_cookie_accepted; admin_session; server_code_execution
+  positive_oracle: forged admin cookie authenticates AND the same Z3-derived key predicts a subsequent rotation value
+  negative_evidence:
+  - key derived from CSPRNG
+  - no observable PRNG outputs
+  false_positive_rules:
+  - a forged cookie that does not authenticate is not a finding — determinism cuts both ways
+  - do not test against third-party production HFS instances; controlled/lab targets only
+  followup_experiment: scan other Node.js file-server/admin UIs for Math.random()-derived session secrets
+  regression_test: with crypto.randomBytes-derived keys, Z3 recovery of outputs must yield no future-key predictions
+  difficulty_estimate: 0.4
+
+- id: S05-WEB-02
+  name: SConnect native host uninitialized-memory heap-spray signature bypass -> LoadLibrary drive-by RCE (CVE-2026-18397)
+  klass: injection
+  requires:
+  - http_observation
+  signals:
+  - browser_extension
+  - native_messaging
+  - postMessage
+  - signature_verification
+  - uninitialized_memory
+  - heap_spray
+  questions:
+  - Does the browser extension accept postMessage from any origin/iframe and forward it to the native host?
+  - Does the native host's custom signature check read a malloc'd buffer that is never initialized when the crypto operation fails?
+  - Can heap spraying make the uninitialized buffer resemble a valid PKCS#1 v1.5 block often enough to chain verification stages?
+  evidence:
+    positive:
+    - 'Bay Area Labs writeup "8 out of 10 Banks HATE This One Weird 3SKey RCE" (2026-10-02): the SConnect extension (1M+ Chrome users, SWIFT 3SKey banking authentication) accepts postMessage from any origin/iframe and forwards it to the native host. The native host''s custom RSA-2048 verification reads a 256-byte malloc''d buffer that is never initialized when modular exponentiation fails. Supplying 257 bytes of 0xFF as the "signature" forces the failure path; heap-spraying through a long-lived native-messaging connection makes the uninitialized buffer resemble a valid PKCS#1 v1.5 block (~18% spray success in PoC). Chaining three verification stages (origin-token signature, addon manifest, signature.json) lets the host LoadLibrary an unsigned attacker addon DLL into the signed Thales process and call its onCreate export — full drive-by RCE in 6-10 seconds with no user warnings.'
+    - 'CVE-2026-18397 (CVSS 4.0: 9.4). Fixed in SConnect Host 2.16.1.0 / extension 2.16.1.1; residual Edge-store installs persist after the Sep-13 removal.'
+    negative:
+    - the signature-verification buffer is zeroed on allocation or on the failure path
+    - postMessage is origin-restricted before forwarding to the native host
+  followups:
+  - measure spray reliability across OS/allocator versions
+  - test whether the third-stage LoadLibrary can be replaced with token/APDU issuance abuse
+  test: 'Against an owned lab install of the vulnerable SConnect host, open a native-messaging channel, heap-spray via long-lived messages, then submit the 0xFF signature. A hold requires the unsigned DLL to load into the signed host process and onCreate to execute.'
+  impact_hint: 'Critical — drive-by RCE into banking-authentication software from any website the victim visits, no user interaction. Precondition: vulnerable SConnect install on the victim machine.'
+  preconditions:
+  - http_observation
+  required_state: browser extension with a native-messaging host performing custom signature verification
+  hypothesis_generator: 'When signals [''native_messaging'', ''signature_verification''] are observed, hypothesize: the verification failure path reads uninitialized memory — force crypto failure with oversized inputs and check whether sprayed heap contents are treated as a valid signature.'
+  request_strategy: establish long-lived native-messaging connection; spray heap; submit oversized/malformed signatures that force the failure path; observe LoadLibrary behavior
+  mutation_strategy: vary signature length and content; vary spray payload layout; vary the verification stage attacked
+  expected_signal: unsigned_dll_loaded; onCreate_executed; signature_check_bypassed
+  positive_oracle: unsigned attacker DLL executes inside the signed native host process on a fully patched-OS lab machine
+  negative_evidence:
+  - verification buffer zeroed on the failure path
+  - postMessage origin allowlist enforced
+  false_positive_rules:
+  - requires the vulnerable host installed — it is not a remote break-in primitive by itself
+  - unverified extension of the writeup: APDU/token issuance abuse was not demonstrated; do not claim it
+  followup_experiment: audit other browser-extension native hosts (password managers, crypto wallets) for custom verification with uninitialized buffers
+  regression_test: with the failure path zeroed, the 0xFF signature must never validate regardless of heap state
+  difficulty_estimate: 0.6
+
+- id: S05-AI-01
+  name: GitLab AI Gateway flow-template sandbox escape -> pre-LLM code execution RCE (CVE-2026-90970)
+  klass: ai_llm
+  requires:
+  - ai_observation
+  signals:
+  - ai_gateway
+  - template_engine
+  - sandbox_escape
+  - flow_config
+  - cwe_1336
+  questions:
+  - Do AI "flow"/agent-behavior configs get rendered through a template engine that claims sandboxing?
+  - Can crafted template syntax break the sandbox and execute before any LLM is invoked?
+  - Has the same component suffered the same template-sandbox class before (regression signal)?
+  evidence:
+    positive:
+    - 'GitLab security advisory (2026-10-02): self-hosted AI Gateway renders "flows" (agent behavior configs) through a Jinja2-style template engine that was supposed to be sandboxed. A crafted flow configuration breaks the sandbox (CWE-1336, improper neutralization in template engine) and the injected template executes as code on the gateway host before any LLM is invoked. Affects 18.1.6-19.2.3, 19.3.0-19.3.1, 19.4.0; fixed in 19.2.4/19.3.2/19.4.1. Reported via HackerOne by researcher "invisiblemeerkat". No user interaction needed.'
+    - 'CVE-2026-90970 (CVSS 9.9). CISA lists exploitation as "none"; no public PoC as of 2026-10-02. Notable as the first critical RCE in an AI-specific infrastructure component.'
+    - 'Regression signal: the same CWE-1336 class hit this exact component in February 2026 (CVE-2026-1868) — template-sandbox boundaries in AI infra are a repeat offender.'
+    negative:
+    - flow configs are schema-validated and template syntax is rejected before rendering
+    - template rendering happens in an isolated worker with no host code-execution path
+  followups:
+  - test sibling AI-gateway flow/prompt-rendering endpoints for the same sandbox boundary
+  - check whether the sandbox escape is a known Jinja2 payload or a novel boundary bug
+  test: 'Against an owned self-hosted AI Gateway (vulnerable range) with Duo Agent Platform access, submit a flow configuration containing template syntax. A hold requires template expressions to evaluate on the gateway host.'
+  impact_hint: 'Critical — authenticated RCE on AI infrastructure with no user interaction; the pre-LLM execution means prompt-level guardrails never see it. Precondition: authenticated Duo Agent Platform access on a self-hosted gateway.'
+  preconditions:
+  - ai_observation
+  required_state: AI gateway/agent platform rendering user-controlled configs through a sandboxed template engine
+  hypothesis_generator: 'When signals [''ai_gateway'', ''template_engine''] are observed, hypothesize: the template sandbox around agent config rendering is breakable — submit flow configs with template expressions and watch for host-side evaluation.'
+  request_strategy: submit flow/agent configs embedding template expressions; observe whether they render on the host and whether sandbox attributes/builtins leak
+  mutation_strategy: vary template payloads (attribute traversal, known sandbox-escape gadgets, novel boundary probes); vary the config field rendered
+  expected_signal: template_executed; sandbox_attribute_leak; host_command_execution
+  positive_oracle: template expression evaluates on the gateway host in the flow-rendering path
+  negative_evidence:
+  - template syntax rejected at config validation
+  - rendering isolated from host code execution
+  false_positive_rules:
+  - the same CVE-2026-1868-class regression means the Feb 2026 fix boundary must be checked too — a hold against 1868 only is a duplicate, not new
+  - no public PoC exists; do not claim exploitation technique beyond the advisory''s CWE-1336 description
+  followup_experiment: survey other AI agent platforms (flow builders, prompt-template editors) for sandboxed template rendering of user configs
+  regression_test: with the sandbox boundary fixed, flow configs containing template syntax must render as inert text
+  difficulty_estimate: 0.5
+
+- id: S05-AI-02
+  name: JSFuck-obfuscated indirect prompt injection defeats agent prompt-inspection -> server-side code execution
+  klass: ai_llm
+  requires:
+  - ai_observation
+  signals:
+  - indirect_prompt_injection
+  - obfuscation
+  - jsfuck
+  - guardrail_evasion
+  - agent
+  - code_execution
+  questions:
+  - Do agent defenses rely on inspecting prompt text (rather than monitoring the action/tool layer)?
+  - Can the injection be encoded in a Turing-complete dialect (JSFuck: only []()!+) that the inspector cannot parse but the agent can decode and run?
+  - Does the agent execute decoded content inside its own server-side environment?
+  evidence:
+    positive:
+    - 'Salt Labs research (reported 2026-10-03 via SCWorld/TechRadar): indirect prompt injection embedded in an email, encoded in JSFuck. Manus''s prompt-injection inspection flagged the plain-text hidden prompt as suspicious, but the JSFuck-encoded variant passed inspection; the agent then decoded and executed the JavaScript inside its own server-side environment — untrusted email content became executable code across the prompt-inspection boundary.'
+    - 'No CVE assigned. Responsible disclosure to Meta via bug bounty; patched.'
+    - 'Novel primitive: obfuscation as an inspection-evasion layer against agent guardrails, exploiting the fact that agents can decode what the guardrail cannot parse. Researchers'' lesson: prompt inspection is necessary but insufficient — action/tool-layer monitoring is the missing control.'
+    negative:
+    - the agent refuses or cannot decode the obfuscated payload
+    - tool-layer monitoring blocks execution of decoded instructions regardless of inspection outcome
+  followups:
+  - test other minimal-dialect encodings (e.g. Brainfuck-adjacent, whitespace languages) against the same inspectors
+  - test whether encoding survives email/HTML sanitizers that would strip plain-text injections
+  test: 'Against an owned agent with email-read plus code-execution tooling and prompt-inspection-only defenses, deliver an email carrying a JSFuck-encoded instruction. A hold requires the agent to decode and execute it after the plain-text equivalent was flagged.'
+  impact_hint: 'High — turns any email the agent reads into potential server-side code execution, specifically defeating the guardrail layer vendors advertise. Precondition: agent with email ingestion and code-execution tools behind inspection-only defenses.'
+  preconditions:
+  - ai_observation
+  required_state: LLM agent ingesting untrusted content with code-execution capability, defended only at the prompt-inspection layer
+  hypothesis_generator: 'When signals [''indirect_prompt_injection'', ''agent'', ''code_execution''] are observed, hypothesize: the prompt inspector cannot parse what the agent can decode — encode the injection in a minimal Turing-complete dialect and check whether inspection passes but execution follows.'
+  request_strategy: send plain-text injection (expect flagged) then the same instruction JSFuck-encoded; compare inspection verdict vs execution outcome
+  mutation_strategy: vary encoding (JSFuck, other esoteric dialects, base64-of-JSFuck); vary carrier (email body, attachment, calendar invite)
+  expected_signal: inspection_passed; payload_decoded; code_executed
+  positive_oracle: encoded injection executes after the plain-text equivalent was flagged, in the same session
+  negative_evidence:
+  - agent cannot decode the dialect
+  - action-layer monitor blocks decoded execution
+  false_positive_rules:
+  - the attack assumes the agent already has code-execution tooling — it does not grant code execution by itself
+  - responsible-disclosure only; no mass exploitation documented — do not claim active campaigns
+  followup_experiment: stack with GhostSplice-style fragment splitting — encoded fragments across channels vs single-channel inspection
+  regression_test: with action-layer monitoring enabled, decoded instructions must be blocked even when inspection passes
+  difficulty_estimate: 0.3
+
+- id: S05-WEB-03
+  name: xray-core pinnedPeerCertSha256 certificate-verification bypass -> full MitM collapse
+  klass: authentication
+  requires:
+  - http_observation
+  signals:
+  - certificate_pinning
+  - tls_verification
+  - chain_position
+  questions:
+  - Does the cert-pinning option constrain WHERE in the chain the pinned hash must appear, or just that the hash appears somewhere?
+  - Is regular certificate verification skipped entirely when the pinning option is enabled (single-point-of-failure)?
+  - Was the pinning option introduced as a "simpler" replacement that quietly dropped the old checks?
+  evidence:
+    positive:
+    - 'net4people bbs#672 (surfaced 2026-10-04; timeline Feb-Jul 2026): xray-core''s replacement cert-pinning option pinnedPeerCertSha256 verifies only the leaf certificate''s hash, without constraining where it appears — an attacker can insert their own leaf cert at ANY position in the presented chain and the pinning check passes. A Jan 16, 2026 logic change made the option always skip regular certificate verification, so this one flawed pinning check was the entire verification layer. Result: zero effective verification, trivial active MitM against users relying on the pinning feature (self-signed cert setups). Fixed silently by maintainers on Feb 6, 2026 (commit message "simplify the code"); the fix was found incomplete on Jul 3, prompting a GitHub Security Advisory filing.'
+    - 'No CVE assigned. ~6 months of silent exposure after a suppressed fix — the defense-in-depth collapse via a single flawed replacement check is itself the incident.'
+    negative:
+    - the pin is bound to the leaf position (chain[0]) and regular verification still runs
+    - the option is a strict addition on top of normal verification, not a replacement
+  followups:
+  - test whether the Jul-3 fix fully restores position binding
+  - audit other proxies/VPN clients with "simplified" pinning replacements
+  test: 'Against an owned xray-core build with pinnedPeerCertSha256 configured for a self-signed setup, present a chain with the attacker leaf at a non-leaf position. A hold requires the connection to be accepted.'
+  impact_hint: 'High — complete TLS verification collapse for users who enabled pinning precisely because they distrusted the default path; 6 months of exposure. Precondition: active MitM position and a client using the pinning option.'
+  preconditions:
+  - http_observation
+  required_state: TLS client with a certificate-pinning option that replaces (rather than augments) standard verification
+  hypothesis_generator: 'When signals [''certificate_pinning''] are observed, hypothesize: the pin is not position-bound and standard verification is skipped — present the pinned hash at a non-leaf chain position and check acceptance.'
+  request_strategy: configure the pinning option; present chains with the pinned cert at leaf, intermediate, and root positions; observe acceptance per position
+  mutation_strategy: vary chain position of the pinned cert; vary whether standard verification is on/off
+  expected_signal: non_leaf_pinned_chain_accepted; verification_skipped
+  positive_oracle: attacker-controlled leaf at a non-leaf position is accepted while a non-pinned valid chain is also accepted (verification fully absent)
+  negative_evidence:
+  - pin bound to leaf position
+  - standard verification still enforced
+  false_positive_rules:
+  - the silent Feb-6 fix may already be deployed — verify the exact build before claiming; the reporter found it incomplete on Jul 3
+  - no mass exploitation documented; the incident is the exposure window, not observed attacks
+  followup_experiment: hunt for "simplify the code" commits in TLS-adjacent projects that replace verification with a single check
+  regression_test: with position binding restored, only leaf-position pins validate and standard verification always runs
+  difficulty_estimate: 0.3
+
+- id: S05-WEB-04
+  name: FortiMail unauthenticated path traversal + NULL-byte bypass -> arbitrary file write (CVE-2026-104286)
+  klass: injection
+  requires:
+  - http_observation
+  signals:
+  - path_traversal
+  - null_byte
+  - file_write
+  - mail_gateway
+  questions:
+  - Does the management interface's path validation reject traversal but miss NULL-byte and double-encoding variants?
+  - Can one crafted HTTPS request write to arbitrary filesystem paths unauthenticated?
+  - Does file-write convert to RCE via webshells, scanner-config tampering, or LD_PRELOAD hijacking?
+  evidence:
+    positive:
+    - 'Fortinet advisory FG-IR-26-175 (2026-10-01); CISA KEV added 2026-10-01. The FortiMail management interface''s path validation is defeated by combining directory traversal sequences with NULL-byte insertion (%00, %252e-style encodings), yielding unauthenticated arbitrary file write to any filesystem path via one crafted HTTPS request (CWE-22 + CWE-158, CVSS 9.8).'
+    - 'Active zero-day exploitation confirmed; observed post-exploitation: modified /data/lib/liblog.so (LD_PRELOAD hijacking), unexpected binaries (smit, webconsole) in /data/bin, ld.so.preload presence, outbound C2 to 79.141.169.187 / 45.129.0.192. Federal remediation deadline 2026-10-04; no patch had shipped as of publication.'
+    negative:
+    - traversal blocked at every encoding layer and NULL bytes rejected before path resolution
+    - file-write path requires authentication
+  followups:
+  - test the same %00/%252e battery against FortiMail''s sibling management endpoints
+  - check whether LD_PRELOAD persistence survives the eventual patch
+  test: 'Against an owned FortiMail appliance (unpatched), send the crafted traversal request targeting a canary path. A hold requires the canary file to appear at the traversed location.'
+  impact_hint: 'Critical — unauthenticated arbitrary file write on a mail gateway, already weaponized as a zero-day with LD_PRELOAD persistence. Precondition: unpatched FortiMail management interface reachable.'
+  preconditions:
+  - http_observation
+  required_state: appliance management interface resolving user-influenced paths to the filesystem
+  hypothesis_generator: 'When signals [''path_traversal'', ''mail_gateway''] are observed, hypothesize: the validator misses encoding variants — run the traversal battery (%2e%2e, %252e, %00 insertion) against file-serving endpoints and watch for writes outside the web root.'
+  request_strategy: send traversal payloads with single, double, and NULL-byte encodings to file-access endpoints; plant canary content and verify placement
+  mutation_strategy: vary encoding (%2e, %252e, %00, %c0%ae); vary the target path depth
+  expected_signal: canary_written_outside_root; encoding_variant_accepted
+  positive_oracle: canary file lands at the traversed absolute path via an unauthenticated request
+  negative_evidence:
+  - all encoding variants rejected
+  - writes contained to the web root
+  false_positive_rules:
+  - log evidence alone (%2e in access logs) is scanning noise, not exploitation — require the write oracle
+  - do not test third-party FortiMail appliances; CISA KEV confirms the class, not your target
+  followup_experiment: generalize the NULL-byte + double-encoding battery to other Fortinet management interfaces
+  regression_test: with the patch, all traversal encodings must be rejected and writes contained
+  difficulty_estimate: 0.4
+
+- id: S05-AUTH-01
+  name: Cisco Catalyst SD-WAN Manager URI-encoding differential-decoding auth bypass (CVE-2026-76504)
+  klass: authentication
+  requires:
+  - http_observation
+  signals:
+  - j_security_check
+  - uri_encoding
+  - differential_decoding
+  - auth_rule
+  questions:
+  - Do the auth rule and the downstream handler decode the request path the same number of times?
+  - Can percent-encoding a matched character (/%6a_security_check) slip past the rule while the backend still decodes it to the protected endpoint?
+  - Does one crafted request yield an authenticated admin session (netadmin role)?
+  evidence:
+    positive:
+    - 'Cisco advisory cisco-sa-sdwan-webauth-xr8beuuU (2026-09-30); Horizon3.ai reverse-engineered analysis (https://horizon3.ai/attack-research/vulnerabilities/cve-2026-76504/); CISA KEV added 2026-09-30. The auth rule gating the j_security_check endpoint and the downstream request handler disagree on URL decoding: percent-encode a matched character (/%6a_security_check) and the rule never fires, while the backend decodes the path and serves it as an authenticated admin session. Classic CWE-177/CWE-288 differential-decoding bypass. One crafted request -> API access as the netadmin-role admin. CVE-2026-76504 (CVSS 9.8).'
+    - 'Cisco PSIRT confirmed active exploitation in September 2026; no workarounds, patch only. Detection: POSTs to j_security_check with hex-encoded chars (%6a) from unknown IPs in serviceproxy-access.log/vmanage-server.log; activity from viptela-reserved-* internal accounts.'
+    negative:
+    - the auth rule normalizes/decodes before matching, or the backend never re-decodes
+    - the encoded path 404s or redirects to login
+  followups:
+  - enumerate other auth-gated endpoints for the same decode-count mismatch
+  - test double-encoding (%256a) and case variants (%6A) against the rule
+  test: 'Against an owned SD-WAN Manager (unpatched), POST to /%6a_security_check with admin credentials omitted. A hold requires an authenticated admin session/API token in response.'
+  impact_hint: 'Critical — single-request unauthenticated admin on network-management infrastructure, actively exploited. Precondition: unpatched SD-WAN Manager reachable.'
+  preconditions:
+  - http_observation
+  required_state: web app with path-based auth rules in front of a separately-decoding backend
+  hypothesis_generator: 'When signals [''j_security_check'', ''auth_rule''] are observed, hypothesize: the rule and the handler decode differently — percent-encode characters of the protected path and check whether the rule misses while the backend still serves.'
+  request_strategy: request the protected endpoint with single/double/case-variant encodings of each path character; compare auth-rule behavior vs backend response
+  mutation_strategy: vary encoded character position; vary encoding depth (%6a, %256a, %c0%af-style overlong)
+  expected_signal: rule_missed; backend_served; admin_session_granted
+  positive_oracle: encoded-path request returns an authenticated admin session while the plain path requires login
+  negative_evidence:
+  - rule matches after normalization
+  - backend rejects or re-challenges encoded paths
+  false_positive_rules:
+  - a 200 on the encoded path without an admin session/token is not a bypass — require the authenticated oracle
+  - exploitation confirmed by Cisco PSIRT is about this CVE, not your target
+  followup_experiment: run the differential-decoding battery against every auth-gated path on the target, not just j_security_check
+  regression_test: with the patch, encoded-path requests must hit the same auth rule as the plain path
+  difficulty_estimate: 0.3
+
+- id: S05-AUTH-02
+  name: Dell CSM authorization cluster — unauthenticated gRPC credential extraction + hardcoded JWT key token forgery (CVE-2026-63688/63692/61421/54472/67269/67273)
+  klass: authentication
+  requires:
+  - http_observation
+  signals:
+  - grpc
+  - missing_authentication
+  - hardcoded_jwt_key
+  - hardcoded_credentials
+  - k8s_operator
+  questions:
+  - Do internal gRPC services (csm-authorization-storage) expose privileged functions without authentication?
+  - Is the JWT signing key hardcoded in the shipped binary/config, enabling token forgery?
+  - Do hardcoded credentials exist for the auth proxy itself?
+  evidence:
+    positive:
+    - 'Dell security advisory (2026-10-01); THN + BleepingComputer coverage (2026-10-02). Cluster in Dell Container Storage Modules < 1.18.0: (i) CWE-306 — csm-authorization-storage gRPC server exposes critical functions without authentication: unauthenticated extraction of storage-backend admin credentials for ALL registered arrays (CVE-2026-63688, 10.0) and full bypass of the authorization model (CVE-2026-63692, 10.0). (ii) Hardcoded JWT signing key in karavi-authorization -> forge valid admin tokens (CVE-2026-61421, 9.8); hardcoded credentials -> forge admin tokens for the auth proxy (CVE-2026-54472, 9.8). (iii) CR-reconciler privilege-management flaw -> low-priv attacker to root on K8s nodes (CVE-2026-67269, 9.9); template injection -> RBAC tampering (CVE-2026-67273, 9.6).'
+    - 'No public PoC and no reported exploitation as of 2026-10-02 — but 10.0/9.9/9.8 CVSS cluster on storage infrastructure.'
+    negative:
+    - gRPC services require mTLS or tokens; JWT key is per-installation generated
+  followups:
+  - extract the hardcoded key from the shipped image and verify cross-installation reuse
+  - test whether the gRPC endpoints are reachable from outside the cluster network
+  test: 'Against an owned CSM < 1.18.0 lab deployment, call csm-authorization-storage gRPC functions without credentials and forge a JWT with the shipped key. A hold requires credential disclosure or an accepted forged token.'
+  impact_hint: 'Critical — unauthenticated extraction of every registered storage array''s admin credentials plus forgeable admin JWTs; a full cluster-takeover primitive set. Precondition: CSM deployment with reachable services.'
+  preconditions:
+  - http_observation
+  required_state: K8s storage-operator stack with internal gRPC auth services and JWT-based admin tokens
+  hypothesis_generator: 'When signals [''grpc'', ''k8s_operator''] are observed, hypothesize: internal auth services skip authentication and the JWT key is hardcoded — call gRPC methods unauthenticated and try forging tokens with any key found in the shipped artifacts.'
+  request_strategy: enumerate gRPC methods on the auth services; call privileged ones without credentials; extract JWT keys from images/configs and forge admin tokens
+  mutation_strategy: vary gRPC method; vary key source (binary strings, config maps, docs)
+  expected_signal: credentials_disclosed; forged_token_accepted; rbac_tampered
+  positive_oracle: unauthenticated gRPC call returns array admin credentials OR a forged JWT is accepted as admin
+  negative_evidence:
+  - gRPC requires auth; JWT key unique per install
+  false_positive_rules:
+  - the CVEs are version-scoped (< 1.18.0) — verify the target version before claiming
+  - no public PoC exists; the oracle must be demonstrated, not inferred from the advisory
+  followup_experiment: survey other K8s storage/network operators for the same missing-auth-gRPC + hardcoded-key pattern
+  regression_test: with 1.18.0+, unauthenticated gRPC calls must fail and forged tokens must be rejected
+  difficulty_estimate: 0.4
+
+- id: S05-WEB-05
+  name: Dockhand null webhook-secret guard -> unauthenticated forced redeploy / container escape (CVE-2026-53988)
+  klass: authentication
+  requires:
+  - http_observation
+  signals:
+  - webhook
+  - null_secret
+  - unsigned_request
+  - docker_compose
+  questions:
+  - Do Git webhook endpoints skip signature verification when the secret is null/empty (the default)?
+  - Are stack IDs enumerable (sequential) so unsigned requests can target any stack?
+  - Can a forced redeploy be escalated via a malicious docker-compose.yml with privileged bind mounts?
+  evidence:
+    positive:
+    - 'VulnCheck advisory (https://www.vulncheck.com/advisories/dockhand-unauthenticated-webhook-trigger-via-git-webhook-endpoints, ~2026-09-29); threataft writeup (2026-10-01). Git webhook endpoints skip authentication entirely when the webhook secret is null (the default). Attacker enumerates sequential stack IDs and sends unsigned webhook requests -> forces git clone + docker compose redeploy. Immediate impact: DoS via repeated forced redeploys; escalated impact: with write access to the tracked git branch, push a malicious docker-compose.yml with privileged bind mounts -> container escape -> host compromise. CVE-2026-53988 (CVSS 10.0); fixed in Dockhand 1.0.40.'
+    - 'Guard condition in code: secret == null -> skip auth. No reported exploitation.'
+    negative:
+    - webhook signature enforced even when no secret is configured (fail-closed default)
+    - stack IDs unguessable and redeploys rate-limited/authenticated
+  followups:
+  - test sibling webhook/event endpoints for the same null-secret fail-open
+  - check whether the redeploy path validates the compose file against allowlists
+  test: 'Against an owned Dockhand < 1.0.40 instance with no webhook secret set, POST an unsigned webhook for a known stack ID. A hold requires a redeploy to trigger.'
+  impact_hint: 'Critical — unauthenticated remote trigger of arbitrary redeploys (DoS) escalating to host compromise via malicious compose files. Precondition: Dockhand instance with default (null) webhook secret.'
+  preconditions:
+  - http_observation
+  required_state: deployment tool with webhook-triggered redeploys and optional webhook secrets
+  hypothesis_generator: 'When signals [''webhook''] are observed, hypothesize: the auth check is fail-open on null secrets — send unsigned webhook requests with enumerated IDs and watch for triggered actions.'
+  request_strategy: enumerate stack IDs; POST unsigned webhook payloads; observe whether redeploys trigger
+  mutation_strategy: vary ID enumeration (sequential, disclosed in UI); vary payload content
+  expected_signal: unsigned_webhook_accepted; redeploy_triggered
+  positive_oracle: unsigned request triggers a redeploy on a null-secret instance
+  negative_evidence:
+  - signature required even with no secret configured
+  - unsigned requests rejected
+  false_positive_rules:
+  - the escalated container-escape requires git-branch write access — a separate precondition; the card''s oracle is the unauthenticated trigger alone
+  - no reported exploitation; do not claim in-the-wild use
+  followup_experiment: generalize to "empty config disables security control" — null API keys, empty allowlists, unset secrets across deployment tooling
+  regression_test: with 1.0.40+, unsigned webhooks must be rejected regardless of secret configuration
+  difficulty_estimate: 0.3
+
+- id: S05-INJ-01
+  name: libmariadb prepared-statement alloca() stack exhaustion via server-controlled field length (HackerOne 3766217)
+  klass: injection
+  requires:
+  - http_observation
+  signals:
+  - alloca
+  - server_controlled_length
+  - prepared_statement
+  - client_dos
+  questions:
+  - In the prepared-statement result-fetch path, is a server-supplied column-length value passed to alloca() with no upper bound?
+  - Can a malicious/impersonated server (or MITM on an unencrypted connection) crash the client with an enormous length?
+  - Which downstream clients (PHP mysqli, Ruby mysql2, Perl DBD::MariaDB) inherit the crash?
+  evidence:
+    positive:
+    - 'HackerOne report 3766217, submitted 2026-10-04 by Yalguun Tumenkhuu (fg0x0) to the MariaDB program; summarized 2026-10-04. In the prepared-statement result-fetch path, libmariadb passes a server-supplied column-length value (from column metadata) directly to alloca() with no upper bound. A malicious/impersonated server sends an enormous length -> client stack exhaustion -> process crash. Affects downstream users of the prepared-statement API: PHP mysqli, Ruby mysql2, Perl DBD::MariaDB, direct C/C++ clients. Vendor confirmed; fix pending in a subsequent release. Demonstrated impact is DoS only, no code execution.'
+    - 'No CVE assigned yet.'
+    negative:
+    - the length is clamped before allocation or heap allocation is used
+    - the connection is encrypted and the server is trusted (reduces reachability, not the bug)
+  followups:
+  - fuzz other server-controlled metadata fields (charset, decimals) for the same unbounded-allocation pattern
+  - test whether the crash is weaponizable beyond DoS on specific allocators
+  test: 'Against an owned libmariadb client, stand up a mock server returning an enormous column length in prepared-statement metadata. A hold requires the client process to crash on fetch.'
+  impact_hint: 'Medium — client-side DoS via a hostile or impersonated database server; wide blast radius through language bindings. Precondition: attacker able to serve as (or MITM) the database server on an unencrypted connection.'
+  preconditions:
+  - http_observation
+  required_state: C client library allocating stack memory sized by server-supplied metadata
+  hypothesis_generator: 'When signals [''alloca'', ''prepared_statement''] are observed, hypothesize: server-controlled lengths reach unbounded stack allocation — stand up a mock server with extreme metadata values and watch for client crashes.'
+  request_strategy: mock the server side; return extreme column-length values in result metadata; observe client behavior on fetch
+  mutation_strategy: vary the length value; vary the metadata field (length, max_length, decimals)
+  expected_signal: client_crash; stack_exhaustion
+  positive_oracle: client crashes deterministically on the extreme length and survives with the length clamped
+  negative_evidence:
+  - allocation bounded or heap-based
+  false_positive_rules:
+  - demonstrated impact is DoS only — do not claim code execution without evidence
+  - no CVE yet; the vendor-confirmed status is the attribution, not exploitability
+  followup_experiment: audit other C database client libraries (libpq, mysqlclient) for server-controlled alloca()/VLA patterns
+  regression_test: with the length clamped, the extreme metadata value must not crash the client
+  difficulty_estimate: 0.4
