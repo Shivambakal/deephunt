@@ -294,24 +294,69 @@ class SubfinderTool(ToolAdapter):
 class HttpxTool(ToolAdapter):
     name = "httpx"
     phase = "passive"
-    description = "Probe discovered hosts: alive, title, tech, status"
+    description = ("Probe discovered hosts: alive, title, tech, status "
+                   "(proxy-aware)")
 
     def available(self):
         return _os.path.isfile(_os.path.join(OPS, "httpx"))
 
+    def _proxy_env_ready(self):
+        """Make sure the egress-proxy env reaches the httpx child process.
+
+        httpx honors HTTP_PROXY/HTTPS_PROXY/NO_PROXY (and falls back to the
+        lowercase forms), so traffic routes through the authenticated egress
+        proxy WITHOUT putting proxy credentials on a command line. We only
+        mirror lowercase -> uppercase for the in-process env; nothing new is
+        persisted anywhere.
+        """
+        env = _os.environ
+        for low, up in (("http_proxy", "HTTP_PROXY"),
+                        ("https_proxy", "HTTPS_PROXY"),
+                        ("all_proxy", "ALL_PROXY")):
+            if env.get(low) and not env.get(up):
+                env[up] = env[low]
+        return bool(env.get("HTTPS_PROXY") or env.get("https_proxy")
+                    or env.get("ALL_PROXY") or env.get("all_proxy"))
+
     def run(self, ctx):
+        from .base import egress_profile
+        out = []
+        env = egress_profile()
+        shimmed = bool(env.get("dns_shimmed"))
+        if shimmed:
+            out.append(self.finding(
+                "env", "system DNS shimmed -> httpx via egress proxy",
+                detail=(f"system resolver said example.com = "
+                        f"{env.get('system_answer')}; DoH "
+                        f"({env.get('doh_provider')}) said "
+                        f"{env.get('doh_answer')}. httpx's own DNS fields "
+                        f"(a/cname) are shim garbage here, so -cname is "
+                        f"dropped; HTTP itself routes through the egress "
+                        f"proxy. TLS certs seen through the proxy are "
+                        f"sandbox-MITM forged — fingerprints are not "
+                        f"target-attributable."),
+                evidence="dns-shim-detected"))
+            if not self._proxy_env_ready():
+                return out + [self.finding(
+                    "broken", "httpx: no egress-proxy env in shimmed sandbox",
+                    "https_proxy/HTTPS_PROXY missing — running httpx would "
+                    "dial the shimmed resolver and silently produce nothing; "
+                    "refusing to run",
+                    evidence="no-proxy-env")]
         subs = ctx["state"].get("all_subdomains", [])
         hosts = ctx["profile"].get("scope_hosts", [])
         targets = sorted(set(subs) | set(hosts))[:150]
         if not targets:
-            return [self.finding("inventory", "httpx: no targets yet",
-                                 "run crtsh/subfinder first")]
+            return out + [self.finding("inventory", "httpx: no targets yet",
+                                       "run crtsh/subfinder first")]
         with open("/tmp/dh_targets.txt", "w") as f:
             f.write("\n".join(targets))
+        # -cname needs real DNS; in the shim it returns 198.18.x.x garbage.
+        cname_flag = "" if shimmed else "-cname"
         rc, _, _ = sh(
             f"{OPS}/httpx -l /tmp/dh_targets.txt -silent -json "
             f"-o /tmp/dh_httpx.jsonl -title -tech-detect -status-code "
-            f"-tls-probe -cname -retries 1 -timeout 8 -threads 40 "
+            f"-tls-probe {cname_flag} -retries 1 -timeout 8 -threads 40 "
             f"< /dev/null",  # httpx also ingests stdin; close it or it hangs
             timeout=420)
         live, techs = [], {}
@@ -322,6 +367,8 @@ class HttpxTool(ToolAdapter):
                 if not line:
                     continue
                 d = _j.loads(line)
+                if d.get("failed"):
+                    continue
                 url = d.get("url", "")
                 live.append(url)
                 for t in d.get("tech", []) or []:
@@ -329,7 +376,7 @@ class HttpxTool(ToolAdapter):
         except OSError:
             pass
         ctx["state"]["live_hosts"] = live[:150]
-        return [self.finding(
+        return out + [self.finding(
             "inventory", f"httpx: {len(live)} live of {len(targets)} probed",
             detail="TECH:\n" + "\n".join(f"{k} x{v}"
                                          for k, v in sorted(techs.items())),
