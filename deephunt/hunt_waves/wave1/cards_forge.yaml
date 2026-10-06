@@ -4138,3 +4138,950 @@
   why_non_obvious: 'IDOR tests swap the id value; HPP tests duplicate parameters. The split-brain variant: the authorization
     layer reads the FIRST id= while the data layer reads the LAST (or vice versa) — so the authz check passes for YOUR object
     while the query returns the VICTIM''s.'
+
+# --- forged 2026-10-06: 8 combos from sweep_2026-10-06 cards ---
+- id: F1-060
+  name: 'Crash-sequenced auth attempt: Unauthenticated memory-overflow input to SAML…
+    x Middleware auth-ordering flaw — privileged si…'
+  klass: forged
+  requires:
+  - http_observation
+  - api_observation
+  signals:
+  - saml_authentication
+  - unauthenticated_memory_overflow
+  - service_crash
+  - appliance_reboot
+  - authentication_username
+  - middleware
+  - upload
+  - '401'
+  - '403'
+  questions:
+  - What new testable property does the interaction of S06-WEB-01 and S28-AUTH-01
+    create that neither parent card describes?
+  - What is the precise oracle that proves the COMBINATION held, not just each parent?
+  - Which benign alternative explains the same observation, and what control kills
+    it?
+  evidence:
+    positive:
+    - post_crash_auth_success; protective_state_reset; sibling_exploit_rearmed
+    negative:
+    - the SAML stack rejects oversized/malformed fields without memory corruption
+    - crashes require authentication or are not reproducible
+    - auth checks run before any side-channel handler for every route variant
+    - body-upload path requires the same token as the API route
+  followups:
+  - combo_oracle_replication
+  - control_pair_baseline
+  - alternative_kill
+  test: vary the delay between crash and attempt; confirm the steady-state baseline
+    fails repeatedly; identify exactly which state (rate limit, session table, WAF
+    learning) the crash resets
+  impact_hint: High - turns a DoS-only bug into an exploit enabler for a second flaw
+    on the same target.
+  preconditions:
+  - http_observation
+  - api_observation
+  required_state:
+  - e
+  - d
+  - g
+  - ' '
+  - a
+  - p
+  - l
+  - i
+  - n
+  - c
+  - x
+  - o
+  - s
+  - u
+  - t
+  - h
+  - S
+  - A
+  - M
+  - L
+  - k
+  - w
+  - m
+  - r
+  - y
+  - '-'
+  - f
+  - P
+  - I
+  - /
+  - b
+  - v
+  hypothesis_generator: Where Unauthenticated memory-overflow input to SAML authentication
+    stack -> service crash, chained with sibling flaw (CVE-2026-88779, Citrix NetScaler)
+    gives a reproducible unauthenticated crash and Middleware auth-ordering flaw —
+    privileged side-channel action before route auth is an auth primitive that fails
+    against the steady-state target, run the auth attempt inside the post-crash window
+    and compare pre/post outcomes.
+  request_strategy: 'staged multi-step combo: establish each parent primitive, then
+    execute the fused sequence'
+  mutation_strategy: cross-primitive mutation — vary the interaction point, not each
+    parent in isolation
+  expected_signal: post_crash_auth_success; protective_state_reset; sibling_exploit_rearmed
+  positive_oracle: 'COMBO-CRASH-SEQ-HELD: trigger the crash primitive (Unauthenticated
+    memory-overflow input to SAML authentication stack -> service crash, chained with
+    sibling flaw (CVE-2026-88779, Citrix NetScaler)) and immediately run the sibling
+    auth attempt (Middleware auth-ordering flaw — privileged side-channel action before
+    route auth) inside the post-crash recovery window. The oracle holds when the sibling
+    attempt succeeds post-crash after failing pre-crash, proving the crash reset the
+    protective state - a sequencing primitive, not just a denial of service.'
+  negative_evidence:
+  - parent_primitives_hold_but_combo_oracle_fails
+  - control_pair_diverges
+  false_positive_rules:
+  - 'candidate is not a finding: requires the COMBINED oracle, not each parent''s
+    oracle separately'
+  - kill the benign alternative explicitly before promotion
+  - verify parent primitives independently first — a combo built on a failed parent
+    is noise
+  followup_experiment: vary the delay between crash and attempt; confirm the steady-state
+    baseline fails repeatedly; identify exactly which state (rate limit, session table,
+    WAF learning) the crash resets
+  regression_test: replay control/test pair; expect combined oracle HELD
+  difficulty_estimate: 1.0
+  forged_from:
+  - S06-WEB-01
+  - S28-AUTH-01
+  forge_rule: R-CRASH-SEQUENCE
+  why_non_obvious: 'Crash primitives are usually filed as DoS and forgotten, while
+    auth-bypass cards are tested against a steady-state target. The NetScaler 88779
+    episode showed the interaction: a reproducible crash can reset rate-limit, session,
+    or mitigation state that a sibling exploit needs. Fused, the crash is not the
+    finding - it is a sequencing primitive that re-arms an auth attempt which fails
+    against the un-crashed target.'
+  notes: forged 2026-10-06 from sweep_2026-10-06 cards via R-CRASH-SEQUENCE / R-MCP-FETCH-CHAIN
+    (seed 20261006)
+- id: F1-061
+  name: 'Crash-sequenced auth attempt: Unauthenticated memory-overflow input to SAML…
+    x SAML parser differential (ruby-saml class)'
+  klass: forged
+  requires:
+  - http_observation
+  - owned_test_account
+  signals:
+  - saml_authentication
+  - unauthenticated_memory_overflow
+  - service_crash
+  - appliance_reboot
+  - authentication_username
+  - saml
+  - SAMLResponse
+  - ruby-saml
+  - /saml/sso
+  questions:
+  - What new testable property does the interaction of S06-WEB-01 and SAML-01 create
+    that neither parent card describes?
+  - What is the precise oracle that proves the COMBINATION held, not just each parent?
+  - Which benign alternative explains the same observation, and what control kills
+    it?
+  evidence:
+    positive:
+    - post_crash_auth_success; protective_state_reset; sibling_exploit_rearmed
+    negative:
+    - the SAML stack rejects oversized/malformed fields without memory corruption
+    - crashes require authentication or are not reproducible
+    - library_patched
+    - strict_parsing_enforced
+  followups:
+  - combo_oracle_replication
+  - control_pair_baseline
+  - alternative_kill
+  test: vary the delay between crash and attempt; confirm the steady-state baseline
+    fails repeatedly; identify exactly which state (rate limit, session table, WAF
+    learning) the crash resets
+  impact_hint: High - turns a DoS-only bug into an exploit enabler for a second flaw
+    on the same target.
+  preconditions:
+  - http_observation
+  - owned_test_account
+  required_state:
+  - e
+  - d
+  - g
+  - ' '
+  - a
+  - p
+  - l
+  - i
+  - n
+  - c
+  - x
+  - o
+  - s
+  - u
+  - t
+  - h
+  - S
+  - A
+  - M
+  - L
+  - k
+  - w
+  - m
+  - r
+  - y
+  - '-'
+  - f
+  hypothesis_generator: Where Unauthenticated memory-overflow input to SAML authentication
+    stack -> service crash, chained with sibling flaw (CVE-2026-88779, Citrix NetScaler)
+    gives a reproducible unauthenticated crash and SAML parser differential (ruby-saml
+    class) is an auth primitive that fails against the steady-state target, run the
+    auth attempt inside the post-crash window and compare pre/post outcomes.
+  request_strategy: 'staged multi-step combo: establish each parent primitive, then
+    execute the fused sequence'
+  mutation_strategy: cross-primitive mutation — vary the interaction point, not each
+    parent in isolation
+  expected_signal: post_crash_auth_success; protective_state_reset; sibling_exploit_rearmed
+  positive_oracle: 'COMBO-CRASH-SEQ-HELD: trigger the crash primitive (Unauthenticated
+    memory-overflow input to SAML authentication stack -> service crash, chained with
+    sibling flaw (CVE-2026-88779, Citrix NetScaler)) and immediately run the sibling
+    auth attempt (SAML parser differential (ruby-saml class)) inside the post-crash
+    recovery window. The oracle holds when the sibling attempt succeeds post-crash
+    after failing pre-crash, proving the crash reset the protective state - a sequencing
+    primitive, not just a denial of service.'
+  negative_evidence:
+  - parent_primitives_hold_but_combo_oracle_fails
+  - control_pair_diverges
+  false_positive_rules:
+  - 'candidate is not a finding: requires the COMBINED oracle, not each parent''s
+    oracle separately'
+  - kill the benign alternative explicitly before promotion
+  - verify parent primitives independently first — a combo built on a failed parent
+    is noise
+  followup_experiment: vary the delay between crash and attempt; confirm the steady-state
+    baseline fails repeatedly; identify exactly which state (rate limit, session table,
+    WAF learning) the crash resets
+  regression_test: replay control/test pair; expect combined oracle HELD
+  difficulty_estimate: 1.0
+  forged_from:
+  - S06-WEB-01
+  - SAML-01
+  forge_rule: R-CRASH-SEQUENCE
+  why_non_obvious: 'Crash primitives are usually filed as DoS and forgotten, while
+    auth-bypass cards are tested against a steady-state target. The NetScaler 88779
+    episode showed the interaction: a reproducible crash can reset rate-limit, session,
+    or mitigation state that a sibling exploit needs. Fused, the crash is not the
+    finding - it is a sequencing primitive that re-arms an auth attempt which fails
+    against the un-crashed target.'
+  notes: forged 2026-10-06 from sweep_2026-10-06 cards via R-CRASH-SEQUENCE / R-MCP-FETCH-CHAIN
+    (seed 20261006)
+- id: F1-062
+  name: 'Crash-sequenced auth attempt: Unauthenticated memory-overflow input to SAML…
+    x Rejetto HFS xorshift128+ PRNG state recovery…'
+  klass: forged
+  requires:
+  - http_observation
+  signals:
+  - saml_authentication
+  - unauthenticated_memory_overflow
+  - service_crash
+  - appliance_reboot
+  - authentication_username
+  - math_random
+  - session_cookie
+  - signature_key
+  - xorshift128
+  - prng_state
+  questions:
+  - What new testable property does the interaction of S06-WEB-01 and S05-WEB-01 create
+    that neither parent card describes?
+  - What is the precise oracle that proves the COMBINATION held, not just each parent?
+  - Which benign alternative explains the same observation, and what control kills
+    it?
+  evidence:
+    positive:
+    - post_crash_auth_success; protective_state_reset; sibling_exploit_rearmed
+    negative:
+    - the SAML stack rejects oversized/malformed fields without memory corruption
+    - crashes require authentication or are not reproducible
+    - the session key is generated with a CSPRNG (crypto.randomBytes) and no PRNG
+      outputs are observable
+    - the cookie signature uses a server-side secret never derived from observable
+      output
+  followups:
+  - combo_oracle_replication
+  - control_pair_baseline
+  - alternative_kill
+  test: vary the delay between crash and attempt; confirm the steady-state baseline
+    fails repeatedly; identify exactly which state (rate limit, session table, WAF
+    learning) the crash resets
+  impact_hint: High - turns a DoS-only bug into an exploit enabler for a second flaw
+    on the same target.
+  preconditions:
+  - http_observation
+  required_state:
+  - e
+  - d
+  - g
+  - ' '
+  - a
+  - p
+  - l
+  - i
+  - n
+  - c
+  - x
+  - o
+  - s
+  - u
+  - t
+  - h
+  - S
+  - A
+  - M
+  - L
+  - k
+  - w
+  - m
+  - r
+  - y
+  - '-'
+  - f
+  - b
+  - v
+  - /
+  - P
+  - R
+  - N
+  - G
+  hypothesis_generator: Where Unauthenticated memory-overflow input to SAML authentication
+    stack -> service crash, chained with sibling flaw (CVE-2026-88779, Citrix NetScaler)
+    gives a reproducible unauthenticated crash and Rejetto HFS xorshift128+ PRNG state
+    recovery -> forged admin session cookie -> RCE (CVE-2026-61500) is an auth primitive
+    that fails against the steady-state target, run the auth attempt inside the post-crash
+    window and compare pre/post outcomes.
+  request_strategy: 'staged multi-step combo: establish each parent primitive, then
+    execute the fused sequence'
+  mutation_strategy: cross-primitive mutation — vary the interaction point, not each
+    parent in isolation
+  expected_signal: post_crash_auth_success; protective_state_reset; sibling_exploit_rearmed
+  positive_oracle: 'COMBO-CRASH-SEQ-HELD: trigger the crash primitive (Unauthenticated
+    memory-overflow input to SAML authentication stack -> service crash, chained with
+    sibling flaw (CVE-2026-88779, Citrix NetScaler)) and immediately run the sibling
+    auth attempt (Rejetto HFS xorshift128+ PRNG state recovery -> forged admin session
+    cookie -> RCE (CVE-2026-61500)) inside the post-crash recovery window. The oracle
+    holds when the sibling attempt succeeds post-crash after failing pre-crash, proving
+    the crash reset the protective state - a sequencing primitive, not just a denial
+    of service.'
+  negative_evidence:
+  - parent_primitives_hold_but_combo_oracle_fails
+  - control_pair_diverges
+  false_positive_rules:
+  - 'candidate is not a finding: requires the COMBINED oracle, not each parent''s
+    oracle separately'
+  - kill the benign alternative explicitly before promotion
+  - verify parent primitives independently first — a combo built on a failed parent
+    is noise
+  followup_experiment: vary the delay between crash and attempt; confirm the steady-state
+    baseline fails repeatedly; identify exactly which state (rate limit, session table,
+    WAF learning) the crash resets
+  regression_test: replay control/test pair; expect combined oracle HELD
+  difficulty_estimate: 1.0
+  forged_from:
+  - S06-WEB-01
+  - S05-WEB-01
+  forge_rule: R-CRASH-SEQUENCE
+  why_non_obvious: 'Crash primitives are usually filed as DoS and forgotten, while
+    auth-bypass cards are tested against a steady-state target. The NetScaler 88779
+    episode showed the interaction: a reproducible crash can reset rate-limit, session,
+    or mitigation state that a sibling exploit needs. Fused, the crash is not the
+    finding - it is a sequencing primitive that re-arms an auth attempt which fails
+    against the un-crashed target.'
+  notes: forged 2026-10-06 from sweep_2026-10-06 cards via R-CRASH-SEQUENCE / R-MCP-FETCH-CHAIN
+    (seed 20261006)
+- id: F1-063
+  name: 'Crash-sequenced auth attempt: Unauthenticated memory-overflow input to SAML…
+    x xray-core pinnedPeerCertSha256 certificate-ve…'
+  klass: forged
+  requires:
+  - http_observation
+  signals:
+  - saml_authentication
+  - unauthenticated_memory_overflow
+  - service_crash
+  - appliance_reboot
+  - authentication_username
+  - certificate_pinning
+  - tls_verification
+  - chain_position
+  questions:
+  - What new testable property does the interaction of S06-WEB-01 and S05-WEB-03 create
+    that neither parent card describes?
+  - What is the precise oracle that proves the COMBINATION held, not just each parent?
+  - Which benign alternative explains the same observation, and what control kills
+    it?
+  evidence:
+    positive:
+    - post_crash_auth_success; protective_state_reset; sibling_exploit_rearmed
+    negative:
+    - the SAML stack rejects oversized/malformed fields without memory corruption
+    - crashes require authentication or are not reproducible
+    - the pin is bound to the leaf position (chain[0]) and regular verification still
+      runs
+    - the option is a strict addition on top of normal verification, not a replacement
+  followups:
+  - combo_oracle_replication
+  - control_pair_baseline
+  - alternative_kill
+  test: vary the delay between crash and attempt; confirm the steady-state baseline
+    fails repeatedly; identify exactly which state (rate limit, session table, WAF
+    learning) the crash resets
+  impact_hint: High - turns a DoS-only bug into an exploit enabler for a second flaw
+    on the same target.
+  preconditions:
+  - http_observation
+  required_state:
+  - e
+  - d
+  - g
+  - ' '
+  - a
+  - p
+  - l
+  - i
+  - n
+  - c
+  - x
+  - o
+  - s
+  - u
+  - t
+  - h
+  - S
+  - A
+  - M
+  - L
+  - k
+  - w
+  - m
+  - r
+  - y
+  - '-'
+  - f
+  - T
+  - (
+  - )
+  - v
+  hypothesis_generator: Where Unauthenticated memory-overflow input to SAML authentication
+    stack -> service crash, chained with sibling flaw (CVE-2026-88779, Citrix NetScaler)
+    gives a reproducible unauthenticated crash and xray-core pinnedPeerCertSha256
+    certificate-verification bypass -> full MitM collapse is an auth primitive that
+    fails against the steady-state target, run the auth attempt inside the post-crash
+    window and compare pre/post outcomes.
+  request_strategy: 'staged multi-step combo: establish each parent primitive, then
+    execute the fused sequence'
+  mutation_strategy: cross-primitive mutation — vary the interaction point, not each
+    parent in isolation
+  expected_signal: post_crash_auth_success; protective_state_reset; sibling_exploit_rearmed
+  positive_oracle: 'COMBO-CRASH-SEQ-HELD: trigger the crash primitive (Unauthenticated
+    memory-overflow input to SAML authentication stack -> service crash, chained with
+    sibling flaw (CVE-2026-88779, Citrix NetScaler)) and immediately run the sibling
+    auth attempt (xray-core pinnedPeerCertSha256 certificate-verification bypass ->
+    full MitM collapse) inside the post-crash recovery window. The oracle holds when
+    the sibling attempt succeeds post-crash after failing pre-crash, proving the crash
+    reset the protective state - a sequencing primitive, not just a denial of service.'
+  negative_evidence:
+  - parent_primitives_hold_but_combo_oracle_fails
+  - control_pair_diverges
+  false_positive_rules:
+  - 'candidate is not a finding: requires the COMBINED oracle, not each parent''s
+    oracle separately'
+  - kill the benign alternative explicitly before promotion
+  - verify parent primitives independently first — a combo built on a failed parent
+    is noise
+  followup_experiment: vary the delay between crash and attempt; confirm the steady-state
+    baseline fails repeatedly; identify exactly which state (rate limit, session table,
+    WAF learning) the crash resets
+  regression_test: replay control/test pair; expect combined oracle HELD
+  difficulty_estimate: 1.0
+  forged_from:
+  - S06-WEB-01
+  - S05-WEB-03
+  forge_rule: R-CRASH-SEQUENCE
+  why_non_obvious: 'Crash primitives are usually filed as DoS and forgotten, while
+    auth-bypass cards are tested against a steady-state target. The NetScaler 88779
+    episode showed the interaction: a reproducible crash can reset rate-limit, session,
+    or mitigation state that a sibling exploit needs. Fused, the crash is not the
+    finding - it is a sequencing primitive that re-arms an auth attempt which fails
+    against the un-crashed target.'
+  notes: forged 2026-10-06 from sweep_2026-10-06 cards via R-CRASH-SEQUENCE / R-MCP-FETCH-CHAIN
+    (seed 20261006)
+- id: F1-064
+  name: 'Unauthenticated MCP fetch as SSRF vehicle: Unauthenticated MCP tool exposure
+    cluster — S… x .NET SOAP/WSDL protocol-switching SSRF (WebRe…'
+  klass: forged
+  requires:
+  - http_observation
+  - .NET app that imports attacker-influenced WSDL or builds SOAP proxies from URLs
+  - ServiceDescriptionImporter or dynamic proxy generation
+  signals:
+  - mcp_server
+  - sse_endpoint
+  - unauthenticated_tool_invoke
+  - file_read_tool
+  - ssrf
+  - WSDL import endpoints
+  - .asmx?WSDL
+  - SOAP client configuration via URL parameter
+  questions:
+  - What new testable property does the interaction of S06-AI-01 and W1-019 create
+    that neither parent card describes?
+  - What is the precise oracle that proves the COMBINATION held, not just each parent?
+  - Which benign alternative explains the same observation, and what control kills
+    it?
+  evidence:
+    positive:
+    - unauth_mcp_fetch; internal_content_in_tool_result; ssrf_via_agent_transport
+    negative:
+    - MCP transport requires authentication before any tool invocation
+    - tools are allowlisted to safe, non-file, non-exec operations with path sandboxing
+    - importer allowlists http/https only
+    - service URL validated against expected hosts
+  followups:
+  - combo_oracle_replication
+  - control_pair_baseline
+  - alternative_kill
+  test: check whether tool-result content is also ingested into any connected agent
+    context (second-order context poisoning); test metadata endpoints and internal
+    admin consoles as fetch targets
+  impact_hint: High - unauthenticated SSRF with the result handed back to the attacker;
+    agent-context ingestion makes it second-order.
+  preconditions:
+  - http_observation
+  - WSDL URL or service address derived from untrusted input
+  - no scheme allowlist before proxy invocation
+  required_state:
+  - M
+  - C
+  - P
+  - ' '
+  - s
+  - e
+  - r
+  - v
+  - x
+  - p
+  - o
+  - i
+  - n
+  - g
+  - S
+  - E
+  - /
+  - m
+  - a
+  - t
+  - h
+  - w
+  - k
+  - l
+  - b
+  - u
+  - c
+  - A
+  - '-'
+  - d
+  - W
+  - D
+  - L
+  - ;
+  - .
+  hypothesis_generator: Where Unauthenticated MCP tool exposure cluster — SSE session
+    + messages endpoint invokes file-read/exec tools; fetch tool SSRF in official
+    servers (Oct-2026 cluster) exposes an unauthenticated fetch-capable tool and .NET
+    SOAP/WSDL protocol-switching SSRF (WebRequest.Create) defines the internal SSRF
+    targets, drive the internal URLs through the MCP tool and read the results back
+    from the tool response.
+  request_strategy: 'staged multi-step combo: establish each parent primitive, then
+    execute the fused sequence'
+  mutation_strategy: cross-primitive mutation — vary the interaction point, not each
+    parent in isolation
+  expected_signal: unauth_mcp_fetch; internal_content_in_tool_result; ssrf_via_agent_transport
+  positive_oracle: 'COMBO-MCP-FETCH-HELD: open an unauthenticated MCP session (Unauthenticated
+    MCP tool exposure cluster — SSE session + messages endpoint invokes file-read/exec
+    tools; fetch tool SSRF in official servers (Oct-2026 cluster)) and invoke its
+    fetch/URL tool against an internal-only URL from the SSRF surface (.NET SOAP/WSDL
+    protocol-switching SSRF (WebRequest.Create)). The oracle holds when internal content
+    is returned through the tool result into an attacker-observable channel - the
+    MCP transport launders the SSRF past the auth boundary the standalone test could
+    not cross.'
+  negative_evidence:
+  - parent_primitives_hold_but_combo_oracle_fails
+  - control_pair_diverges
+  false_positive_rules:
+  - 'candidate is not a finding: requires the COMBINED oracle, not each parent''s
+    oracle separately'
+  - kill the benign alternative explicitly before promotion
+  - verify parent primitives independently first — a combo built on a failed parent
+    is noise
+  followup_experiment: check whether tool-result content is also ingested into any
+    connected agent context (second-order context poisoning); test metadata endpoints
+    and internal admin consoles as fetch targets
+  regression_test: replay control/test pair; expect combined oracle HELD
+  difficulty_estimate: 1.0
+  forged_from:
+  - S06-AI-01
+  - W1-019
+  forge_rule: R-MCP-FETCH-CHAIN
+  why_non_obvious: 'SSRF cards assume the fetcher is a feature the tester must reach,
+    often behind auth. Unauthenticated MCP tool exposure inverts this: the fetch tool
+    is reachable with no credentials, and its result flows back into an attacker-observable
+    tool response. Fused, the MCP transport becomes an auth-less SSRF delivery vehicle
+    - the SSRF test rides a channel the standalone SSRF methodology could never reach.'
+  notes: forged 2026-10-06 from sweep_2026-10-06 cards via R-CRASH-SEQUENCE / R-MCP-FETCH-CHAIN
+    (seed 20261006)
+- id: F1-065
+  name: 'Unauthenticated MCP fetch as SSRF vehicle: Unauthenticated MCP tool exposure
+    cluster — S… x SSRF via parser differentials'
+  klass: forged
+  requires:
+  - http_observation
+  signals:
+  - mcp_server
+  - sse_endpoint
+  - unauthenticated_tool_invoke
+  - file_read_tool
+  - ssrf
+  - webhook
+  - url=
+  - import
+  - fetch
+  - preview
+  - avatar
+  questions:
+  - What new testable property does the interaction of S06-AI-01 and SSRF-03 create
+    that neither parent card describes?
+  - What is the precise oracle that proves the COMBINATION held, not just each parent?
+  - Which benign alternative explains the same observation, and what control kills
+    it?
+  evidence:
+    positive:
+    - unauth_mcp_fetch; internal_content_in_tool_result; ssrf_via_agent_transport
+    negative:
+    - MCP transport requires authentication before any tool invocation
+    - tools are allowlisted to safe, non-file, non-exec operations with path sandboxing
+    - output_encoded
+    - input_neutralized
+    - defense_at_boundary
+  followups:
+  - combo_oracle_replication
+  - control_pair_baseline
+  - alternative_kill
+  test: check whether tool-result content is also ingested into any connected agent
+    context (second-order context poisoning); test metadata endpoints and internal
+    admin consoles as fetch targets
+  impact_hint: High - unauthenticated SSRF with the result handed back to the attacker;
+    agent-context ingestion makes it second-order.
+  preconditions:
+  - http_observation
+  required_state:
+  - M
+  - C
+  - P
+  - ' '
+  - s
+  - e
+  - r
+  - v
+  - x
+  - p
+  - o
+  - i
+  - n
+  - g
+  - S
+  - E
+  - /
+  - m
+  - a
+  - t
+  - h
+  - w
+  - k
+  - l
+  - b
+  - u
+  - c
+  hypothesis_generator: Where Unauthenticated MCP tool exposure cluster — SSE session
+    + messages endpoint invokes file-read/exec tools; fetch tool SSRF in official
+    servers (Oct-2026 cluster) exposes an unauthenticated fetch-capable tool and SSRF
+    via parser differentials defines the internal SSRF targets, drive the internal
+    URLs through the MCP tool and read the results back from the tool response.
+  request_strategy: 'staged multi-step combo: establish each parent primitive, then
+    execute the fused sequence'
+  mutation_strategy: cross-primitive mutation — vary the interaction point, not each
+    parent in isolation
+  expected_signal: unauth_mcp_fetch; internal_content_in_tool_result; ssrf_via_agent_transport
+  positive_oracle: 'COMBO-MCP-FETCH-HELD: open an unauthenticated MCP session (Unauthenticated
+    MCP tool exposure cluster — SSE session + messages endpoint invokes file-read/exec
+    tools; fetch tool SSRF in official servers (Oct-2026 cluster)) and invoke its
+    fetch/URL tool against an internal-only URL from the SSRF surface (SSRF via parser
+    differentials). The oracle holds when internal content is returned through the
+    tool result into an attacker-observable channel - the MCP transport launders the
+    SSRF past the auth boundary the standalone test could not cross.'
+  negative_evidence:
+  - parent_primitives_hold_but_combo_oracle_fails
+  - control_pair_diverges
+  false_positive_rules:
+  - 'candidate is not a finding: requires the COMBINED oracle, not each parent''s
+    oracle separately'
+  - kill the benign alternative explicitly before promotion
+  - verify parent primitives independently first — a combo built on a failed parent
+    is noise
+  followup_experiment: check whether tool-result content is also ingested into any
+    connected agent context (second-order context poisoning); test metadata endpoints
+    and internal admin consoles as fetch targets
+  regression_test: replay control/test pair; expect combined oracle HELD
+  difficulty_estimate: 0.8
+  forged_from:
+  - S06-AI-01
+  - SSRF-03
+  forge_rule: R-MCP-FETCH-CHAIN
+  why_non_obvious: 'SSRF cards assume the fetcher is a feature the tester must reach,
+    often behind auth. Unauthenticated MCP tool exposure inverts this: the fetch tool
+    is reachable with no credentials, and its result flows back into an attacker-observable
+    tool response. Fused, the MCP transport becomes an auth-less SSRF delivery vehicle
+    - the SSRF test rides a channel the standalone SSRF methodology could never reach.'
+  notes: forged 2026-10-06 from sweep_2026-10-06 cards via R-CRASH-SEQUENCE / R-MCP-FETCH-CHAIN
+    (seed 20261006)
+- id: F1-066
+  name: 'Unauthenticated MCP fetch as SSRF vehicle: Unauthenticated MCP tool exposure
+    cluster — S… x SSRF allowlist bypass via DNS rebinding TOCTOU'
+  klass: forged
+  requires:
+  - http_observation
+  - url_input_parameter
+  - owned_dns_record
+  signals:
+  - mcp_server
+  - sse_endpoint
+  - unauthenticated_tool_invoke
+  - file_read_tool
+  - ssrf
+  - filter_validates_hostname_at_request_time
+  - dns_lookup_happens_at_connect_time
+  questions:
+  - What new testable property does the interaction of S06-AI-01 and C1-002 create
+    that neither parent card describes?
+  - What is the precise oracle that proves the COMBINATION held, not just each parent?
+  - Which benign alternative explains the same observation, and what control kills
+    it?
+  evidence:
+    positive:
+    - unauth_mcp_fetch; internal_content_in_tool_result; ssrf_via_agent_transport
+    negative:
+    - MCP transport requires authentication before any tool invocation
+    - tools are allowlisted to safe, non-file, non-exec operations with path sandboxing
+    - No OOB hit across multiple flip timings
+    - Server appears to resolve once and cache (second request reuses first resolution)
+  followups:
+  - combo_oracle_replication
+  - control_pair_baseline
+  - alternative_kill
+  test: check whether tool-result content is also ingested into any connected agent
+    context (second-order context poisoning); test metadata endpoints and internal
+    admin consoles as fetch targets
+  impact_hint: High - unauthenticated SSRF with the result handed back to the attacker;
+    agent-context ingestion makes it second-order.
+  preconditions:
+  - http_observation
+  - The server resolves the hostname itself at connect time
+  - You control an authoritative DNS name with low TTL, or a rebinding service
+  required_state:
+  - M
+  - C
+  - P
+  - ' '
+  - s
+  - e
+  - r
+  - v
+  - x
+  - p
+  - o
+  - i
+  - n
+  - g
+  - S
+  - E
+  - /
+  - m
+  - a
+  - t
+  - h
+  - w
+  - k
+  - l
+  - b
+  - u
+  - c
+  - d
+  hypothesis_generator: Where Unauthenticated MCP tool exposure cluster — SSE session
+    + messages endpoint invokes file-read/exec tools; fetch tool SSRF in official
+    servers (Oct-2026 cluster) exposes an unauthenticated fetch-capable tool and SSRF
+    allowlist bypass via DNS rebinding TOCTOU defines the internal SSRF targets, drive
+    the internal URLs through the MCP tool and read the results back from the tool
+    response.
+  request_strategy: 'staged multi-step combo: establish each parent primitive, then
+    execute the fused sequence'
+  mutation_strategy: cross-primitive mutation — vary the interaction point, not each
+    parent in isolation
+  expected_signal: unauth_mcp_fetch; internal_content_in_tool_result; ssrf_via_agent_transport
+  positive_oracle: 'COMBO-MCP-FETCH-HELD: open an unauthenticated MCP session (Unauthenticated
+    MCP tool exposure cluster — SSE session + messages endpoint invokes file-read/exec
+    tools; fetch tool SSRF in official servers (Oct-2026 cluster)) and invoke its
+    fetch/URL tool against an internal-only URL from the SSRF surface (SSRF allowlist
+    bypass via DNS rebinding TOCTOU). The oracle holds when internal content is returned
+    through the tool result into an attacker-observable channel - the MCP transport
+    launders the SSRF past the auth boundary the standalone test could not cross.'
+  negative_evidence:
+  - parent_primitives_hold_but_combo_oracle_fails
+  - control_pair_diverges
+  false_positive_rules:
+  - 'candidate is not a finding: requires the COMBINED oracle, not each parent''s
+    oracle separately'
+  - kill the benign alternative explicitly before promotion
+  - verify parent primitives independently first — a combo built on a failed parent
+    is noise
+  followup_experiment: check whether tool-result content is also ingested into any
+    connected agent context (second-order context poisoning); test metadata endpoints
+    and internal admin consoles as fetch targets
+  regression_test: replay control/test pair; expect combined oracle HELD
+  difficulty_estimate: 1.0
+  forged_from:
+  - S06-AI-01
+  - C1-002
+  forge_rule: R-MCP-FETCH-CHAIN
+  why_non_obvious: 'SSRF cards assume the fetcher is a feature the tester must reach,
+    often behind auth. Unauthenticated MCP tool exposure inverts this: the fetch tool
+    is reachable with no credentials, and its result flows back into an attacker-observable
+    tool response. Fused, the MCP transport becomes an auth-less SSRF delivery vehicle
+    - the SSRF test rides a channel the standalone SSRF methodology could never reach.'
+  notes: forged 2026-10-06 from sweep_2026-10-06 cards via R-CRASH-SEQUENCE / R-MCP-FETCH-CHAIN
+    (seed 20261006)
+- id: F1-067
+  name: 'Unauthenticated MCP fetch as SSRF vehicle: Unauthenticated MCP tool exposure
+    cluster — S… x SSRF via URL fetch / webhook / file-import pa…'
+  klass: forged
+  requires:
+  - http_observation
+  signals:
+  - mcp_server
+  - sse_endpoint
+  - unauthenticated_tool_invoke
+  - file_read_tool
+  - ssrf
+  - url=
+  - webhook
+  - import
+  - fetch
+  - avatar
+  - preview
+  - callback
+  questions:
+  - What new testable property does the interaction of S06-AI-01 and SSRF-01 create
+    that neither parent card describes?
+  - What is the precise oracle that proves the COMBINATION held, not just each parent?
+  - Which benign alternative explains the same observation, and what control kills
+    it?
+  evidence:
+    positive:
+    - unauth_mcp_fetch; internal_content_in_tool_result; ssrf_via_agent_transport
+    negative:
+    - MCP transport requires authentication before any tool invocation
+    - tools are allowlisted to safe, non-file, non-exec operations with path sandboxing
+    - output_encoded
+    - input_neutralized
+    - defense_at_boundary
+  followups:
+  - combo_oracle_replication
+  - control_pair_baseline
+  - alternative_kill
+  test: check whether tool-result content is also ingested into any connected agent
+    context (second-order context poisoning); test metadata endpoints and internal
+    admin consoles as fetch targets
+  impact_hint: High - unauthenticated SSRF with the result handed back to the attacker;
+    agent-context ingestion makes it second-order.
+  preconditions:
+  - http_observation
+  required_state:
+  - M
+  - C
+  - P
+  - ' '
+  - s
+  - e
+  - r
+  - v
+  - x
+  - p
+  - o
+  - i
+  - n
+  - g
+  - S
+  - E
+  - /
+  - m
+  - a
+  - t
+  - h
+  - w
+  - k
+  - l
+  - b
+  - u
+  - c
+  hypothesis_generator: Where Unauthenticated MCP tool exposure cluster — SSE session
+    + messages endpoint invokes file-read/exec tools; fetch tool SSRF in official
+    servers (Oct-2026 cluster) exposes an unauthenticated fetch-capable tool and SSRF
+    via URL fetch / webhook / file-import parameters defines the internal SSRF targets,
+    drive the internal URLs through the MCP tool and read the results back from the
+    tool response.
+  request_strategy: 'staged multi-step combo: establish each parent primitive, then
+    execute the fused sequence'
+  mutation_strategy: cross-primitive mutation — vary the interaction point, not each
+    parent in isolation
+  expected_signal: unauth_mcp_fetch; internal_content_in_tool_result; ssrf_via_agent_transport
+  positive_oracle: 'COMBO-MCP-FETCH-HELD: open an unauthenticated MCP session (Unauthenticated
+    MCP tool exposure cluster — SSE session + messages endpoint invokes file-read/exec
+    tools; fetch tool SSRF in official servers (Oct-2026 cluster)) and invoke its
+    fetch/URL tool against an internal-only URL from the SSRF surface (SSRF via URL
+    fetch / webhook / file-import parameters). The oracle holds when internal content
+    is returned through the tool result into an attacker-observable channel - the
+    MCP transport launders the SSRF past the auth boundary the standalone test could
+    not cross.'
+  negative_evidence:
+  - parent_primitives_hold_but_combo_oracle_fails
+  - control_pair_diverges
+  false_positive_rules:
+  - 'candidate is not a finding: requires the COMBINED oracle, not each parent''s
+    oracle separately'
+  - kill the benign alternative explicitly before promotion
+  - verify parent primitives independently first — a combo built on a failed parent
+    is noise
+  followup_experiment: check whether tool-result content is also ingested into any
+    connected agent context (second-order context poisoning); test metadata endpoints
+    and internal admin consoles as fetch targets
+  regression_test: replay control/test pair; expect combined oracle HELD
+  difficulty_estimate: 1.0
+  forged_from:
+  - S06-AI-01
+  - SSRF-01
+  forge_rule: R-MCP-FETCH-CHAIN
+  why_non_obvious: 'SSRF cards assume the fetcher is a feature the tester must reach,
+    often behind auth. Unauthenticated MCP tool exposure inverts this: the fetch tool
+    is reachable with no credentials, and its result flows back into an attacker-observable
+    tool response. Fused, the MCP transport becomes an auth-less SSRF delivery vehicle
+    - the SSRF test rides a channel the standalone SSRF methodology could never reach.'
+  notes: forged 2026-10-06 from sweep_2026-10-06 cards via R-CRASH-SEQUENCE / R-MCP-FETCH-CHAIN
+    (seed 20261006)

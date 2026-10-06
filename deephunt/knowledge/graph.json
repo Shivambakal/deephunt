@@ -1108,6 +1108,44 @@
    "klass": "injection",
    "impact": "Medium \u2014 client-side DoS via a hostile or impersonated database server; wide bla"
   },
+  "S06-WEB-01": {
+   "type": "technique",
+   "name": "Unauthenticated memory-overflow input to SAML authentication stack -> service crash, chained with sibling flaw (CVE-2026-88779, Citrix NetScaler)",
+   "klass": "memory_corruption",
+   "impact": "High \u2014 unauthenticated remote DoS on perimeter authentication infrastructure wit"
+  },
+  "class:memory_corruption": {
+   "type": "class",
+   "name": "memory_corruption"
+  },
+  "S06-WEB-02": {
+   "type": "technique",
+   "name": "Forged server-identity login string + unbounded privileged file write -> unauthenticated remote root RCE on management plane, single TCP port (CVE-2026-93616, Check Point)",
+   "klass": "authentication",
+   "impact": "Critical \u2014 unauthenticated remote root on the host holding firewall policy and t"
+  },
+  "S06-WEB-03": {
+   "type": "technique",
+   "name": "Attacker-controlled bookmark-card URL feeds malicious SVG into server-side image processing -> command execution (CVE-2026-105642, Ghost CMS)",
+   "klass": "injection",
+   "impact": "High \u2014 authenticated low-privilege staff to RCE on the CMS host. Precondition: v"
+  },
+  "S06-AI-01": {
+   "type": "technique",
+   "name": "Unauthenticated MCP tool exposure cluster \u2014 SSE session + messages endpoint invokes file-read/exec tools; fetch tool SSRF in official servers (Oct-2026 cluster)",
+   "klass": "ai_agent",
+   "impact": "Critical \u2014 unauthenticated remote file theft / credential theft / SSRF / RCE dep"
+  },
+  "class:ai_agent": {
+   "type": "class",
+   "name": "ai_agent"
+  },
+  "S06-AI-02": {
+   "type": "technique",
+   "name": "Defensive context bomb \u2014 forged operator instruction planted in canary secrets persuades an attacking AI agent to halt (Tracebit, Qwen)",
+   "klass": "ai_agent",
+   "impact": "Medium \u2014 defensive deception technique: interrupts AI-led attacks without provid"
+  },
   "A1-001": {
    "type": "technique",
    "name": "Self-replicating adversarial prompt worm across agent ecosystems",
@@ -5837,6 +5875,101 @@
    "S05-INJ-01"
   ],
   [
+   "S06-WEB-01",
+   "in_class",
+   "class:memory_corruption"
+  ],
+  [
+   "S06-WEB-02",
+   "in_class",
+   "class:authentication"
+  ],
+  [
+   "S06-WEB-02",
+   "exploits_weakness",
+   "CWE-287"
+  ],
+  [
+   "CWE-287",
+   "enables",
+   "S06-WEB-02"
+  ],
+  [
+   "S06-WEB-02",
+   "exploits_weakness",
+   "CWE-307"
+  ],
+  [
+   "CWE-307",
+   "enables",
+   "S06-WEB-02"
+  ],
+  [
+   "S06-WEB-02",
+   "exploits_weakness",
+   "CWE-613"
+  ],
+  [
+   "CWE-613",
+   "enables",
+   "S06-WEB-02"
+  ],
+  [
+   "S06-WEB-03",
+   "in_class",
+   "class:injection"
+  ],
+  [
+   "S06-WEB-03",
+   "exploits_weakness",
+   "CWE-78"
+  ],
+  [
+   "CWE-78",
+   "enables",
+   "S06-WEB-03"
+  ],
+  [
+   "S06-WEB-03",
+   "exploits_weakness",
+   "CWE-79"
+  ],
+  [
+   "CWE-79",
+   "enables",
+   "S06-WEB-03"
+  ],
+  [
+   "S06-WEB-03",
+   "exploits_weakness",
+   "CWE-89"
+  ],
+  [
+   "CWE-89",
+   "enables",
+   "S06-WEB-03"
+  ],
+  [
+   "S06-WEB-03",
+   "exploits_weakness",
+   "CWE-94"
+  ],
+  [
+   "CWE-94",
+   "enables",
+   "S06-WEB-03"
+  ],
+  [
+   "S06-AI-01",
+   "in_class",
+   "class:ai_agent"
+  ],
+  [
+   "S06-AI-02",
+   "in_class",
+   "class:ai_agent"
+  ],
+  [
    "A1-001",
    "in_class",
    "class:ai_llm"
@@ -8298,8 +8431,8 @@
   ]
  ],
  "stats": {
-  "techniques": 342,
+  "techniques": 347,
   "weaknesses": 33,
-  "classes": 35
+  "classes": 37
  }
 }

@@ -1,0 +1,238 @@
+# DEEPHUNT technique cards — daily intel sweep 2026-10-06
+# Schema v2: preconditions/required_state/hypothesis_generator/
+# request_strategy/mutation_strategy/expected_signal/positive_oracle/
+# negative_evidence/false_positive_rules/followup_experiment/
+# regression_test/difficulty_estimate. 5 cards.
+# Sources: Pacific Technology Group + Help Net Security + cybersecurefox + Threadlinqs
+# (CVE-2026-88779 reporting 2026-10-04/05); Bishop Fox "One Port to Root"
+# (CVE-2026-93616, ~2026-10-01); TheHackerWire CVE-2026-105642 (2026-10-05);
+# dev.to kielltampubolon MCP 4-CVE cluster (2026-10-04) + RedPacket CVE-2026-104120
+# (2026-10-02) + ClawSecure AI Agent Threat Report (report 2026-09-24, press 2026-10-05);
+# itbrief.co.nz Tracebit Qwen/canary research (~2026-10-02).
+# Dedup: Manus/JSFuck, GitLab AI Gateway 90970, HFS 61500 all already in sweep_2026-10-05;
+# OWASP LLM Top 10 2026 (Aug) + Agent Control Standard (Sep 1) are outside the ~24h window
+# and already covered in survey_2026; no new OWASP/MITRE item in window.
+
+- id: S06-WEB-01
+  name: Unauthenticated memory-overflow input to SAML authentication stack -> service crash, chained with sibling flaw (CVE-2026-88779, Citrix NetScaler)
+  klass: memory_corruption
+  requires:
+  - http_observation
+  signals:
+  - saml_authentication
+  - unauthenticated_memory_overflow
+  - service_crash
+  - appliance_reboot
+  - authentication_username
+  questions:
+  - Does the SAML authentication stack (SP or IdP role) corrupt memory on malformed/oversized attacker-controlled fields (e.g. crafted auth usernames)?
+  - Can an unauthenticated caller repeatedly trigger the corruption to keep the authentication service down?
+  - Is a DoS-only flaw being used deliberately as a crash primitive to re-arm or cover exploitation of a sibling memory-safety bug?
+  evidence:
+    positive:
+    - 'Pacific Technology Group (2026-10-05): CVE-2026-88779 is a memory overflow in NetScaler''s SAML authentication stack allowing unauthenticated remote attackers to trigger denial of service against SAML-configured VPN/SSO gateways; researchers are investigating escalation to RCE. CISA added it to KEV on 2026-10-04 with a 2026-10-07 federal patch deadline. Distinct from September''s CVE-2026-88771/88772 — patched shops remain exposed.'
+    - 'Help Net Security (2026-10-05): Bishop Fox and watchTowr independently involved; watchTowr reproduced the vulnerability within hours of spotting suspicious honeypot activity. Attackers observed trying to download and run scripts to install webshells; a Geico threat hunter published a SIGMA rule for probing/exploitation. Citrix confirms targeted attacks on unmitigated SAML deployments.'
+    - 'Threadlinqs timeline (TL-2026-2896): CTX697174 published 2026-10-03 (CVSS v4.0 8.7, CWE-119); fixed in 14.1-73.41 and 13.1-64.28. On 2026-10-04 researchers reported crafted authentication usernames carrying shell commands that fetched a payload from 213.209.159.55 (saved as /v and executed); Kevin Beaumont found a downloaded malware binary on a honeypot. watchTowr judges the flaw DoS-only and suspects the crashes are DELIBERATE — triggered to aid exploitation of sibling CVE-2026-88771.'
+    negative:
+    - the SAML stack rejects oversized/malformed fields without memory corruption
+    - crashes require authentication or are not reproducible
+  followups:
+  - test whether repeated crash cycles reset any rate-limit or session state used by a sibling exploit
+  - monitor whether any public PoC escalates the overflow to code execution
+  test: 'Against an owned lab NetScaler with SAML enabled, send malformed/oversized SAML authentication fields unauthenticated. A hold requires a reproducible crash of the authentication service; a second-order hold requires showing the crash resets state relied on by a sibling-flaw exploit chain.'
+  impact_hint: 'High — unauthenticated remote DoS on perimeter authentication infrastructure with active in-the-wild exploitation; possible RCE under investigation. Precondition: NetScaler ADC/Gateway with SAML in SP or IdP role, reachable over the network.'
+  preconditions:
+  - http_observation
+  required_state: edge appliance exposing an unauthenticated SAML authentication stack with memory-unsafe parsing
+  hypothesis_generator: 'When signals [''saml_authentication'', ''unauthenticated_memory_overflow''] are observed, hypothesize: crafted SAML fields corrupt memory — probe for reproducible service crashes, then test whether the crash is being used as a sequencing primitive for a sibling flaw.'
+  request_strategy: send oversized/malformed values in SAML-facing auth fields (usernames, assertion fields) without authentication; observe service availability and reboot behavior
+  mutation_strategy: vary field length and encoding; vary SAML role (SP vs IdP); vary request burst cadence to test repeated-crash persistence
+  expected_signal: auth_service_crash; appliance_reboot; exploitation_attempt_scripts
+  positive_oracle: unauthenticated input reproducibly crashes the SAML service AND post-crash state measurably differs in a way a sibling exploit can consume
+  negative_evidence:
+  - input validation rejects oversized SAML fields
+  - no crash after sustained fuzzing of SAML fields
+  false_positive_rules:
+  - a crash that requires valid credentials is not this flaw — the primitive is unauthenticated
+  - single-instance crashes on already-patched builds do not confirm the vuln; check build numbers first
+  followup_experiment: audit other SAML implementations (IdP-initiated vs SP-initiated paths) for the same unauthenticated memory-corruption pattern
+  regression_test: with the patch applied, oversized SAML fields are rejected and the service stays up under the same input corpus
+  difficulty_estimate: 0.7
+
+- id: S06-WEB-02
+  name: Forged server-identity login string + unbounded privileged file write -> unauthenticated remote root RCE on management plane, single TCP port (CVE-2026-93616, Check Point)
+  klass: authentication
+  requires:
+  - http_observation
+  signals:
+  - management_plane
+  - forged_login
+  - server_identity_spoof
+  - arbitrary_file_write
+  - root_execution
+  questions:
+  - Does a management-plane login method accept a caller-supplied string as the server's own identity and treat it as authenticated?
+  - Does a file service reachable after that login write anywhere on the filesystem as root?
+  - Do advisory and patch disagree on scope — and does scoping from the patch reveal the real primitive?
+  evidence:
+    positive:
+    - 'Bishop Fox writeup "One Port to Root" (~2026-10-01): CVE-2026-93616 is an unauthenticated remote root code execution vulnerability on the Check Point management server over a single TCP port (19009), against the host that holds the organization''s firewall policy and internal CA. Exploited in the wild. What made it a clean unauthenticated root shell was "a login method that spoofs the server''s own identity from a string and a file service that writes anywhere as root". Check Point''s fix closes the forged login and the unbounded write, not just the traversal the advisory names.'
+    - 'Bishop Fox detection tool published: github.com/BishopFox/CVE-2026-93616-check. Fix: patch to Take 45 (or branch equivalent) and restrict TCP 19009 to required stations; exposure depends on build plus the Trusted Clients / firewall configuration in front of the management server.'
+    negative:
+    - the management port is unreachable from attacker networks (proper firewall/Trusted Clients config)
+    - the login path requires a real client certificate or pre-shared credential that cannot be string-spoofed
+  followups:
+  - diff the patch against the advisory to enumerate the true primitive set (Bishop Fox lesson: scope from the patch)
+  - audit other management planes for "what can an unauthenticated caller become, and what can that identity reach"
+  test: 'Against an owned lab Check Point management server, attempt unauthenticated login with a spoofed server-identity string, then request a file write outside the intended directory. A hold requires the write to land as root and a follow-on command execution path to open.'
+  impact_hint: 'Critical — unauthenticated remote root on the host holding firewall policy and the internal CA; exploited in the wild. Precondition: unpatched build with TCP 19009 reachable.'
+  preconditions:
+  - http_observation
+  required_state: management plane exposing an identity-spoofable login method and a privileged file service
+  hypothesis_generator: 'When signals [''management_plane'', ''forged_login''] are observed, hypothesize: the login accepts a caller-controlled identity string — try the server''s own identity values, then pivot to the file service for unbounded privileged writes.'
+  request_strategy: enumerate identity-bearing login fields; submit server-identity strings as the caller identity; once past login, push path-traversal writes through the file service
+  mutation_strategy: vary the spoofed identity string (hostname, internal names, defaults); vary write destinations toward executable/config paths
+  expected_signal: forged_login_accepted; arbitrary_file_written_as_root; command_execution
+  positive_oracle: an unauthenticated request chain ends with attacker-controlled content written as root to a chosen path AND an execution primitive firing
+  negative_evidence:
+  - login requires cryptographic proof of identity
+  - file service is chrooted/sandboxed with no root context
+  false_positive_rules:
+  - an authenticated admin file write is not this flaw — the login bypass is the finding
+  - do not test against third-party production management servers; controlled/lab targets only
+  followup_experiment: scan other firewall/VPN management planes for identity-string logins paired with privileged file services
+  regression_test: with the fix, spoofed identity strings are rejected and the file service cannot write outside its directory as root
+  difficulty_estimate: 0.5
+
+- id: S06-WEB-03
+  name: Attacker-controlled bookmark-card URL feeds malicious SVG into server-side image processing -> command execution (CVE-2026-105642, Ghost CMS)
+  klass: injection
+  requires:
+  - http_observation
+  signals:
+  - bookmark_card
+  - url_preview
+  - svg_handling
+  - image_processing
+  - command_injection
+  questions:
+  - Does a content feature that fetches an attacker-controlled URL (bookmark card / link preview) pass the fetched content into a server-side media pipeline?
+  - Does the bundled image processing library mishandle SVG (active content, external entities, embedded scripts) such that parsing becomes command execution?
+  - Is the feature reachable by low-privilege staff roles (e.g. Contributor), not just admins?
+  evidence:
+    positive:
+    - 'TheHackerWire CVE-2026-105642 analysis (2026-10-05): Ghost (Node.js CMS) 6.56.0 through 6.67.0 — a bundled image processing library contains a vulnerability in its SVG handling. Any staff user, including Contributors, can create a bookmark card for an attacker-controlled website, resulting in arbitrary commands being run on the Ghost server. Fixed in 6.67.0. CVSS 8.8, CWE-94. No public exploit code confirmed as of 2026-10-05.'
+    negative:
+    - bookmark/URL-preview fetching is disabled or restricted to privileged roles
+    - fetched media is sanitized/re-encoded by a hardened pipeline before any SVG parsing
+  followups:
+  - determine the exact SVG construct (entity expansion, foreignObject, embedded script) that crosses into command execution
+  - test whether the fetch can be triggered by unauthenticated actors (comment embeds, oEmbed consumers)
+  test: 'Against an owned lab Ghost 6.56.0-6.66.x, log in as a Contributor, create a bookmark card pointing at an attacker-controlled page serving a malicious SVG, and observe whether the server-side image pipeline executes commands. A hold requires command execution on the server with proof (e.g. outbound callback or marker file).'
+  impact_hint: 'High — authenticated low-privilege staff to RCE on the CMS host. Precondition: vulnerable Ghost version, staff account (Contributor suffices).'
+  preconditions:
+  - http_observation
+  required_state: CMS/blog platform where a low-privilege content feature fetches remote URLs into a server-side image pipeline
+  hypothesis_generator: 'When signals [''bookmark_card'', ''svg_handling''] are observed, hypothesize: the URL-preview fetch feeds attacker content into a vulnerable media parser — point the card at a hostile SVG and watch the pipeline.'
+  request_strategy: as a low-privilege staff user, create bookmark/preview cards for attacker-controlled URLs serving crafted SVGs; vary the SVG payload across parser-relevant constructs
+  mutation_strategy: vary SVG features (entities, foreignObject, image href, embedded scripts); vary the card/preview entry point (bookmark, embed, oEmbed)
+  expected_signal: server_side_command_execution; pipeline_error_with_command_artifacts
+  positive_oracle: a bookmark card created by a Contributor-level account causes the server to execute attacker-chosen commands
+  negative_evidence:
+  - preview fetcher strips or rasterizes SVG before parsing
+  - card creation requires admin privilege
+  false_positive_rules:
+  - client-side rendering of the SVG in the browser is not the finding — execution must happen server-side in the pipeline
+  followup_experiment: survey other CMS/knowledge-base platforms whose link-preview or media-import features accept contributor-level input and parse SVG server-side
+  regression_test: on 6.67.0+, the same hostile SVG through the same bookmark flow executes nothing
+  difficulty_estimate: 0.4
+
+- id: S06-AI-01
+  name: Unauthenticated MCP tool exposure cluster — SSE session + messages endpoint invokes file-read/exec tools; fetch tool SSRF in official servers (Oct-2026 cluster)
+  klass: ai_agent
+  requires:
+  - http_observation
+  signals:
+  - mcp_server
+  - sse_endpoint
+  - unauthenticated_tool_invoke
+  - file_read_tool
+  - ssrf
+  questions:
+  - Does the MCP server expose its SSE/messages transport with no authentication, letting anyone mint a session and invoke tools?
+  - Do exposed tools include file reads (path traversal to /proc/self/environ) or program execution chosen by the caller?
+  - Does the MCP fetch tool follow attacker URLs (SSRF) — including in the OFFICIAL modelcontextprotocol servers?
+  evidence:
+    positive:
+    - 'dev.to kielltampubolon (2026-10-04): "MCP Servers Had a Rough 48 Hours" — four unauthenticated CVEs published in ~35h, same failure: every exposed tool reachable with no auth. A GitLab MCP server (CVE-2026-61560, GHSA-cv3r-c5h8-f4g5) reads any host file and uploads it wherever asked: curl the SSE endpoint (no auth), capture sessionId, POST /messages with tool upload_markdown and file_path /proc/self/environ — the environment file is exfiltrated into a GitLab project, yielding GITLAB_PERSONAL_ACCESS_TOKEN. A gateway runs a program chosen by whoever can POST; a MySQL tool hands database + filesystem to the network; an IBM sandbox escape comes down to two string concatenations. Advisory PoC: run against hosts you own only.'
+    - 'RedPacket CVE-2026-104120 (published 2026-10-02): modelcontextprotocol mcp-server-fetch and mcp-server-everything <= 2026.6.4 — fetch_url in mcp_server_fetch/server.py takes url/path with no validation -> SSRF, remotely initiable, public exploit disclosed, CVSS 7.3.'
+    - 'ClawSecure AI Agent Threat Report (report 2026-09-24; press wave 2026-10-05): two-volume red-team across 14 models from 5 frontier labs + 3 MCP platforms — every model obeyed attacker indirect prompt injections (credential theft, account draining, data exfiltration); critical DEFAULT MCP vulnerabilities found on production platforms including Dropbox Dash, Notion, and Linear. Thesis: the protocol''s real risk lives in defaults, not exotic prompt injection.'
+    negative:
+    - MCP transport requires authentication before any tool invocation
+    - tools are allowlisted to safe, non-file, non-exec operations with path sandboxing
+  followups:
+  - enumerate the other three CVEs in the cluster (gateway, MySQL tool, IBM sandbox) for their exact unauth tool shapes
+  - test whether exposed MCP SSE endpoints also accept tool-result poisoning (context poisoning via unauth tool outputs)
+  test: 'Against an owned lab MCP server, connect to the SSE endpoint without credentials, capture the session id, and invoke a file-read tool with an absolute path. A hold requires reading a secret-bearing file (e.g. /proc/self/environ) and exfiltrating it through a second exposed tool; a second hold requires fetch_url to issue an outbound request to an attacker-controlled URL (SSRF).'
+  impact_hint: 'Critical — unauthenticated remote file theft / credential theft / SSRF / RCE depending on the exposed toolset; multiple live CVEs in a 35h window. Precondition: MCP server reachable over HTTP with tools exposed without auth.'
+  preconditions:
+  - http_observation
+  required_state: MCP server exposing SSE/messages transport over the network with tools invokable without authentication
+  hypothesis_generator: 'When signals [''mcp_server'', ''sse_endpoint''] are observed, hypothesize: tool invocation is unauthenticated — mint a session, enumerate tools, aim file-read tools at secret paths and fetch tools at internal URLs.'
+  request_strategy: GET the SSE endpoint to capture sessionId; POST tool invocations to /messages; probe fetch tools with internal/attacker URLs
+  mutation_strategy: vary tool names toward file-read, upload, exec, and preview tools; vary paths (/proc/self/environ, cloud metadata, config files); vary fetch targets (internal services, metadata endpoints)
+  expected_signal: file_contents_returned; secret_exfiltrated; outbound_request_to_attacker; command_executed
+  positive_oracle: an unauthenticated session reads a secret file through an exposed tool AND the secret is verifiably exfiltrated (or the fetch tool issues an attacker-observable outbound request)
+  negative_evidence:
+  - SSE endpoint requires auth before session creation
+  - tools are namespaced/sandboxed with no file or network primitives
+  false_positive_rules:
+  - a tool that only reads its own configured directory is not the finding — the break is unauthenticated arbitrary-path or network access
+  - do not invoke tools against third-party production MCP servers; lab/owned targets only
+  followup_experiment: scan other MCP gateway products for the same SSE-without-auth default, and test tool-output poisoning where tool results feed an agent''s context
+  regression_test: with auth enforced, the same SSE/messages flow without credentials returns 401 and no tool executes
+  difficulty_estimate: 0.3
+
+- id: S06-AI-02
+  name: Defensive context bomb — forged operator instruction planted in canary secrets persuades an attacking AI agent to halt (Tracebit, Qwen)
+  klass: ai_agent
+  requires:
+  - lab_observation
+  signals:
+  - ai_attack_agent
+  - canary_secret
+  - indirect_prompt_injection
+  - deception
+  questions:
+  - Will an autonomous attacking agent that reads a decoy secret also obey an instruction embedded in that secret?
+  - Can a forged operator halt-message stop the agent WITHOUT relying on model safety refusals or provider moderation?
+  - Does the persuasion hold across model variants (modified weights, different runtimes)?
+  evidence:
+    positive:
+    - 'itbrief.co.nz (~2026-10-02): Tracebit tested "context bombs" as a defensive method against AI-led cyber attacks. Earlier canary strings that relied on triggering provider runtime safety checks did NOT stop a modified Qwen. A second approach used indirect prompt injection: a forged instruction embedded in a canary secret stored in AWS Secrets Manager, so the attacking agent encounters it while exploring. The payload closed with: an instruction for Qwen to stop all activities and respond with an acknowledgement phrase — and the recorded test shows the modified model complied. Initial checks showed the same technique also worked against the original Qwen. Unlike the earlier method it does not rely on a safety refusal or external moderation; it persuades the agent its operator told it to halt.'
+    - 'Defensive framing: the study distinguishes detection from interruption — a payload may fail to stop the agent, but the canary still reveals that the agent touched a resource it should not have.'
+    negative:
+    - the attacking agent ignores tool-output text that is not addressed to it
+    - the agent''s harness strips or quarantines canary content before it reaches the model
+  followups:
+  - measure halt reliability across agent frameworks (how the instruction is rendered in tool output matters)
+  - test whether the same payload works when the agent runs with a strict system prompt disavowing tool-output instructions
+  test: 'In a lab, deploy an attacking AI agent against a target containing a canary secret with the forged halt instruction. A hold requires the agent to stop its attack loop and emit the acknowledgement after reading the secret, on both a modified and an unmodified model.'
+  impact_hint: 'Medium — defensive deception technique: interrupts AI-led attacks without provider cooperation; doubles as a tripwire. Precondition: defender can seed canary secrets in the environment the attacker''s agent will explore.'
+  preconditions:
+  - lab_observation
+  required_state: environment under test where a defender can plant canary secrets that an autonomous attacking agent will read
+  hypothesis_generator: 'When signals [''ai_attack_agent'', ''canary_secret''] are observed in a defensive exercise, hypothesize: the agent obeys embedded operator instructions — plant a forged halt directive in the canary and observe the attack loop.'
+  request_strategy: seed canary secrets (AWS Secrets Manager, decoy files, fake credentials) carrying a forged operator halt instruction; release the attacking agent; observe
+  mutation_strategy: vary the instruction wording (authority framing, urgency, politeness); vary the canary location (secrets manager, config file, database row); vary the acknowledgement format
+  expected_signal: agent_halts; acknowledgement_emitted; canary_access_logged
+  positive_oracle: the agent stops its attack activities after reading the canary AND the canary access is logged (detection holds even when interruption fails)
+  negative_evidence:
+  - the agent continues attacking after reading the canary
+  - the harness never surfaces canary content to the model
+  false_positive_rules:
+  - a halt that only occurs because the provider''s safety system refused is not this technique — the mechanism must be persuasion, not refusal
+  - do not deploy forged halt payloads outside lab/defensive exercises
+  followup_experiment: chain the canary with a silent alarm so interruption failure still yields high-fidelity detection of AI-led intrusion
+  regression_test: against an agent harness that quarantines canary content, the halt instruction must never reach the model
+  difficulty_estimate: 0.3

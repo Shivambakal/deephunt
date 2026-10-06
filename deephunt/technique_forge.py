@@ -1327,6 +1327,63 @@ COMBO_RULES: list[dict] = [
         "difficulty_delta": 0,
         "impact": "High - unauthenticated triggers wherever defaults are fail-open; trivially scannable.",
     },
+    {
+        "rule_id": "R-CRASH-SEQUENCE",
+        "parents": [("memory_corruption", "S06-WEB-01"), ("authentication", None)],
+        "name": "Crash-sequenced auth attempt: {a_short} x {b_short}",
+        "why_non_obvious": (
+            "Crash primitives are usually filed as DoS and forgotten, while auth-bypass cards "
+            "are tested against a steady-state target. The NetScaler 88779 episode showed the "
+            "interaction: a reproducible crash can reset rate-limit, session, or mitigation state "
+            "that a sibling exploit needs. Fused, the crash is not the finding - it is a sequencing "
+            "primitive that re-arms an auth attempt which fails against the un-crashed target."
+        ),
+        "oracle": (
+            "COMBO-CRASH-SEQ-HELD: trigger the crash primitive ({a_name}) and immediately run the "
+            "sibling auth attempt ({b_name}) inside the post-crash recovery window. The oracle holds "
+            "when the sibling attempt succeeds post-crash after failing pre-crash, proving the crash "
+            "reset the protective state - a sequencing primitive, not just a denial of service."
+        ),
+        "oracle_markers": ["succeeds post-crash after failing pre-crash", "sequencing primitive"],
+        "expected_signal": "post_crash_auth_success; protective_state_reset; sibling_exploit_rearmed",
+        "hypothesis": (
+            "Where {a_name} gives a reproducible unauthenticated crash and {b_name} is an auth "
+            "primitive that fails against the steady-state target, run the auth attempt inside the "
+            "post-crash window and compare pre/post outcomes."
+        ),
+        "followup": "vary the delay between crash and attempt; confirm the steady-state baseline fails repeatedly; identify exactly which state (rate limit, session table, WAF learning) the crash resets",
+        "difficulty_delta": 1,
+        "impact": "High - turns a DoS-only bug into an exploit enabler for a second flaw on the same target.",
+    },
+    {
+        "rule_id": "R-MCP-FETCH-CHAIN",
+        "parents": [("ai_agent", "S06-AI-01"), ("ssrf", None)],
+        "name": "Unauthenticated MCP fetch as SSRF vehicle: {a_short} x {b_short}",
+        "why_non_obvious": (
+            "SSRF cards assume the fetcher is a feature the tester must reach, often behind auth. "
+            "Unauthenticated MCP tool exposure inverts this: the fetch tool is reachable with no "
+            "credentials, and its result flows back into an attacker-observable tool response. Fused, "
+            "the MCP transport becomes an auth-less SSRF delivery vehicle - the SSRF test rides a "
+            "channel the standalone SSRF methodology could never reach."
+        ),
+        "oracle": (
+            "COMBO-MCP-FETCH-HELD: open an unauthenticated MCP session ({a_name}) and invoke its "
+            "fetch/URL tool against an internal-only URL from the SSRF surface ({b_name}). The oracle "
+            "holds when internal content is returned through the tool result into an attacker-observable "
+            "channel - the MCP transport launders the SSRF past the auth boundary the standalone test "
+            "could not cross."
+        ),
+        "oracle_markers": ["into an attacker-observable channel", "past the auth boundary"],
+        "expected_signal": "unauth_mcp_fetch; internal_content_in_tool_result; ssrf_via_agent_transport",
+        "hypothesis": (
+            "Where {a_name} exposes an unauthenticated fetch-capable tool and {b_name} defines the "
+            "internal SSRF targets, drive the internal URLs through the MCP tool and read the results "
+            "back from the tool response."
+        ),
+        "followup": "check whether tool-result content is also ingested into any connected agent context (second-order context poisoning); test metadata endpoints and internal admin consoles as fetch targets",
+        "difficulty_delta": 0,
+        "impact": "High - unauthenticated SSRF with the result handed back to the attacker; agent-context ingestion makes it second-order.",
+    },
 ]
 
 

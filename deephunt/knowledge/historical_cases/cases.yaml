@@ -598,3 +598,29 @@
   detection_clue: "Hex-encoded j_security_check requests from unknown IPs; viptela-reserved-* account activity; admin API calls without preceding login flow."
   why_scanners_missed_it: "Scanners test the canonical path (blocked) and common bypass lists; a single-character percent-encoding of the protected endpoint name is outside most auth-bypass wordlists."
   source: "Cisco advisory cisco-sa-sdwan-webauth-xr8beuuU; Horizon3.ai analysis; CISA KEV."
+
+- id: CASE-48
+  application_type: "Ruflo AI orchestration platform (MCP Bridge)"
+  architecture: "Express.js MCP Bridge exposing 233 tools over HTTP (shell execution, database interaction, agent lifecycle management) — publicly accessible on port 3001, bound to 0.0.0.0 in default Docker deployments"
+  initial_observation: "Noma Labs research (~August 2026) found the MCP Bridge lacked any authentication controls by default. A single crafted HTTP POST to /mcp invoking the ruflo__terminal_execute tool triggered arbitrary command execution inside the container with no API keys, tokens, or session validation. CVE-2026-59726, CVSS 10.0. Ruflo had ~67,000 GitHub stars and ~1M active users at the time."
+  attacker_assumption: "MCP tool surfaces are local plumbing between the agent and its tools — not an internet-facing attack surface."
+  unexpected_behavior: "Because the Bridge is the central control plane for multi-agent swarms (every action, memory op, and tool invocation passes through it), the unauthenticated shell became a swarm-hijack primitive: attackers dumped process environment variables to steal LLM provider API keys (OpenAI, Anthropic, Gemini) and could spawn unauthorized agent swarms on the host's compute. Credential exfiltration and full orchestration-layer lateral movement from one POST."
+  chain_of_events: ["MCP Bridge bound to 0.0.0.0:3001 with no auth by default", "Unauthenticated POST /mcp -> ruflo__terminal_execute -> container shell", "Environment dump harvests provider API keys", "Keys reused to spawn attacker-controlled agent swarms on victim compute"]
+  root_cause: "Missing authentication on a tool-execution HTTP interface (CWE-306) combined with shell-capable tools in the default toolset — the management plane of the agent fleet was treated as trusted local plumbing."
+  impact: "Unauthenticated remote code execution plus AI-swarm hijacking and LLM-provider credential theft on a platform with ~1M users."
+  detection_clue: "Unauthenticated POSTs to /mcp from external IPs; ruflo__terminal_execute invocations outside operator sessions; unexpected agent-spawn activity and outbound API-key usage."
+  why_scanners_missed_it: "Scanners fingerprint web apps, not agent-control planes; the /mcp endpoint returns valid MCP protocol responses, so unauthenticated tool execution looks like a healthy service until a tool is actually invoked."
+  source: "Noma Security research via cybersecuritynews.com (~August 2026); CVE-2026-59726."
+
+- id: CASE-49
+  application_type: "Check Point Quantum Security Gateway / CloudGuard / Quantum Spark (management interface)"
+  architecture: "Check Point security gateway appliances exposing a management web interface that resolves user-influenced paths to the filesystem"
+  initial_observation: "Check Point disclosed CVE-2024-24919 in May 2024: a path traversal vulnerability in the gateway management interface allowing an unauthenticated remote attacker to read arbitrary files on the appliance. Exploitation in the wild was confirmed within days of disclosure, with attackers harvesting sensitive files (including password hashes and configuration) from internet-facing gateways."
+  attacker_assumption: "The gateway's management interface is an admin-only surface — traversal bugs there are low-priority because the box itself is a security product."
+  unexpected_behavior: "The same interface class kept producing unauthenticated primitives: two years later, Bishop Fox's CVE-2026-93616 writeup shows the management plane falling again — this time a forged server-identity login plus an unbounded root file write yielding unauthenticated remote root over a single TCP port (19009), exploited in the wild. The management plane, not the data plane, is the recurring weak seam: it concentrates identity decisions, privileged file operations, and network reachability in one service."
+  chain_of_events: ["2024-05: CVE-2024-24919 path traversal disclosed; in-the-wild file harvesting on gateways", "Attackers learn the management interface is the soft seam", "2026-10: CVE-2026-93616 forged-identity login + root file write -> unauthenticated remote root on the management server (policy + internal CA host)"]
+  root_cause: "Management-plane services that combine caller-influenced identity/path handling with privileged filesystem access, reachable from untrusted networks — the same seam exploited twice in two years."
+  impact: "Unauthenticated file disclosure (2024) escalating to unauthenticated remote root on the firewall-policy and internal-CA host (2026)."
+  detection_clue: "Traversal sequences in management-interface access logs (2024 pattern); unauthenticated logins presenting server-identity strings and file writes outside expected directories (2026 pattern); exposure of the management port to user networks."
+  why_scanners_missed_it: "Scanners treat security appliances as trusted infrastructure and skip aggressive management-interface probing; the 2026 primitive is an identity-semantics flaw, not a payload pattern."
+  source: "Check Point security advisory May 2024 (CVE-2024-24919); Bishop Fox 'One Port to Root' (~2026-10-01)."
