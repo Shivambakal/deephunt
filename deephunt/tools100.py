@@ -105,8 +105,8 @@ TOOLS100 = [
     ("autorize", "protocol", "manual", "autorize", "url", "", "Burp extension — human-driven", "authorization tester — human-driven"),
     ("authmatrix", "protocol", "manual", "authmatrix", "url", "", "Burp extension — human-driven", "role-based access matrix — human-driven"),
     ("retirejs", "protocol", "passive", "retire", "url", "--js {url}", "npm i -g retire", "vulnerable JS library detector"),
-    ("wafw00f", "protocol", "passive", "wafw00f", "url", "{url}", "pip install wafw00f / apt install wafw00f", "WAF fingerprinting"),
-    ("testssl", "protocol", "passive", "testssl.sh", "host", "--fast {host}", "git clone drwetter/testssl.sh", "TLS/SSL configuration tester"),
+    ("wafw00f", "protocol", "passive", "wafw00f", "url", "{url}", "pip install wafw00f / apt install wafw00f", "WAF fingerprinting", "t100-wafw00f"),
+    ("testssl", "protocol", "passive", "testssl.sh", "host", "--fast {host}", "git clone drwetter/testssl.sh", "TLS/SSL configuration tester", "t100-testssl"),
     # ---- fuzzing ----
     ("aflpp", "fuzz", "manual", "afl-fuzz", "none", "--help", "apt install afl++", "coverage-guided fuzzer — lab binaries, human setup"),
     ("libfuzzer", "fuzz", "manual", "clang", "none", "--help", "llvm toolchain", "in-process fuzzer — human setup"),
