@@ -1,0 +1,115 @@
+# DEEPHUNT technique cards — daily intel sweep 2026-10-07
+# Schema v2: preconditions/required_state/hypothesis_generator/
+# request_strategy/mutation_strategy/expected_signal/positive_oracle/
+# negative_evidence/false_positive_rules/followup_experiment/
+# regression_test/difficulty_estimate. 2 cards.
+# Sources: CrowdSec "CVE-2026-85706: Critical GitLab File Read Exploited in
+# the Wild" (published 2026-10-05; root-cause detail on the Workhorse/Rails
+# decode differential + exploitation telemetry); Unite.AI "Researcher Discloses
+# Same MCP Flaw at Google, JPMorgan, Two Governments" (~2026-10-06) covering
+# Syed Anas Mohiuddin's "Protocol Pivoting, four months later" October-2026
+# research update (Zenodo preprint 2026-05-24, MCPCon talk scheduled 2026-10-23).
+# Dedup: CVE-2026-84411 (MikroTik WebFig integer underflow) disclosure is
+# 2026-09-29/30 — outside the ~24h window (skipped); CVE-2026-87719 and
+# CVE-2026-88765 (GitLab Sep-10 patch window) published 2026-09-12 — outside
+# window (skipped); OpenAI GPT-Red self-replicating injections (2026-09-25)
+# already in knowledge; Explosive Prompts arXiv paper 2026-09-18 — outside
+# window; Salt Labs Manus email hijack ~2026-10-01 is the Manus IPI family
+# already covered in sweep_2026-10-05 (S05-AI-02); ShinyHunters PeopleSoft
+# %50 WAF bypass campaign dates to the 2026-09-25 Mandiant/GTIG report —
+# outside window; OWASP LLM Top 10 2026 (Aug) + Agent Control Standard (Sep 1)
+# already in survey_2026, no new OWASP/MITRE item in window; no new
+# PortSwigger research item in window.
+
+- id: S07-WEB-01
+  name: Gateway/backend raw-vs-decoded URL routing differential lets a caller-supplied percent-encoding skip the gateway and inject an internal-only parameter -> unauthenticated arbitrary file read (GitLab CVE-2026-85706, Workhorse/Rails decode differential)
+  klass: authorization
+  requires:
+  - http_observation
+  signals:
+  - gateway_backend_routing_differential
+  - raw_url_matching
+  - decoded_routing
+  - internal_parameter_trust
+  - unauthenticated_file_read
+  questions:
+  - Does a front-end gateway (Workhorse-style) match upload/side-channel routes on the RAW URL while the back-end app (Rails-style) routes on the DECODED path?
+  - Can a single percent-encoded letter (e.g. '%66iles' for 'files', '%63ommits' for 'commits') slip past the gateway's route match while the back end decodes it into a privileged route?
+  - Does the back-end trust an internal-only parameter (e.g. 'file.path'/'file.size') that only the gateway is supposed to set — and fail to confine it to the intended directory?
+  evidence:
+    positive:
+    - 'CrowdSec vuln-tracking report (published 2026-10-05): CVE-2026-85706 is a CVSS 10.0 unauthenticated file read in self-managed GitLab CE/EE (18.7 through 19.3.1). Root cause per CrowdSec: GitLab''s Workhorse front end matches upload routes on the raw URL while Rails decodes the path first. Percent-encoding one letter of the repository API path (''%66iles'' for ''files'') makes Workhorse pass the request through untouched, so Rails reads whatever ''file.path'' the attacker supplied. Rails trusted a parameter only Workhorse should ever set and did not confine it to the repository. Reported by s3ntago via GitLab''s HackerOne program; independent root-cause lab by 0xenesbayram.'
+    - 'CrowdSec exploitation telemetry (report 2026-10-05, signal window Sep 28-Oct 4): 1,022 unique IP addresses sending matching requests since Sep 11, 2026 (watchTowr first probes Sep 11 06:00 UTC; CISA KEV listed Sep 11 19:32 UTC; federal deadline Sep 14). 2,835 matching signals in the last 7 full days, peaking at 1,160 on Oct 1. Attack path needs at least one public project on the instance per watchTowr. Nuclei template + public PoCs reduce it to one unauthenticated HTTP request; PoCs target gitlab-secrets.json and gitlab.rb.'
+    - 'CrowdSec virtual-patch note: the rule blocks a ''file.path''/''file.size'' parameter sent to /api/v4/ in URL or body — encoding-agnostic, so it also catches variants such as ''%63ommits'' (''commits'').'
+    negative:
+    - the gateway decodes/normalizes the path before route matching, or the back end never routes on attacker-decodable paths
+    - '''file.path''-style internal parameters are authenticated at the back end regardless of gateway routing'
+  followups:
+  - enumerate sibling routes (commits/files/uploads/packages) for the same raw-vs-decoded gateway slip; the fix notes ''%63ommits'' as an equivalent variant
+  - probe whether the internal parameter is accepted over GET query as well as POST body (CrowdSec flags both)
+  test: 'Against an owned lab GitLab with a public project, send the repository API request with one path letter percent-encoded (e.g. /api/v4/projects/<id>/repository/%66iles) and an attacker-controlled file.path. A hold requires reading a server file outside the repository without authentication; confirm the decoded-route variant fails when the gateway is configured to decode first.'
+  impact_hint: 'Critical — CVSS 10.0, unauthenticated arbitrary server file read (gitlab-secrets.json encrypts CI/CD variables and signs sessions; gitlab.rb holds DB/LDAP/SMTP/object-storage passwords). Precondition: self-managed GitLab CE/EE with at least one public project; exploited in the wild since Sep 11, 2026.'
+  preconditions:
+  - http_observation
+  required_state: app fronted by a gateway that route-matches on the raw URL while the back end routes on the decoded path, plus a back-end handler that trusts an internal-only path parameter
+  hypothesis_generator: 'When signals [''gateway_backend_routing_differential'', ''internal_parameter_trust''] are observed, hypothesize: percent-encoding a single route letter bypasses the gateway match — try each API route with one encoded letter while injecting the internal parameter the gateway was supposed to set.'
+  request_strategy: for each privileged API route, resend with exactly one path letter percent-encoded; attach the internal-only path parameter in query and body; watch for file contents vs error pages
+  mutation_strategy: vary which letter is encoded and whether it sits in the route prefix or a trailing segment; vary the internal parameter name (file.path, file.size, path, filename); vary request method (GET/POST/PUT)
+  expected_signal: internal_parameter_accepted; out_of_directory_file_read; public_project_file_read
+  positive_oracle: an unauthenticated request with a single percent-encoded path letter AND an attacker-supplied internal path parameter returns file content from outside the application data directory
+  negative_evidence:
+  - encoded-letter requests are rejected at the gateway before reaching the app
+  - internal parameter is ignored unless accompanied by a valid gateway session/upload token
+  false_positive_rules:
+  - the CVE also has a distinct create-commit body-upload/auth-ordering angle (see card S28-AUTH-01, sweep_2026-09-28) — this card is the separate routing-differential angle; do not double-count them as independent findings
+  - an authenticated file read of repo content is normal behavior, not this flaw — the primitive is the unauthenticated out-of-directory read via the internal parameter
+  followup_experiment: audit other gateway/backend pairs (CDN->origin, sidecar proxies, upload front ends) for raw-vs-decoded route-matching splits combined with trusted-internal parameters
+  regression_test: with the fix, percent-encoded route letters reach the app only via the gateway's route handling, and the internal path parameter is rejected when supplied by the client
+  difficulty_estimate: 0.4
+
+- id: S07-AI-01
+  name: Protocol Pivoting — enter through one agent protocol, exploit the trust protocols place in each other, and escalate to capabilities available only through a different protocol (MCP<->A2A privilege escalation via implicit trust delegation)
+  klass: ai-llm
+  requires:
+  - http_observation
+  signals:
+  - mcp_tool_output
+  - a2a_task_instruction
+  - cross_protocol_delegation
+  - implicit_trust_delegation
+  - subagent_execution
+  questions:
+  - When an MCP tool returns text shaped like an A2A task instruction, does the orchestrating agent forward it to a subagent as normal delegation?
+  - Does the subagent trust instructions arriving via its orchestrator without re-verifying their origin?
+  - Do per-protocol guards (MCP SSRF checks, A2A task-origin checks) fail to compose — i.e. does each protocol assume the other already validated the data?
+  evidence:
+    positive:
+    - 'Unite.AI research summary (~2026-10-06) of Syed Anas Mohiuddin''s October-2026 update "Protocol Pivoting, four months later" (formal preprint published on Zenodo 2026-05-24; MCPCon North America talk scheduled 2026-10-23): Protocol Pivoting is defined as a multi-step attack where the adversary enters through one protocol, exploits the trust assumptions protocols place in each other, and escalates to capabilities available only through a different protocol. Concrete example: text shaped like an A2A task instruction is placed inside MCP tool output; the orchestrating agent passes it to a subagent as normal delegation; the subagent, trusting its orchestrator, runs it.'
+    - 'Preprint scenarios: (1) MCP-to-A2A privilege escalation via implicit trust delegation; (2) A2A-to-MCP capability injection via malicious agent impersonation; (3) cross-protocol prompt injection chains. Analysis of why existing defenses fail and a proposed unified cross-protocol security framework with a formal trust boundary model plus three protocol-agnostic mitigations.'
+    - 'Cross-vendor confirmation (update 2026-10-06): the same SSRF class in MCP servers was confirmed and fixed by Google (CVE-2026-14540, mcp-toolbox generic HTTP source, CVSS 8.0, fixed v1.5.0 with SSRFGuard against DNS-rebinding), JPMorgan Chase (jpmorgan-payments/ai documentation MCP server, Responsible Disclosure team confirmed), Weaviate (Google module apiEndpoint restriction, Hall of Fame 2026-08-25), France''s DINUM datagouv-mcp (PR #126, 2026-09-04), and the Tangerang City government Wazuh-MCP-Server (hostname-not-resolved SSRF-protection bypass, Sep 2026). Two published CVEs total; Mohiuddin reports 16 maintainer-published GitHub security advisories crediting him, plus fixes merged in github-mcp-server, mongodb-mcp-server, salesforce-mcp-server.'
+    - 'Five open US-federal findings (filed 2026-09-02, in triage): MCP servers under GSA TTS — a VA benefits-claims server logging full upstream error bodies (veteran PII) at ERROR level, a CMS Blue Button server, a regulations.gov server, a USASpending server, and a CDC PLACES server. Mohiuddin notes software composition analysis and dependency scanners miss this class because the dangerous input arrives over the transport as a tool argument the scanner never reads — the call graph stops at the transport boundary.'
+    negative:
+    - cross-protocol data carries unforgeable origin provenance that every downstream agent re-verifies
+    - tool outputs are sandboxed as data and never forwarded as instructions to subagents or other protocols
+  followups:
+  - test whether injected A2A-shaped instructions in MCP tool output survive an orchestrator's delegation boundary in common frameworks
+  - check whether fixes like Google's SSRFGuard compose across protocols (e.g. guard at MCP fetch + provenance at A2A delegation)
+  test: 'Against an owned lab agent stack with MCP tools feeding an orchestrator that delegates to subagents over A2A, place A2A-shaped task instructions in MCP tool output. A hold requires the subagent to execute the injected instruction as if it came from the orchestrator; a second-order hold requires reaching a capability the MCP protocol alone could not provide.'
+  impact_hint: 'High — a structural cross-vendor class: protocol-boundary guards that do not compose let an attacker escalate from data-plane output (MCP) to control-plane execution (A2A) through implicit trust delegation. Confirmed across Google, JPMorgan Chase, Weaviate, and two governments; five US federal findings still open as of 2026-10-06.'
+  preconditions:
+  - http_observation
+  required_state: agentic system where output of one protocol (e.g. MCP tool output) is forwarded to another protocol (e.g. A2A task delegation) without re-verification of origin
+  hypothesis_generator: 'When signals [''mcp_tool_output'', ''cross_protocol_delegation''] are observed, hypothesize: tool output shaped as the other protocol''s control message crosses the boundary — inject A2A-styled instructions into MCP tool output and watch whether the subagent executes them as orchestrator intent.'
+  request_strategy: poison MCP tool responses with instruction-shaped payloads targeting the downstream protocol's control syntax (A2A task messages, subagent prompts); observe delegation chains
+  mutation_strategy: vary payload framing (plain instruction, JSON task envelope, system-role mimicry); vary injection point (tool output, error body, log tail); vary delegation depth (one hop vs nested subagents)
+  expected_signal: injected_instruction_delegated; subagent_executes_cross_protocol_task; capability_beyond_mcp_reached
+  positive_oracle: content originating in one protocol's data channel is executed as a control instruction by a different protocol's consumer, reaching a capability unreachable through the entry protocol alone
+  negative_evidence:
+  - downstream agents re-verify instruction origin and provenance at each protocol boundary
+  - tool outputs are structurally separated from control messages (e.g. capability-restricted channels)
+  false_positive_rules:
+  - a prompt injection confined to a single protocol is not protocol pivoting — the class requires a cross-protocol trust-boundary crossing
+  - SCA/dependency-scanner clean results do not refute it; the input arrives over the transport as tool arguments the scanner never reads
+  followup_experiment: build a test matrix of MCP->A2A, A2A->MCP, and MCP->MCP delegation pairs; measure which frameworks re-verify origin at boundaries and which inherit trust
+  regression_test: with a fix (provenance tagging + per-boundary origin re-verification), A2A-shaped content in MCP tool output is treated as untrusted data and never delegated as an instruction
+  difficulty_estimate: 0.6

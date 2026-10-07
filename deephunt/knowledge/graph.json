@@ -1146,6 +1146,18 @@
    "klass": "ai_agent",
    "impact": "Medium \u2014 defensive deception technique: interrupts AI-led attacks without provid"
   },
+  "S07-WEB-01": {
+   "type": "technique",
+   "name": "Gateway/backend raw-vs-decoded URL routing differential lets a caller-supplied percent-encoding skip the gateway and inject an internal-only parameter -> unauthenticated arbitrary file read (GitLab CVE-2026-85706, Workhorse/Rails decode differential)",
+   "klass": "authorization",
+   "impact": "Critical \u2014 CVSS 10.0, unauthenticated arbitrary server file read (gitlab-secrets"
+  },
+  "S07-AI-01": {
+   "type": "technique",
+   "name": "Protocol Pivoting \u2014 enter through one agent protocol, exploit the trust protocols place in each other, and escalate to capabilities available only through a different protocol (MCP<->A2A privilege escalation via implicit trust delegation)",
+   "klass": "ai-llm",
+   "impact": "High \u2014 a structural cross-vendor class: protocol-boundary guards that do not com"
+  },
   "A1-001": {
    "type": "technique",
    "name": "Self-replicating adversarial prompt worm across agent ecosystems",
@@ -5970,6 +5982,66 @@
    "class:ai_agent"
   ],
   [
+   "S07-WEB-01",
+   "in_class",
+   "class:authorization"
+  ],
+  [
+   "S07-WEB-01",
+   "exploits_weakness",
+   "CWE-639"
+  ],
+  [
+   "CWE-639",
+   "enables",
+   "S07-WEB-01"
+  ],
+  [
+   "S07-WEB-01",
+   "exploits_weakness",
+   "CWE-285"
+  ],
+  [
+   "CWE-285",
+   "enables",
+   "S07-WEB-01"
+  ],
+  [
+   "S07-WEB-01",
+   "exploits_weakness",
+   "CWE-862"
+  ],
+  [
+   "CWE-862",
+   "enables",
+   "S07-WEB-01"
+  ],
+  [
+   "S07-AI-01",
+   "in_class",
+   "class:ai-llm"
+  ],
+  [
+   "S07-AI-01",
+   "exploits_weakness",
+   "CWE-1427"
+  ],
+  [
+   "CWE-1427",
+   "enables",
+   "S07-AI-01"
+  ],
+  [
+   "S07-AI-01",
+   "exploits_weakness",
+   "CWE-1428"
+  ],
+  [
+   "CWE-1428",
+   "enables",
+   "S07-AI-01"
+  ],
+  [
    "A1-001",
    "in_class",
    "class:ai_llm"
@@ -8431,7 +8503,7 @@
   ]
  ],
  "stats": {
-  "techniques": 347,
+  "techniques": 349,
   "weaknesses": 33,
   "classes": 37
  }
