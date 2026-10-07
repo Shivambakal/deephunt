@@ -270,26 +270,133 @@ class GraphqlProbe(ToolAdapter):
 class DnsAxfr(ToolAdapter):
     name = "dns_axfr"
     phase = "active"
-    description = "DNS zone-transfer attempt (gated, read-only)"
+    description = "DNS zone-transfer attempt (gated, read-only, DoH-aware NS resolution)"
+
+    @staticmethod
+    def parse_axfr(output):
+        """Classify a `dig AXFR` response. Returns (verdict, reason).
+
+        verdict is one of 'allowed', 'refused', 'inconclusive'.
+        """
+        txt = (output or "").strip()
+        if not txt:
+            return "refused", "empty response (refused, timed out, or unreachable)"
+        low = txt.lower()
+        if "transfer failed" in low or "failed" in low \
+                or "timed out" in low or "connection refused" in low:
+            return "refused", "dig reported failure/timeout/refusal"
+        lines = [l for l in txt.splitlines() if l.strip()]
+        has_soa = any(" SOA " in f" {l.upper()} " for l in lines)
+        if has_soa and len(lines) >= 3:
+            return "allowed", f"{len(lines)} zone records dumped"
+        return "inconclusive", \
+            f"{len(lines)} non-empty lines, no SOA block ({txt[:120]!r})"
+
+    @staticmethod
+    def _ns_ips(zone, doh_dns):
+        """Resolve authoritative NS hostnames -> IPs via DoH.
+
+        Returns list of (ns_hostname, ip). DoH only touches public
+        resolvers, never the target's infrastructure.
+        """
+        pairs = []
+        r = doh_dns.resolve(zone, "NS", timeout=15)
+        if r.get("error"):
+            return [], r.get("error")
+        for a in r.get("answers", []):
+            if a.get("type") != "NS":
+                continue
+            ns = a["data"].rstrip(".")
+            ra = doh_dns.resolve(ns, "A", timeout=15)
+            if ra.get("error"):
+                continue
+            for aa in ra.get("answers", []):
+                if aa.get("type") == "A":
+                    pairs.append((ns, aa["data"].rstrip(".")))
+                    break
+        return pairs, None
 
     def run(self, ctx):
         ok, reason = _gate(ctx)
         if not ok:
             return [self.finding("gated", "dns_axfr BLOCKED", reason)]
+        from .base import egress_profile
+        try:
+            import doh_dns
+        except ImportError:
+            return [self.finding(
+                "broken", "dns_axfr: doh_dns module unavailable",
+                "proxy-aware DNS resolver not importable; `dig` path would "
+                "read shimmed system DNS — refusing to run",
+                evidence="doh_dns-missing")]
         out = []
-        for zone in ctx["profile"].get("ct_zones", [])[:3]:
-            rc, so, _ = sh(f"dig +short {zone} NS", timeout=20)
-            for ns in [l.strip() for l in so.splitlines() if l.strip()][:3]:
-                rc2, so2, _ = sh(f"dig @{ns} {zone} AXFR +short +time=10",
-                                  timeout=30)
-                if so2.strip() and "failed" not in so2.lower() \
-                        and "timed out" not in so2.lower():
+        env = egress_profile()
+        zones = ctx["profile"].get("ct_zones", [])[:3]
+        if not zones:
+            return [self.finding("clean", "dns_axfr: no zones in ct_zones")]
+        if env.get("dns_shimmed"):
+            out.append(self.finding(
+                "env", "system DNS shimmed -> NS resolved via DoH",
+                detail=f"system resolver said example.com = "
+                       f"{env.get('system_answer')}; DoH ({env.get('doh_provider')}) "
+                       f"said {env.get('doh_answer')}",
+                evidence="dns-shim-detected"))
+        # One cheap probe: `dig` speaks raw UDP/TCP 53, which cannot ride
+        # the egress HTTP proxy. If nameservers are unreachable from here,
+        # say so explicitly instead of reporting a false "refused everywhere".
+        probe_ns, probe_err = self._ns_ips(zones[0], doh_dns)
+        if not probe_ns:
+            return out + [self.finding(
+                "broken", f"dns_axfr: NS lookup failed for {zones[0]}",
+                detail=probe_err or "no NS A-records resolved",
+                evidence="doh-ns-failed")]
+        _ns, probe_ip = probe_ns[0]
+        rc, so, _ = sh(f"dig @{probe_ip} {zones[0]} SOA "
+                       f"+time=4 +tries=1 +short", timeout=20)
+        if not so.strip():
+            return out + [
+                self.finding(
+                    "env", "dns_axfr: nameservers unreachable from here",
+                    detail=f"direct UDP/TCP probe to {probe_ip} (auth NS for "
+                           f"{zones[0]}) returned nothing; raw DNS cannot use "
+                           f"the egress proxy, so AXFR cannot be tested in "
+                           f"this environment",
+                    evidence="egress-blocks-dns"),
+                self.finding(
+                    "clean",
+                    "dns_axfr: no attempt made — NOT evidence of refusal",
+                    detail="reporting 'refused everywhere' here would be a "
+                           "false negative; run from a real network")]
+        # Real network: AXFR attempt per zone, per NS IP (read-only, gated)
+        attempted = []
+        for zone in zones:
+            pairs, err = self._ns_ips(zone, doh_dns)
+            if not pairs:
+                out.append(self.finding(
+                    "env", f"dns_axfr: NS lookup failed for {zone}",
+                    detail=err or "no NS A-records resolved",
+                    evidence="doh-ns-failed"))
+                continue
+            for ns, ip in pairs[:3]:
+                rc2, so2, _ = sh(
+                    f"dig @{ip} {zone} AXFR +short +time=10", timeout=30)
+                attempted.append(f"{zone}@{ns}({ip})")
+                verdict, why = self.parse_axfr(so2)
+                if verdict == "allowed":
                     out.append(self.finding(
                         "vuln-candidate",
                         f"Zone transfer ALLOWED: {zone} via {ns}",
-                        detail=so2[:1500], severity_hint="high"))
-        if not out:
-            out.append(self.finding("clean", "dns_axfr: refused everywhere"))
+                        detail=f"{why}\n{so2[:1500]}",
+                        severity_hint="high"))
+                elif verdict == "inconclusive":
+                    out.append(self.finding(
+                        "sensitive",
+                        f"dns_axfr inconclusive on {zone} via {ns}",
+                        detail=why, severity_hint="note"))
+        if not out or all(f["kind"] in ("env",) for f in out):
+            out.append(self.finding(
+                "clean", "dns_axfr: refused everywhere",
+                detail=f"attempted: {', '.join(attempted) or 'none'}"))
         return out
 
 
