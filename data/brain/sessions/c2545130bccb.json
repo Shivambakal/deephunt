@@ -1,0 +1,122 @@
+{
+ "objective": "dbg",
+ "created": "2026-09-27T03:25:47Z",
+ "updated": "2026-09-27T03:25:47Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [],
+  "trust_boundaries": [],
+  "state_machines": {}
+ },
+ "observations": [],
+ "assumptions": [],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "statement": "stmt",
+   "violated_assumption": "",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "supported",
+   "source": "manual",
+   "provenance": "e2e",
+   "ts": "2026-09-27T03:25:47Z"
+  }
+ ],
+ "tests": [
+  {
+   "id": "T1",
+   "hypothesis_id": "H1",
+   "spec": {
+    "expected_observation": "x",
+    "reason": "r",
+    "scope_hosts": [
+     "mockshop"
+    ],
+    "auth_basis": "syn",
+    "success_criteria": "s",
+    "failure_criteria": "f",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "no benign explanation recorded",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T1",
+    "hypothesis_id": "H1",
+    "session_id": "c2545130bccb",
+    "scope_hosts": [
+     "mockshop"
+    ],
+    "issued_at": 1790479547.5223367,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-27T03:25:47Z"
+  }
+ ],
+ "results": [
+  {
+   "id": "R1",
+   "test_id": "T1",
+   "hypothesis_id": "H1",
+   "outcome": "confirmed",
+   "observed": "obs",
+   "why_failed": "",
+   "learned": "l",
+   "false_explanation": "",
+   "environment": "",
+   "technology": "",
+   "preconditions": "",
+   "ts": "2026-09-27T03:25:47Z"
+  }
+ ],
+ "rejected_hypotheses": [],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [
+  {
+   "hypothesis_id": "H1",
+   "claim": "stmt",
+   "evidence": "obs",
+   "ts": "2026-09-27T03:25:47Z"
+  }
+ ],
+ "facts": [],
+ "lessons": [],
+ "next_actions": [
+  "run T1 (hypothesis H1)"
+ ],
+ "id": "c2545130bccb"
+}

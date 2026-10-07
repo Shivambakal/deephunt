@@ -1,0 +1,840 @@
+{
+ "objective": "Yahoo public HackerOne deep hunt \u2014 find and prove unusual bugs, in-scope only (*.yahoo.com, *.aol.com, *.techcrunch.com), throttled, manual-style",
+ "created": "2026-09-26T19:36:24Z",
+ "updated": "2026-09-26T20:58:51Z",
+ "model": {
+  "users": [
+   "unauthenticated visitor",
+   "Yahoo account holder (own account only)"
+  ],
+  "objects": [
+   "yahoo.com web properties",
+   "aol.com services",
+   "techcrunch.com",
+   "Yahoo OAuth login",
+   "API subdomains"
+  ],
+  "trust_boundaries": [
+   "HackerOne scope: *.yahoo.com, *.aol.com, *.techcrunch.com"
+  ],
+  "state_machines": [
+   "hunter VM"
+  ]
+ },
+ "observations": [
+  {
+   "ts": "2026-09-26T19:37:21Z",
+   "kind": "fact",
+   "text": "crt.sh mapped 4726 unique subdomains: yahoo.com 1482, aol.com 3171, techcrunch.com 75"
+  },
+  {
+   "ts": "2026-09-26T19:37:21Z",
+   "kind": "fact",
+   "text": "sandbox DNS proxy REFUSES CNAME queries \u2014 takeover detection must be HTTP-fingerprint based, not DNS based"
+  },
+  {
+   "ts": "2026-09-26T19:44:16Z",
+   "kind": "fact",
+   "text": "sweep done: 4 of 300 legacy hosts answer; rest are dark"
+  }
+ ],
+ "assumptions": [
+  {
+   "id": "A1",
+   "believes": "Yahoo's main properties are well-hardened by a mature security team",
+   "enforcement": "HackerOne triage history; bug bounty since 2013",
+   "violated_if": "we find a remotely triggerable flaw on a core property",
+   "confidence": 0.85
+  },
+  {
+   "id": "A2",
+   "believes": "Legacy/acquired subdomains (aol.com, oath-era) may point at decommissioned infra",
+   "enforcement": "none observed yet",
+   "violated_if": "a dangling CNAME to a claimable service is found",
+   "confidence": 0.5
+  }
+ ],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "statement": "A Yahoo/AOL API subdomain reflects an arbitrary Origin with Access-Control-Allow-Credentials:true, enabling cross-origin theft of authenticated responses",
+   "violated_assumption": "A1",
+   "attacker_view": "attacker site makes credentialed fetch() to api endpoint; browser allows read if ACAO echoes evil.com + ACAC true",
+   "defender_view": "Yahoo uses a strict allowlist of origins on API endpoints; main properties hardened",
+   "devil_view": "",
+   "investigator_test": "",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-26T19:37:34Z"
+  },
+  {
+   "id": "H2",
+   "statement": "develop.techcrunch.com (WordPress) discloses usernames via REST API /wp-json/wp/v2/users or ?author=N redirects, enabling targeted credential attacks",
+   "violated_assumption": "A1",
+   "attacker_view": "enumerate valid WP usernames from the dev site, then use in password-spray or social engineering",
+   "defender_view": "WP REST user endpoint disabled or requires auth; author archives disabled",
+   "devil_view": "",
+   "investigator_test": "",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "rejected",
+   "source": "manual",
+   "ts": "2026-09-26T19:44:16Z"
+  },
+  {
+   "id": "H3",
+   "statement": "The rejection may be channel-specific; the same assumption may fail on a sibling endpoint.",
+   "violated_assumption": "A1",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "Map sibling endpoints sharing the object and test the cheapest one.",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "rejected",
+   "source": "manual",
+   "ts": "2026-09-26T19:54:43Z"
+  },
+  {
+   "id": "H4",
+   "statement": "api.qa.cmi.aol.com (AWS API Gateway, 403 on /) exposes a reachable stage/path (e.g. /prod, /v1, /api) returning backend content or a different error class",
+   "violated_assumption": "A1",
+   "attacker_view": "enumerate gateway stages to reach undocumented QA API operations",
+   "defender_view": "gateway has no deployed stages or all stages require auth; 403 on every path",
+   "devil_view": "",
+   "investigator_test": "",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-26T19:55:00Z"
+  },
+  {
+   "id": "H5",
+   "statement": "The rejection may be channel-specific; the same assumption may fail on a sibling endpoint.",
+   "violated_assumption": "A1",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "Map sibling endpoints sharing the object and test the cheapest one.",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "rejected",
+   "source": "manual",
+   "ts": "2026-09-26T20:00:56Z"
+  },
+  {
+   "id": "H6",
+   "statement": "beta.api.login.yahoo.com (older/secondary API version) validates requests more weakly than api.login.yahoo.com \u2014 e.g. different auth requirements, verbose errors, or missing rate limits on the same endpoints",
+   "violated_assumption": "A1",
+   "attacker_view": "find an endpoint that is locked on prod API but open/verbose on the beta API version",
+   "defender_view": "both API versions share the same validation and auth enforcement",
+   "devil_view": "",
+   "investigator_test": "",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-26T20:03:51Z"
+  },
+  {
+   "id": "H7",
+   "statement": "Ownership is enforced on GET but not re-checked on state-changing verbs.",
+   "violated_assumption": "A1",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "Replay the same object access via PATCH/PUT/DELETE as non-owner; diff against GET.",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-26T20:04:49Z"
+  },
+  {
+   "id": "H8",
+   "statement": "Ownership is enforced at the controller but skipped on a nested/member route.",
+   "violated_assumption": "A1",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "Reach the same object through nested routes (/parent/:id/child) and member actions.",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-26T20:04:49Z"
+  },
+  {
+   "id": "H9",
+   "statement": "api.stage.screenname.aol.com enforces auth per-method: GET returns 401 but POST/PUT/DELETE/OPTIONS receive different handling (200/405/500), indicating method-based auth bypass or verbose method exposure",
+   "violated_assumption": "A1",
+   "attacker_view": "use POST/PUT against screenname API operations that only guard GET",
+   "defender_view": "ATS enforces auth uniformly across methods; all non-GET return 401/405 uniformly",
+   "devil_view": "",
+   "investigator_test": "",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-26T20:05:00Z"
+  },
+  {
+   "id": "H10",
+   "statement": "login.yahoo.com/oauth2/request_auth does not strictly validate redirect_uri against the client registration, allowing an attacker to receive authorization codes at an evil domain",
+   "violated_assumption": "A1",
+   "attacker_view": "craft authorize URL with victim client_id but evil redirect_uri; victim approves; code goes to attacker",
+   "defender_view": "Yahoo enforces exact redirect_uri match per OAuth 2.0; mismatches show an error, never redirect",
+   "devil_view": "",
+   "investigator_test": "",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-26T20:58:51Z"
+  }
+ ],
+ "tests": [
+  {
+   "id": "T1",
+   "hypothesis_id": "H1",
+   "spec": {
+    "expected_observation": "response contains Access-Control-Allow-Origin: https://evil.example.com AND Access-Control-Allow-Credentials: true",
+    "reason": "CORS misconfig is a classic logic flaw on large estates; Yahoo's estate includes hundreds of legacy API hosts where allowlist may be loose. Single GET with Origin header is the minimal discriminating test.",
+    "scope_hosts": [
+     "yahoo.com",
+     "aol.com",
+     "techcrunch.com"
+    ],
+    "auth_basis": "HackerOne public program: automated tools permitted at reasonable rates against in-scope assets; single manual-style request per host, no DoS, no user data",
+    "success_criteria": "ACAO echoes our origin AND ACAC is true on an endpoint that serves user-influenced data",
+    "failure_criteria": "ACAO absent, or echoes only whitelisted origins, or ACAC not true",
+    "single_variable": true,
+    "repeater_spec": {
+     "note": "curl-based single GET probe"
+    }
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "Yahoo uses a strict allowlist of origins on API endpoints; main properties hardened",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T1",
+    "hypothesis_id": "H1",
+    "session_id": "960eb4de9444",
+    "scope_hosts": [
+     "yahoo.com",
+     "aol.com",
+     "techcrunch.com"
+    ],
+    "issued_at": 1790451454.5073526,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-26T19:37:34Z"
+  },
+  {
+   "id": "T2",
+   "hypothesis_id": "H2",
+   "spec": {
+    "expected_observation": "/wp-json/wp/v2/users returns a JSON array containing user slugs/names, or /?author=1 301-redirects to /author/<username>/",
+    "reason": "WP user enumeration is a well-known info-disclosure primitive; dev instances often run default config with REST users exposed. Two read-only GETs discriminate completely.",
+    "scope_hosts": [
+     "techcrunch.com"
+    ],
+    "auth_basis": "HackerOne public program (*.techcrunch.com in scope): read-only GET requests, no auth bypass, no brute force, no DoS",
+    "success_criteria": "usernames/slugs disclosed without authentication",
+    "failure_criteria": "401/403/empty on REST endpoint AND no author redirect",
+    "single_variable": true,
+    "repeater_spec": {
+     "note": "curl GET x2"
+    }
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "WP REST user endpoint disabled or requires auth; author archives disabled",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T2",
+    "hypothesis_id": "H2",
+    "session_id": "960eb4de9444",
+    "scope_hosts": [
+     "techcrunch.com"
+    ],
+    "issued_at": 1790451856.5771563,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-26T19:44:16Z"
+  },
+  {
+   "id": "T3",
+   "hypothesis_id": "H3",
+   "spec": {
+    "expected_observation": "GET /prod (or /v1, /api) returns non-403: 200/401/404 with backend-shaped body, differing from the / ForbiddenException",
+    "reason": "API Gateway 403 on / means no matching resource; stages are the standard routing axis. Three sequential GETs, one per likely stage name, is minimal and low-volume.",
+    "scope_hosts": [
+     "aol.com"
+    ],
+    "auth_basis": "HackerOne public program (*.aol.com in scope): 3 read-only GETs, spaced, no auth bypass attempt, no DoS",
+    "success_criteria": "any stage path returns a different status/body class than / (indicating a deployed stage)",
+    "failure_criteria": "403 ForbiddenException on all three stage paths",
+    "single_variable": true,
+    "repeater_spec": {
+     "note": "curl GET x3 sequential"
+    }
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "no benign explanation recorded",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T3",
+    "hypothesis_id": "H3",
+    "session_id": "960eb4de9444",
+    "scope_hosts": [
+     "aol.com"
+    ],
+    "issued_at": 1790452500.0209286,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-26T19:55:00Z"
+  },
+  {
+   "id": "T4",
+   "hypothesis_id": "H1",
+   "spec": {
+    "expected_observation": "GET query1.finance.yahoo.com/v8/finance/chart/AAPL with Origin: https://evil.example.com returns Access-Control-Allow-Origin: https://evil.example.com AND Access-Control-Allow-Credentials: true",
+    "reason": "H1 parked on roots; finance chart API is a real data endpoint serving user-relevant data. One request discriminates whether the CORS policy is endpoint-specific and loose.",
+    "scope_hosts": [
+     "yahoo.com"
+    ],
+    "auth_basis": "HackerOne public program: single read-only GET to a public market-data endpoint, no auth, no DoS",
+    "success_criteria": "ACAO echoes evil origin with ACAC true on the chart endpoint",
+    "failure_criteria": "ACAO is * without credentials, or absent, or only whitelisted origins",
+    "single_variable": true,
+    "repeater_spec": {
+     "note": "curl GET x1"
+    }
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "Yahoo uses a strict allowlist of origins on API endpoints; main properties hardened",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T4",
+    "hypothesis_id": "H1",
+    "session_id": "960eb4de9444",
+    "scope_hosts": [
+     "yahoo.com"
+    ],
+    "issued_at": 1790452923.3317788,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-26T20:02:03Z"
+  },
+  {
+   "id": "T5",
+   "hypothesis_id": "H5",
+   "spec": {
+    "expected_observation": "identical GET / to both hosts returns DIFFERENT status/body/headers (e.g. beta returns 200/verbose where prod returns 401, or beta leaks stack traces)",
+    "reason": "API version gaps are a classic logic flaw; Yahoo runs parallel api.login and beta.api.login hosts. A differential GET on / is the minimal test \u2014 one request per host, same headers, compare.",
+    "scope_hosts": [
+     "yahoo.com"
+    ],
+    "auth_basis": "HackerOne public program: 2 read-only GETs to in-scope API hosts, no auth bypass, no DoS",
+    "success_criteria": "material difference in status/body/headers indicating weaker validation on beta",
+    "failure_criteria": "identical 401/headers on both (no version gap on /)",
+    "single_variable": true,
+    "repeater_spec": {
+     "note": "curl GET x2, diff via differential.compare"
+    }
+   },
+   "adversarial_review": {
+    "rejections": [
+     "test is unnecessary: already answered by result(s) ['R2']"
+    ],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "no benign explanation recorded",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "R2"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "rejected",
+   "authorization": null,
+   "ts": "2026-09-26T20:03:51Z"
+  },
+  {
+   "id": "T6",
+   "hypothesis_id": "H5",
+   "spec": {
+    "expected_observation": "beta.api.login.yahoo.com responds to GET / with a 2xx/3xx or a JSON error body while api.login.yahoo.com responds 401 Unauthorized with ATS headers \u2014 a version-skew in authentication enforcement between the two login API deployments",
+    "reason": "Parallel API deployments (prod vs beta) frequently drift in auth enforcement. Comparing the two login API roots with identical requests isolates version as the single variable.",
+    "scope_hosts": [
+     "yahoo.com"
+    ],
+    "auth_basis": "HackerOne public program: 2 read-only GETs to in-scope API hosts, no auth bypass, no DoS",
+    "success_criteria": "beta returns success-class or verbose JSON where prod returns 401",
+    "failure_criteria": "both return 401 with matching ATS server headers",
+    "single_variable": true,
+    "repeater_spec": {
+     "note": "curl GET x2"
+    }
+   },
+   "adversarial_review": {
+    "rejections": [
+     "test is unnecessary: already answered by result(s) ['R1', 'R3']"
+    ],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "no benign explanation recorded",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "R1",
+      "R3"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "rejected",
+   "authorization": null,
+   "ts": "2026-09-26T20:03:56Z"
+  },
+  {
+   "id": "T7",
+   "hypothesis_id": "H5",
+   "spec": {
+    "expected_observation": "beta.api.login.yahoo.com slash yields HTTP 200/302/500 whereas api.login.yahoo.com slash yields HTTP 401 \u2014 version skew",
+    "reason": "Parallel deployments drift. Identical slash fetch against prod and beta login API isolates version.",
+    "scope_hosts": [
+     "yahoo.com"
+    ],
+    "auth_basis": "HackerOne public program: 2 read-only GETs, in-scope, no bypass, no DoS",
+    "success_criteria": "beta slash differs materially from prod slash",
+    "failure_criteria": "both slash 401 ATS",
+    "single_variable": true,
+    "repeater_spec": {
+     "note": "curl x2"
+    }
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "no benign explanation recorded",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T7",
+    "hypothesis_id": "H5",
+    "session_id": "960eb4de9444",
+    "scope_hosts": [
+     "yahoo.com"
+    ],
+    "issued_at": 1790453044.7592676,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-26T20:04:04Z"
+  },
+  {
+   "id": "T8",
+   "hypothesis_id": "H6",
+   "spec": {
+    "expected_observation": "POST or OPTIONS to api.stage.screenname.aol.com slash diverges from GET 401 \u2014 e.g. 200, 405 with Allow header, or 500 with stack trace",
+    "reason": "Method-based auth gaps are an unusual logic flaw; the screenname API is a staging identity endpoint. Four single requests (POST/PUT/DELETE/OPTIONS), one per method, spaced.",
+    "scope_hosts": [
+     "aol.com"
+    ],
+    "auth_basis": "HackerOne public program: 4 read-only method probes, no body payload, in-scope, no DoS",
+    "success_criteria": "any method returns non-401 (200/405/500 with differential body)",
+    "failure_criteria": "all methods 401 identical to GET",
+    "single_variable": true,
+    "repeater_spec": {
+     "note": "curl -X x4, empty body"
+    }
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "both API versions share the same validation and auth enforcement",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T8",
+    "hypothesis_id": "H6",
+    "session_id": "960eb4de9444",
+    "scope_hosts": [
+     "aol.com"
+    ],
+    "issued_at": 1790453100.4209287,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-26T20:05:00Z"
+  },
+  {
+   "id": "T9",
+   "hypothesis_id": "H7",
+   "spec": {
+    "expected_observation": "302 redirect to https://evil.example.com with ?code= \u2014 proving redirect_uri is not validated",
+    "reason": "redirect_uri validation is the linchpin of OAuth code flow; a single authorize request with a dummy client_id and evil redirect_uri discriminates. No credentials, no user session, no code redemption \u2014 validation behavior only.",
+    "scope_hosts": [
+     "yahoo.com"
+    ],
+    "auth_basis": "HackerOne public program: single GET to in-scope OAuth endpoint, no auth, no user data, no token redemption",
+    "success_criteria": "302 to evil.example.com carrying code or token",
+    "failure_criteria": "error page / 400 / no redirect to evil domain",
+    "single_variable": true,
+    "repeater_spec": {
+     "note": "curl GET x1, no follow"
+    }
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "no benign explanation recorded",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T9",
+    "hypothesis_id": "H7",
+    "session_id": "960eb4de9444",
+    "scope_hosts": [
+     "yahoo.com"
+    ],
+    "issued_at": 1790456331.5262165,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-26T20:58:51Z"
+  }
+ ],
+ "results": [
+  {
+   "id": "R1",
+   "test_id": "T2",
+   "hypothesis_id": "H2",
+   "outcome": "rejected",
+   "observed": "/wp-json/ -> 302 to wp-login.php; /wp-json/wp/v2/users -> 302 to login; /?author=1 -> 302 to wp-login.php?redirect_to; xmlrpc.php -> connection refused (000); no generator meta. No username disclosed anywhere without auth.",
+   "why_failed": "dev WP instance forces login for all WP routes including REST API; xmlrpc dead at network edge",
+   "learned": "develop.techcrunch.com is a hardened WP: auth wall on every route. Do not spend more time on WP user-enum here. Pivot to API-gateway host and OAuth surfaces.",
+   "false_explanation": "",
+   "environment": "develop.techcrunch.com (in scope)",
+   "technology": "WordPress behind nginx, login-walled",
+   "preconditions": "",
+   "ts": "2026-09-26T19:54:43Z"
+  },
+  {
+   "id": "R2",
+   "test_id": "T3",
+   "hypothesis_id": "H3",
+   "outcome": "rejected",
+   "observed": "GET /prod, /v1, /api on api.qa.cmi.aol.com all return 403 {\"message\":\"Forbidden\"} \u2014 identical to /. No deployed stage reachable. (Note: mid-test sandbox egress outage caused transient 000s; retried after recovery with 12s spacing.)",
+   "why_failed": "API Gateway has no reachable stages under common names; 403 uniform across / and stage paths",
+   "learned": "api.qa.cmi.aol.com is a locked-down API Gateway. Stage-guessing beyond 3 common names is noisy \u2014 stop here.",
+   "false_explanation": "",
+   "environment": "api.qa.cmi.aol.com (in scope)",
+   "technology": "AWS API Gateway",
+   "preconditions": "",
+   "ts": "2026-09-26T20:00:56Z"
+  },
+  {
+   "id": "R3",
+   "test_id": "T4",
+   "hypothesis_id": "H1",
+   "outcome": "inconclusive",
+   "observed": "GET query1.finance.yahoo.com/v8/finance/chart/AAPL with evil Origin returned 429 Too Many Requests (no CORS headers in 429). Edge is rate-limiting this egress IP after earlier sweeps.",
+   "why_failed": "",
+   "learned": "Yahoo edge 429s this IP \u2014 back off Yahoo hosts for 30+ min; pivot to aol.com/techcrunch.com infra which is separate. CORS on finance API untested, not rejected.",
+   "false_explanation": "",
+   "environment": "query1.finance.yahoo.com",
+   "technology": "Yahoo ATS edge rate limiting",
+   "preconditions": "",
+   "ts": "2026-09-26T20:02:42Z"
+  },
+  {
+   "id": "R4",
+   "test_id": "T7",
+   "hypothesis_id": "H5",
+   "outcome": "rejected",
+   "observed": "GET / on api.login.yahoo.com and beta.api.login.yahoo.com both return 401 Unauthorized, Server ATS, identical 12-byte body. No version skew on root path.",
+   "why_failed": "both API versions enforce auth identically on /",
+   "learned": "login API prod/beta are in sync on /. Version-gap testing needs deeper known endpoints, not root.",
+   "false_explanation": "",
+   "environment": "api.login.yahoo.com, beta.api.login.yahoo.com",
+   "technology": "Yahoo ATS",
+   "preconditions": "",
+   "ts": "2026-09-26T20:04:49Z"
+  },
+  {
+   "id": "R5",
+   "test_id": "T8",
+   "hypothesis_id": "H6",
+   "outcome": "inconclusive",
+   "observed": "POST to api.stage.screenname.aol.com timed out (000); follow-up GET also 000. Host was 401 at 19:42 UTC. Egress confirmed working (example.com 200, www.aol.com 200) \u2014 this is per-host throttling/flakiness, not IP block.",
+   "why_failed": "",
+   "learned": "api.stage.screenname.aol.com throttles after a few requests. Method-differential untested, not rejected. Cool down this host; use fresh hosts.",
+   "false_explanation": "",
+   "environment": "api.stage.screenname.aol.com",
+   "technology": "Yahoo ATS per-host throttling",
+   "preconditions": "",
+   "ts": "2026-09-26T20:58:44Z"
+  }
+ ],
+ "rejected_hypotheses": [
+  {
+   "id": "H2",
+   "statement": "develop.techcrunch.com (WordPress) discloses usernames via REST API /wp-json/wp/v2/users or ?author=N redirects, enabling targeted credential attacks",
+   "believed": "develop.techcrunch.com (WordPress) discloses usernames via REST API /wp-json/wp/v2/users or ?author=N redirects, enabling targeted credential attacks",
+   "tested": "WP user enumeration is a well-known info-disclosure primitive; dev instances often run default config with REST users exposed. Two read-only GETs discriminate completely.",
+   "observed_result": "/wp-json/ -> 302 to wp-login.php; /wp-json/wp/v2/users -> 302 to login; /?author=1 -> 302 to wp-login.php?redirect_to; xmlrpc.php -> connection refused (000); no generator meta. No username disclosed anywhere without auth.",
+   "why_failed": "dev WP instance forces login for all WP routes including REST API; xmlrpc dead at network edge",
+   "learned": "develop.techcrunch.com is a hardened WP: auth wall on every route. Do not spend more time on WP user-enum here. Pivot to API-gateway host and OAuth surfaces.",
+   "false_explanation": "",
+   "environment": "develop.techcrunch.com (in scope)",
+   "technology": "WordPress behind nginx, login-walled",
+   "preconditions": "",
+   "changes_future": [
+    "The rejection may be channel-specific; the same assumption may fail on a sibling endpoint."
+   ]
+  },
+  {
+   "id": "H3",
+   "statement": "The rejection may be channel-specific; the same assumption may fail on a sibling endpoint.",
+   "believed": "The rejection may be channel-specific; the same assumption may fail on a sibling endpoint.",
+   "tested": "API Gateway 403 on / means no matching resource; stages are the standard routing axis. Three sequential GETs, one per likely stage name, is minimal and low-volume.",
+   "observed_result": "GET /prod, /v1, /api on api.qa.cmi.aol.com all return 403 {\"message\":\"Forbidden\"} \u2014 identical to /. No deployed stage reachable. (Note: mid-test sandbox egress outage caused transient 000s; retried after recovery with 12s spacing.)",
+   "why_failed": "API Gateway has no reachable stages under common names; 403 uniform across / and stage paths",
+   "learned": "api.qa.cmi.aol.com is a locked-down API Gateway. Stage-guessing beyond 3 common names is noisy \u2014 stop here.",
+   "false_explanation": "",
+   "environment": "api.qa.cmi.aol.com (in scope)",
+   "technology": "AWS API Gateway",
+   "preconditions": "",
+   "changes_future": [
+    "The rejection may be channel-specific; the same assumption may fail on a sibling endpoint."
+   ]
+  },
+  {
+   "id": "H5",
+   "statement": "The rejection may be channel-specific; the same assumption may fail on a sibling endpoint.",
+   "believed": "The rejection may be channel-specific; the same assumption may fail on a sibling endpoint.",
+   "tested": "Parallel deployments drift. Identical slash fetch against prod and beta login API isolates version.",
+   "observed_result": "GET / on api.login.yahoo.com and beta.api.login.yahoo.com both return 401 Unauthorized, Server ATS, identical 12-byte body. No version skew on root path.",
+   "why_failed": "both API versions enforce auth identically on /",
+   "learned": "login API prod/beta are in sync on /. Version-gap testing needs deeper known endpoints, not root.",
+   "false_explanation": "",
+   "environment": "api.login.yahoo.com, beta.api.login.yahoo.com",
+   "technology": "Yahoo ATS",
+   "preconditions": "",
+   "changes_future": [
+    "Ownership is enforced on GET but not re-checked on state-changing verbs.",
+    "Ownership is enforced at the controller but skipped on a nested/member route."
+   ]
+  }
+ ],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [],
+ "facts": [],
+ "lessons": [
+  {
+   "ts": "2026-09-26T19:54:43Z",
+   "text": "H2 rejected: dev WP instance forces login for all WP routes including REST API; xmlrpc dead at network edge -> learned: develop.techcrunch.com is a hardened WP: auth wall on every route. Do not spend more time on WP user-enum here. Pivot to API-gateway host and OAuth surfaces."
+  },
+  {
+   "ts": "2026-09-26T20:00:56Z",
+   "text": "H3 rejected: API Gateway has no reachable stages under common names; 403 uniform across / and stage paths -> learned: api.qa.cmi.aol.com is a locked-down API Gateway. Stage-guessing beyond 3 common names is noisy \u2014 stop here."
+  },
+  {
+   "ts": "2026-09-26T20:04:49Z",
+   "text": "H5 rejected: both API versions enforce auth identically on / -> learned: login API prod/beta are in sync on /. Version-gap testing needs deeper known endpoints, not root."
+  }
+ ],
+ "next_actions": [
+  "run T1 (hypothesis H1)",
+  "run T2 (hypothesis H2)",
+  "run T3 (hypothesis H3)",
+  "run T4 (hypothesis H1)",
+  "run T7 (hypothesis H5)",
+  "run T8 (hypothesis H6)",
+  "run T9 (hypothesis H7)",
+  "design test for H4: api.qa.cmi.aol.com (AWS API Gateway, 403 on /) exposes a reachable sta...",
+  "design test for H8: Ownership is enforced at the controller but skipped on a nested/member...",
+  "design test for H9: api.stage.screenname.aol.com enforces auth per-method: GET returns 401...",
+  "design test for H10: login.yahoo.com/oauth2/request_auth does not strictly validate redirec..."
+ ],
+ "id": "960eb4de9444"
+}

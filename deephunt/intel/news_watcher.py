@@ -22,6 +22,7 @@ import datetime
 import json
 import os
 import sys
+import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 
@@ -64,10 +65,15 @@ def hn_stories(days: int = 1) -> list[dict]:
     since = (datetime.datetime.now(datetime.timezone.utc)
              - datetime.timedelta(days=days)).timestamp()
     for q in HN_QUERIES:
-        url = ("http://hn.algolia.com/api/v1/search?query="
-               + urllib.request.quote(q)
-               + "&tags=story&numericFilters=created_at_i>"
-               + str(int(since)))
+        # NOTE: build the query string with urlencode — the egress proxy
+        # drops requests with a raw '>'/'<' in the URL, so numericFilters
+        # must go out as created_at_i%3E<ts> (2026-09-29).
+        params = urllib.parse.urlencode({
+            "query": q,
+            "tags": "story",
+            "numericFilters": f"created_at_i>{int(since)}",
+        })
+        url = "https://hn.algolia.com/api/v1/search?" + params
         raw = _get(url)
         if not raw:
             continue
@@ -143,9 +149,10 @@ def main() -> None:
         seen["bc"].append(b["url"])
         items.append(b)
 
-    # keep watermarks bounded
+    # keep watermarks bounded (KEV catalog is >1300 entries; cap must exceed it
+    # or old CVEs get re-ingested as "new" every run)
     for k in seen:
-        seen[k] = seen[k][-500:]
+        seen[k] = seen[k][-5000:]
     _save_seen(seen)
 
     os.makedirs(NEWS_DIR, exist_ok=True)

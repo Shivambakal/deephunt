@@ -1,0 +1,314 @@
+{
+ "objective": "Kiteworks unauthenticated blitz (2026-09-27): static JS-bundle teardown, /login_config + cookie surface, unauthenticated route map, server error-behavior capture. Read-only recon + single benign probes on the authorized YesWeHack hunting env.",
+ "created": "2026-09-27T06:17:22Z",
+ "updated": "2026-09-27T06:17:22Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [],
+  "trust_boundaries": [],
+  "state_machines": {}
+ },
+ "observations": [
+  {
+   "ts": "2026-09-27T06:17:22Z",
+   "kind": "observation",
+   "text": "REACHABILITY: GET /login_config -> HTTP 200, 1190 bytes, 1.76s. Body is JS defining desanitize(str) entity-decoder and var vue_config. Framework evidence: Vue (vue_config)."
+  },
+  {
+   "ts": "2026-09-27T06:17:22Z",
+   "kind": "observation",
+   "text": "desanitize() definition captured verbatim from /login_config into /tmp/kw_login_config.json: entity-decode map for backslash, &#039;, &amp;, &quot;, &lt;, &gt; applied via str.replace with regex; applied to tenant config strings like serviceName and ipBlockMsg in vue_config."
+  }
+ ],
+ "assumptions": [],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "statement": "Signin/login JS chunks contain desanitize() call sites; verbatim evidence of whether outputs reach DOM/URL sinks (innerHTML, v-html, location.assign, etc.) or are ruled out.",
+   "violated_assumption": "",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "live",
+   "source": "manual",
+   "provenance": "kw-blitz-2026-09-27",
+   "ts": "2026-09-27T06:17:22Z"
+  },
+  {
+   "id": "H2",
+   "statement": "Client handling of server-returned redirectUrl: exact code quote; validation present (quoted) or absent (stated none found).",
+   "violated_assumption": "",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "live",
+   "source": "manual",
+   "provenance": "kw-blitz-2026-09-27",
+   "ts": "2026-09-27T06:17:22Z"
+  },
+  {
+   "id": "H3",
+   "statement": "Complete verbatim /login_config field dump + Set-Cookie attribute table from /login and /register responses.",
+   "violated_assumption": "",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "live",
+   "source": "manual",
+   "provenance": "kw-blitz-2026-09-27",
+   "ts": "2026-09-27T06:17:22Z"
+  },
+  {
+   "id": "H4",
+   "statement": "Verbatim server error strings for bad login / bad CAPTCHA / admin-gated registration from single benign POST probes.",
+   "violated_assumption": "",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "live",
+   "source": "manual",
+   "provenance": "kw-blitz-2026-09-27",
+   "ts": "2026-09-27T06:17:22Z"
+  }
+ ],
+ "tests": [
+  {
+   "id": "T1",
+   "hypothesis_id": "H1",
+   "spec": {
+    "expected_observation": "Signin/login JS chunks contain desanitize() call sites; verbatim evidence of whether outputs reach DOM/URL sinks (innerHTML, v-html, location.assign, etc.) or are ruled out.",
+    "reason": "/login_config embeds desanitize(); tenant-controlled strings may flow into it; sink reachability unknown until chunks are traced.",
+    "scope_hosts": [
+     "ywh-kw-public.bounty.kiteworks.dev"
+    ],
+    "auth_basis": "YesWeHack Kiteworks public bug bounty program scope: https://ywh-kw-public.bounty.kiteworks.dev ; unauthenticated read-only recon; single benign probe values only where GET cannot reach the code path; UA suffix -public-yeswehack; max ~1 req/2s; backoff on 429/503",
+    "success_criteria": "Exact code quote chunk+line showing tainted value reaching a sink, or exhaustive no-sink statement after all chunks fetched.",
+    "failure_criteria": "All chunks fetched and no desanitize call site or sink found.",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [],
+    "answers": {
+     "supporting_evidence": [
+      "REACHABILITY: GET /login_config -> HTTP 200, 1190 bytes, 1.76s. Body is JS defining desanitize(str) entity-decoder and var vue_config. Framework evidence: Vue (",
+      "desanitize() definition captured verbatim from /login_config into /tmp/kw_login_config.json: entity-decode map for backslash, &#039;, &amp;, &quot;, &lt;, &gt; "
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "no benign explanation recorded",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 3
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T1",
+    "hypothesis_id": "H1",
+    "session_id": "7db9caebbea2",
+    "scope_hosts": [
+     "ywh-kw-public.bounty.kiteworks.dev"
+    ],
+    "issued_at": 1790489842.5675156,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-27T06:17:22Z"
+  },
+  {
+   "id": "T2",
+   "hypothesis_id": "H2",
+   "spec": {
+    "expected_observation": "Client handling of server-returned redirectUrl: exact code quote; validation present (quoted) or absent (stated none found).",
+    "reason": "Prior swarm report claimed unvalidated redirectUrl -> window.location.assign(); needs verbatim re-verification.",
+    "scope_hosts": [
+     "ywh-kw-public.bounty.kiteworks.dev"
+    ],
+    "auth_basis": "YesWeHack Kiteworks public bug bounty program scope: https://ywh-kw-public.bounty.kiteworks.dev ; unauthenticated read-only recon; single benign probe values only where GET cannot reach the code path; UA suffix -public-yeswehack; max ~1 req/2s; backoff on 429/503",
+    "success_criteria": "Verbatim code showing redirectUrl flow with/without validation.",
+    "failure_criteria": "redirectUrl handling not present in fetched chunks.",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "no benign explanation recorded",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T2",
+    "hypothesis_id": "H2",
+    "session_id": "7db9caebbea2",
+    "scope_hosts": [
+     "ywh-kw-public.bounty.kiteworks.dev"
+    ],
+    "issued_at": 1790489842.5691879,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-27T06:17:22Z"
+  },
+  {
+   "id": "T3",
+   "hypothesis_id": "H3",
+   "spec": {
+    "expected_observation": "Complete verbatim /login_config field dump + Set-Cookie attribute table from /login and /register responses.",
+    "reason": "Config endpoint is public (200 observed); headers/cookies are passive evidence.",
+    "scope_hosts": [
+     "ywh-kw-public.bounty.kiteworks.dev"
+    ],
+    "auth_basis": "YesWeHack Kiteworks public bug bounty program scope: https://ywh-kw-public.bounty.kiteworks.dev ; unauthenticated read-only recon; single benign probe values only where GET cannot reach the code path; UA suffix -public-yeswehack; max ~1 req/2s; backoff on 429/503",
+    "success_criteria": "Complete verbatim field dump and cookie table.",
+    "failure_criteria": "Endpoint blocks or redacts fields unauthenticated.",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [],
+    "answers": {
+     "supporting_evidence": [
+      "REACHABILITY: GET /login_config -> HTTP 200, 1190 bytes, 1.76s. Body is JS defining desanitize(str) entity-decoder and var vue_config. Framework evidence: Vue (",
+      "desanitize() definition captured verbatim from /login_config into /tmp/kw_login_config.json: entity-decode map for backslash, &#039;, &amp;, &quot;, &lt;, &gt; "
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "no benign explanation recorded",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 3
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T3",
+    "hypothesis_id": "H3",
+    "session_id": "7db9caebbea2",
+    "scope_hosts": [
+     "ywh-kw-public.bounty.kiteworks.dev"
+    ],
+    "issued_at": 1790489842.582711,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-27T06:17:22Z"
+  },
+  {
+   "id": "T4",
+   "hypothesis_id": "H4",
+   "spec": {
+    "expected_observation": "Verbatim server error strings for bad login / bad CAPTCHA / admin-gated registration from single benign POST probes.",
+    "reason": "Registration visibly fails with admin-gate message; login/captcha paths untested.",
+    "scope_hosts": [
+     "ywh-kw-public.bounty.kiteworks.dev"
+    ],
+    "auth_basis": "YesWeHack Kiteworks public bug bounty program scope: https://ywh-kw-public.bounty.kiteworks.dev ; unauthenticated read-only recon; single benign probe values only where GET cannot reach the code path; UA suffix -public-yeswehack; max ~1 req/2s; backoff on 429/503",
+    "success_criteria": "Verbatim error string + status per probe.",
+    "failure_criteria": "Endpoint not discoverable statically or probe blocked.",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [],
+    "answers": {
+     "supporting_evidence": [
+      "desanitize() definition captured verbatim from /login_config into /tmp/kw_login_config.json: entity-decode map for backslash, &#039;, &amp;, &quot;, &lt;, &gt; "
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "no benign explanation recorded",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 3
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T4",
+    "hypothesis_id": "H4",
+    "session_id": "7db9caebbea2",
+    "scope_hosts": [
+     "ywh-kw-public.bounty.kiteworks.dev"
+    ],
+    "issued_at": 1790489842.5868568,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-27T06:17:22Z"
+  }
+ ],
+ "results": [],
+ "rejected_hypotheses": [],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [],
+ "facts": [],
+ "lessons": [],
+ "next_actions": [
+  "run T1 (hypothesis H1)",
+  "run T2 (hypothesis H2)",
+  "run T3 (hypothesis H3)",
+  "run T4 (hypothesis H4)"
+ ],
+ "id": "7db9caebbea2"
+}

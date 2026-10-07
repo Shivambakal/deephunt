@@ -1,0 +1,229 @@
+{
+ "objective": "DEEPHUNT autonomous hunt: shopify (HackerOne shopify (public; scope verified via published policy 2026-09-27))",
+ "created": "2026-09-27T05:21:06Z",
+ "updated": "2026-09-27T05:22:07Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [],
+  "trust_boundaries": [],
+  "state_machines": {}
+ },
+ "observations": [
+  {
+   "ts": "2026-09-27T05:21:11Z",
+   "kind": "fact",
+   "text": "cors_probe: cors_probe: no misconfig found \u2014 "
+  },
+  {
+   "ts": "2026-09-27T05:21:32Z",
+   "kind": "fact",
+   "text": "crtsh: crt.sh: 328 subdomains under shopify.com \u2014 328 unique names"
+  },
+  {
+   "ts": "2026-09-27T05:21:32Z",
+   "kind": "fact",
+   "text": "gau: gau: 0 urls for shopify.com \u2014 0 param/api urls"
+  },
+  {
+   "ts": "2026-09-27T05:21:32Z",
+   "kind": "fact",
+   "text": "gau: gau: 0 urls for admin.shopify.com \u2014 0 param/api urls"
+  },
+  {
+   "ts": "2026-09-27T05:21:32Z",
+   "kind": "fact",
+   "text": "gau: gau: 0 urls for accounts.shopify.com \u2014 0 param/api urls"
+  },
+  {
+   "ts": "2026-09-27T05:21:32Z",
+   "kind": "fact",
+   "text": "gau: gau: 0 urls for partners.shopify.com \u2014 0 param/api urls"
+  },
+  {
+   "ts": "2026-09-27T05:21:35Z",
+   "kind": "fact",
+   "text": "github_recon: github Shopify: 100 repos \u2014 100 keyword hits"
+  },
+  {
+   "ts": "2026-09-27T05:21:37Z",
+   "kind": "fact",
+   "text": "headers: headers: shopify.com \u2014 missing: strict-transport-security, content-security-policy, x-frame-options"
+  },
+  {
+   "ts": "2026-09-27T05:21:37Z",
+   "kind": "fact",
+   "text": "headers: headers: admin.shopify.com \u2014 missing: none"
+  },
+  {
+   "ts": "2026-09-27T05:21:37Z",
+   "kind": "fact",
+   "text": "headers: headers: accounts.shopify.com \u2014 missing: content-security-policy"
+  },
+  {
+   "ts": "2026-09-27T05:21:37Z",
+   "kind": "fact",
+   "text": "headers: headers: partners.shopify.com \u2014 missing: x-frame-options"
+  },
+  {
+   "ts": "2026-09-27T05:21:37Z",
+   "kind": "fact",
+   "text": "error_intel: error-intel: Cloudflare edge in front \u2014 expect JS challenge / managed rules; tune evasion per WAF-01. \u2014 patterns=['waf-cloudflare'] techniques=['WAF-01'] src=headers:headers: shopify.com"
+  },
+  {
+   "ts": "2026-09-27T05:21:37Z",
+   "kind": "fact",
+   "text": "error_intel: error-intel: Cloudflare edge in front \u2014 expect JS challenge / managed rules; tune evasion per WAF-01. \u2014 patterns=['waf-cloudflare'] techniques=['WAF-01'] src=headers:headers: accounts.shopify.com"
+  },
+  {
+   "ts": "2026-09-27T05:21:41Z",
+   "kind": "fact",
+   "text": "httpx: httpx: 4 live of 4 probed \u2014 4 live"
+  },
+  {
+   "ts": "2026-09-27T05:21:46Z",
+   "kind": "fact",
+   "text": "js_extract: JS mining: 0 bundles, 0 api paths, 0 params, 0 urls \u2014 0 bundles fetched"
+  },
+  {
+   "ts": "2026-09-27T05:21:49Z",
+   "kind": "fact",
+   "text": "js_secrets: js_secrets: 0 bundles, no key patterns \u2014 "
+  },
+  {
+   "ts": "2026-09-27T05:21:49Z",
+   "kind": "fact",
+   "text": "jwt_probe: jwt_probe: no token \u2014 "
+  },
+  {
+   "ts": "2026-09-27T05:21:49Z",
+   "kind": "fact",
+   "text": "param_miner: param_miner: 0 params, 0 paths \u2014 "
+  },
+  {
+   "ts": "2026-09-27T05:21:49Z",
+   "kind": "fact",
+   "text": "proxy_route: intercept proxy already on :8080 \u2014 "
+  },
+  {
+   "ts": "2026-09-27T05:21:54Z",
+   "kind": "fact",
+   "text": "robots_sitemap: shopify.com/robots.txt exposed \u2014 2 entries"
+  },
+  {
+   "ts": "2026-09-27T05:21:54Z",
+   "kind": "fact",
+   "text": "robots_sitemap: shopify.com/sitemap.xml exposed \u2014 50 entries"
+  },
+  {
+   "ts": "2026-09-27T05:21:54Z",
+   "kind": "fact",
+   "text": "robots_sitemap: admin.shopify.com/robots.txt exposed \u2014 1 entries"
+  },
+  {
+   "ts": "2026-09-27T05:21:54Z",
+   "kind": "fact",
+   "text": "robots_sitemap: admin.shopify.com/sitemap.xml exposed \u2014 0 entries"
+  },
+  {
+   "ts": "2026-09-27T05:21:54Z",
+   "kind": "fact",
+   "text": "robots_sitemap: partners.shopify.com/robots.txt exposed \u2014 2 entries"
+  },
+  {
+   "ts": "2026-09-27T05:21:55Z",
+   "kind": "fact",
+   "text": "subfinder: subfinder: 0 subs for shopify.com \u2014 rc=0"
+  },
+  {
+   "ts": "2026-09-27T05:21:55Z",
+   "kind": "fact",
+   "text": "t100-dnsrecon: t100-dnsrecon failed \u2014 "
+  },
+  {
+   "ts": "2026-09-27T05:21:55Z",
+   "kind": "fact",
+   "text": "t100-linkfinder: t100-linkfinder failed \u2014 "
+  },
+  {
+   "ts": "2026-09-27T05:21:55Z",
+   "kind": "fact",
+   "text": "error_intel: error-study: unknown error from t100-linkfinder queued \u2014 t100-linkfinder failed t100-linkfinder failed fast (not transient): ValueError('not enough values to unpack (expected 9, got 8)') "
+  },
+  {
+   "ts": "2026-09-27T05:21:55Z",
+   "kind": "fact",
+   "text": "t100-secretfinder: t100-secretfinder failed \u2014 "
+  },
+  {
+   "ts": "2026-09-27T05:21:55Z",
+   "kind": "fact",
+   "text": "error_intel: error-study: unknown error from t100-secretfinder queued \u2014 t100-secretfinder failed t100-secretfinder failed fast (not transient): ValueError('not enough values to unpack (expected 9, got 8)') "
+  },
+  {
+   "ts": "2026-09-27T05:21:55Z",
+   "kind": "fact",
+   "text": "t100-testssl: t100-testssl failed \u2014 "
+  },
+  {
+   "ts": "2026-09-27T05:21:55Z",
+   "kind": "fact",
+   "text": "t100-wafw00f: t100-wafw00f failed \u2014 "
+  },
+  {
+   "ts": "2026-09-27T05:21:55Z",
+   "kind": "fact",
+   "text": "error_intel: error-study: unknown error from t100-wafw00f queued \u2014 t100-wafw00f failed t100-wafw00f failed fast (not transient): ValueError('not enough values to unpack (expected 9, got 8)') "
+  },
+  {
+   "ts": "2026-09-27T05:21:56Z",
+   "kind": "fact",
+   "text": "takeover: takeover: no dangling CNAMEs found \u2014 "
+  },
+  {
+   "ts": "2026-09-27T05:22:01Z",
+   "kind": "fact",
+   "text": "tech_detect: stack: shopify.com \u2014 1 signals"
+  },
+  {
+   "ts": "2026-09-27T05:22:01Z",
+   "kind": "fact",
+   "text": "tech_detect: stack: admin.shopify.com \u2014 0 signals"
+  },
+  {
+   "ts": "2026-09-27T05:22:01Z",
+   "kind": "fact",
+   "text": "tech_detect: stack: partners.shopify.com \u2014 1 signals"
+  },
+  {
+   "ts": "2026-09-27T05:22:07Z",
+   "kind": "fact",
+   "text": "urlscan: urlscan: 50 scans for shopify.com \u2014 10000 total"
+  },
+  {
+   "ts": "2026-09-27T05:22:07Z",
+   "kind": "fact",
+   "text": "urlscan: urlscan: 50 scans for admin.shopify.com \u2014 10000 total"
+  },
+  {
+   "ts": "2026-09-27T05:22:07Z",
+   "kind": "fact",
+   "text": "urlscan: urlscan: 50 scans for accounts.shopify.com \u2014 4394 total"
+  }
+ ],
+ "assumptions": [],
+ "hypotheses": [],
+ "tests": [],
+ "results": [],
+ "rejected_hypotheses": [],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [],
+ "facts": [],
+ "lessons": [],
+ "next_actions": [],
+ "id": "cdd6e91ccbb2"
+}

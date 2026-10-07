@@ -1,0 +1,53 @@
+{
+  "total": 413,
+  "by_file": {
+    "obs_recon": 84,
+    "obs_app": 123,
+    "obs_diff": 84,
+    "obs_verify": 10,
+    "hyp_known": 76,
+    "hyp_novel": 36
+  },
+  "by_type": {
+    "observation": 282,
+    "hypothesis": 121,
+    "verification": 10
+  },
+  "by_confidence": {
+    "medium": 149,
+    "high": 143,
+    "low": 121
+  },
+  "fixes": [
+    {
+      "file": "hyp_novel",
+      "line": 4,
+      "fixes": [
+        "missing:evidence"
+      ]
+    },
+    {
+      "file": "hyp_novel",
+      "line": 5,
+      "fixes": [
+        "missing:evidence"
+      ]
+    },
+    {
+      "file": "hyp_novel",
+      "line": 6,
+      "fixes": [
+        "missing:evidence"
+      ]
+    }
+  ],
+  "final_counts": {
+    "obs_recon": 84,
+    "obs_app": 123,
+    "obs_diff": 84,
+    "obs_verify": 10,
+    "hyp_known": 76,
+    "hyp_novel": 36
+  },
+  "stale_warning": "source files may still be appended by sibling agents"
+}

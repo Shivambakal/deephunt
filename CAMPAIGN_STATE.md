@@ -172,3 +172,28 @@ Persona/IDV bypass (planned), SafeTix bypass (planned), job-token scope escapes.
 - Hard stops: KYC/PII (SSN, ID docs, payment) halts automation -> user.
 - CAPTCHA: runtime preference (solve/user_handles/ask); paid solvers need explicit cap — NOT enabled.
 - Pending: Robinhood signup-flow study (browser task running) -> playbooks/robinhood.yaml
+
+## 2026-10-01 11:34 IST — audit agent infra failure
+- Audit/fix subagent (8a7c1877) errored on a runtime delivery glitch ("background exec disappeared before its result was delivered"), NOT on a real audit finding.
+- No audit conclusions were produced. Re-dispatch the audit before trusting any tool-health claim.
+- Daemon still down (STOP file present); watchdog + daily-build crons unchanged.
+
+## 2026-10-01 11:58 IST — correction: daemon is UP
+- Watchdog verified: STOP absent, DAEMON_GO present, daemon alive (PIDs 14370/14376/23451, `python3 deephunt.py --daemon --target adobe,shopify,yahoo --interval-hours 6`).
+- Supersedes the 11:34 note claiming daemon down — that was stale; the daemon was (re)started before the audit agent errored.
+- Audit still never completed (infra glitch); re-dispatch before trusting tool-health claims.
+
+## 2026-10-04 ~02:45 IST — DEEPHUNT recon restart (coordinator, shell-only)
+- STOP removed (restart ordered). Daemon LEFT DOWN by coordinator choice: its active adapters assume direct egress, which this sandbox lacks (direct TCP blocked, DNS shimmed) — it would silently produce nothing. Disciplined batches run directly instead. Recommend proxy-aware adapter upgrade (see deephunt/ROADMAP.md) before daemon restart.
+- Targets covered (all in-scope public paid programs): shopify (H1), yahoo (H1, incl. aol/techcrunch/compuserve legacy), robinhood (H1 paid), adobe (Intigriti, PASSIVE ONLY — honored).
+- Work completed, all polite/throttled:
+  - Passive enum: 397 hosts (hackertarget API + urlscan.io API; subfinder/amass dead here).
+  - DoH CNAME map: 248 records via dns.google through proxy.
+  - Takeover fingerprinting: 9 CloudFront candidates, all live (301, no unclaimed sig). say.rocks Vercel fleet (9 hosts): all live apps, no dangling. Legacy compuserve (16 hosts): all live AWS ELBs. NO TAKEOVERS.
+  - Seed HTTP probe (16 hosts): HSTS/XFO everywhere, no CORS origin reflection.
+  - Sensitive files (.git/HEAD, .env) on 12 high-value hosts: none exposed. Note: mail.yahoo.com + login.yahoo.com returned 429 on later probes — Yahoo edge throttling; backed off.
+  - Robinhood API surface: /robots.txt, /.well-known/security.txt, /api/docs, /openapi.json, /swagger.json all 404 on api./nummus. hosts.
+  - Lead (unconfirmed): consumerapi.say.rocks + api.say.rocks referenced in public Say JS but unreachable from sandbox (TLS hang via proxy). Needs check from real network.
+- FINDINGS: none exploitable. No P1/P2. Everything checked is either hardened or live-legit.
+- State: deephunt/state/recon-20261004/ (hosts, cname_map, http_probe.json, takeover_leads, probes). Run log: deephunt/state/recon_run_2026-10-04.log.
+- Next moves: (1) proxy-aware adapter upgrade then daemon restart; (2) JS-bundle endpoint mining on app.say.rocks / techcrunch (public JS, high EV); (3) Shopify OAuth/app-ecosystem needs owned test shop (blocked: no test account); (4) Robinhood trading-flow logic needs test account (blocked: X-Test-Account-Email unavailable); (5) re-verify consumerapi.say.rocks reachability from real network.

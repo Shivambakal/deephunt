@@ -1,0 +1,461 @@
+{
+ "objective": "DEEPHUNT autonomous hunt: yahoo (HackerOne yahoo (public; scope per published program summary 2026-09-27))",
+ "created": "2026-10-01T09:53:26Z",
+ "updated": "2026-10-01T10:04:09Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [],
+  "trust_boundaries": [],
+  "state_machines": {}
+ },
+ "observations": [
+  {
+   "ts": "2026-10-01T09:53:33Z",
+   "kind": "fact",
+   "text": "cors_probe: cors_probe: no misconfig found \u2014 "
+  },
+  {
+   "ts": "2026-10-01T09:53:37Z",
+   "kind": "fact",
+   "text": "crtsh: crt.sh failed for yahoo.com \u2014 "
+  },
+  {
+   "ts": "2026-10-01T09:53:37Z",
+   "kind": "fact",
+   "text": "crtsh: crt.sh failed for aol.com \u2014 "
+  },
+  {
+   "ts": "2026-10-01T09:53:37Z",
+   "kind": "fact",
+   "text": "gau: gau: 0 urls for yahoo.com \u2014 0 param/api urls"
+  },
+  {
+   "ts": "2026-10-01T09:53:37Z",
+   "kind": "fact",
+   "text": "gau: gau: 0 urls for aol.com \u2014 0 param/api urls"
+  },
+  {
+   "ts": "2026-10-01T09:53:37Z",
+   "kind": "fact",
+   "text": "gau: gau: 0 urls for techcrunch.com \u2014 0 param/api urls"
+  },
+  {
+   "ts": "2026-10-01T09:53:39Z",
+   "kind": "fact",
+   "text": "github_recon: github yahoo: 100 repos \u2014 100 keyword hits"
+  },
+  {
+   "ts": "2026-10-01T09:53:41Z",
+   "kind": "fact",
+   "text": "headers: headers: yahoo.com \u2014 missing: content-security-policy"
+  },
+  {
+   "ts": "2026-10-01T09:53:41Z",
+   "kind": "fact",
+   "text": "headers: headers: aol.com \u2014 missing: strict-transport-security, content-security-policy, x-frame-options"
+  },
+  {
+   "ts": "2026-10-01T09:53:41Z",
+   "kind": "fact",
+   "text": "headers: headers: techcrunch.com \u2014 missing: none"
+  },
+  {
+   "ts": "2026-10-01T09:53:42Z",
+   "kind": "fact",
+   "text": "error_intel: error-intel: AWS WAF / ELB \u2014 managed rules; test rule-specific bypasses. \u2014 patterns=['waf-aws'] techniques=['WAF-01'] src=headers:headers: aol.com"
+  },
+  {
+   "ts": "2026-10-01T10:00:42Z",
+   "kind": "fact",
+   "text": "httpx: httpx: 102 live of 3 probed \u2014 102 live"
+  },
+  {
+   "ts": "2026-10-01T10:01:02Z",
+   "kind": "fact",
+   "text": "js_extract: JS mining: 44 bundles, 10 api paths, 166 params, 85 urls \u2014 44 bundles fetched"
+  },
+  {
+   "ts": "2026-10-01T10:01:17Z",
+   "kind": "fact",
+   "text": "js_secrets: js_secrets: 38 bundles, no key patterns \u2014 "
+  },
+  {
+   "ts": "2026-10-01T10:01:17Z",
+   "kind": "fact",
+   "text": "jwt_probe: jwt_probe: no token \u2014 "
+  },
+  {
+   "ts": "2026-10-01T10:01:17Z",
+   "kind": "fact",
+   "text": "param_miner: param_miner: 0 params, 5 paths \u2014 "
+  },
+  {
+   "ts": "2026-10-01T10:01:17Z",
+   "kind": "fact",
+   "text": "proxy_route: intercept proxy already on :8080 \u2014 "
+  },
+  {
+   "ts": "2026-10-01T10:01:25Z",
+   "kind": "fact",
+   "text": "robots_sitemap: yahoo.com/robots.txt exposed \u2014 26 entries"
+  },
+  {
+   "ts": "2026-10-01T10:01:25Z",
+   "kind": "fact",
+   "text": "robots_sitemap: aol.com/robots.txt exposed \u2014 100 entries"
+  },
+  {
+   "ts": "2026-10-01T10:01:25Z",
+   "kind": "fact",
+   "text": "robots_sitemap: techcrunch.com/robots.txt exposed \u2014 20 entries"
+  },
+  {
+   "ts": "2026-10-01T10:01:25Z",
+   "kind": "fact",
+   "text": "robots_sitemap: techcrunch.com/sitemap.xml exposed \u2014 50 entries"
+  },
+  {
+   "ts": "2026-10-01T10:01:28Z",
+   "kind": "fact",
+   "text": "subfinder: subfinder: 0 subs for yahoo.com \u2014 rc=0"
+  },
+  {
+   "ts": "2026-10-01T10:01:28Z",
+   "kind": "fact",
+   "text": "subfinder: subfinder: 0 subs for aol.com \u2014 rc=0"
+  },
+  {
+   "ts": "2026-10-01T10:01:29Z",
+   "kind": "fact",
+   "text": "t100-dnsrecon: t100-dnsrecon: completed (rc=0) \u2014 category=recon cmd=dnsrecon -d yahoo.com -t std"
+  },
+  {
+   "ts": "2026-10-01T10:01:30Z",
+   "kind": "fact",
+   "text": "t100-linkfinder: t100-linkfinder: completed (rc=0) \u2014 category=discovery cmd=linkfinder -i https://yahoo.com -o cli"
+  },
+  {
+   "ts": "2026-10-01T10:01:35Z",
+   "kind": "fact",
+   "text": "t100-secretfinder: t100-secretfinder: completed (rc=0) \u2014 category=discovery cmd=secretfinder -i https://yahoo.com -o cli"
+  },
+  {
+   "ts": "2026-10-01T10:01:45Z",
+   "kind": "fact",
+   "text": "t100-testssl: t100-testssl: completed (rc=245) \u2014 category=protocol cmd=testssl.sh --fast yahoo.com"
+  },
+  {
+   "ts": "2026-10-01T10:01:49Z",
+   "kind": "fact",
+   "text": "t100-wafw00f: t100-wafw00f: completed (rc=0) \u2014 category=protocol cmd=wafw00f https://yahoo.com"
+  },
+  {
+   "ts": "2026-10-01T10:01:49Z",
+   "kind": "fact",
+   "text": "takeover: takeover: no subdomains yet \u2014 "
+  },
+  {
+   "ts": "2026-10-01T10:01:55Z",
+   "kind": "fact",
+   "text": "tech_detect: stack: aol.com \u2014 1 signals"
+  },
+  {
+   "ts": "2026-10-01T10:01:55Z",
+   "kind": "fact",
+   "text": "tech_detect: stack: techcrunch.com \u2014 1 signals"
+  },
+  {
+   "ts": "2026-10-01T10:02:12Z",
+   "kind": "fact",
+   "text": "urlscan: urlscan: 50 scans for yahoo.com \u2014 10000 total"
+  },
+  {
+   "ts": "2026-10-01T10:02:12Z",
+   "kind": "fact",
+   "text": "urlscan: urlscan: 50 scans for aol.com \u2014 10000 total"
+  },
+  {
+   "ts": "2026-10-01T10:02:12Z",
+   "kind": "fact",
+   "text": "urlscan: urlscan: 50 scans for techcrunch.com \u2014 10000 total"
+  },
+  {
+   "ts": "2026-10-01T10:04:08Z",
+   "kind": "fact",
+   "text": "internet seed: OAuth Misconfiguration to Account Takeover | The Bug Bounty Playbook (https://bugbounty.info/Chains/OAuth-Misconfig-to-ATO)"
+  },
+  {
+   "ts": "2026-10-01T10:04:08Z",
+   "kind": "fact",
+   "text": "internet seed: Subdomain Takeover Lab - WriteupDB (https://www.writeup-db.com/labs/subdomain-takeover-lab/)"
+  },
+  {
+   "ts": "2026-10-01T10:04:08Z",
+   "kind": "fact",
+   "text": "internet seed: GitHub - Mr-Error313/Bugbounty-Subdomain-Takeover-Script- (https://github.com/Mr-Error313/Bugbounty-Subdomain-Takeover-Script-)"
+  },
+  {
+   "ts": "2026-10-01T10:04:08Z",
+   "kind": "fact",
+   "text": "internet seed: A Guide To Subdomain Takeovers - HackerOne (https://www.hackerone.com/blog/guide-subdomain-takeovers)"
+  },
+  {
+   "ts": "2026-10-01T10:04:08Z",
+   "kind": "fact",
+   "text": "internet seed: Why Your Subdomain Takeover Reports Keep Getting Closed as N/A ... - Medium (https://medium.com/@omaroymdm/why-your-subdomain-takeover-reports-keep-getting-closed-as-n-a-and-how-to-fix-it-8eb93f0ab320)"
+  },
+  {
+   "ts": "2026-10-01T10:04:08Z",
+   "kind": "fact",
+   "text": "internet seed: Simple Subdomain Takeover. Writeup about how I successfully ... - Medium (https://infosecwriteups.com/simple-subdomain-takeover-15129e19bbb4)"
+  },
+  {
+   "ts": "2026-10-01T10:04:08Z",
+   "kind": "fact",
+   "text": "internet seed: Subdomain Takeover | The Bug Bounty Playbook (https://bugbounty.info/Attack-Surface/Web/Client-Side/Subdomain-Takeover)"
+  },
+  {
+   "ts": "2026-10-01T10:04:08Z",
+   "kind": "fact",
+   "text": "internet seed: How To Secure Yahoo Mail Account: Practical Steps To Protect Your Inbox ... (https://roihacks.com/how-to-secure-yahoo-mail-account/)"
+  }
+ ],
+ "assumptions": [],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "statement": "[F1-027] Stored-XSS-driven cross-session action: Stored XSS via profile/content fields \u00d7 Session fixation / concurrent-session / logou\u2026: map which privileged roles render the field; test action idempotency; confirm no CSRF token bypass was needed",
+   "violated_assumption": "A1",
+   "attacker_view": "seed from train:F1-027",
+   "defender_view": "vendor has standard mitigations; assume filtered until proven otherwise",
+   "devil_view": "most similar past attempts were rejected \u2014 the discriminating test must be single-variable with a control",
+   "investigator_test": "minimum controlled experiment with owned accounts/data only",
+   "killed_by": "control and variant behave identically, or mitigation demonstrably neutralizes it",
+   "impact": 4,
+   "novelty": 3,
+   "testability": 3,
+   "score": 36,
+   "status": "live",
+   "source": "manual",
+   "provenance": "",
+   "ts": "2026-10-01T10:04:09Z"
+  },
+  {
+   "id": "H2",
+   "statement": "[F1-036] Version-drift authorization gap: Unauthenticated / unthrottled enumeration end\u2026 \u00d7 IDOR via parameter pollution / duplicate para\u2026: enumerate all versioned prefixes; test method overrides on legacy paths; check whether legacy auth uses weaker tokens",
+   "violated_assumption": "A1",
+   "attacker_view": "seed from train:F1-036",
+   "defender_view": "vendor has standard mitigations; assume filtered until proven otherwise",
+   "devil_view": "most similar past attempts were rejected \u2014 the discriminating test must be single-variable with a control",
+   "investigator_test": "minimum controlled experiment with owned accounts/data only",
+   "killed_by": "control and variant behave identically, or mitigation demonstrably neutralizes it",
+   "impact": 4,
+   "novelty": 3,
+   "testability": 3,
+   "score": 36,
+   "status": "live",
+   "source": "manual",
+   "provenance": "",
+   "ts": "2026-10-01T10:04:09Z"
+  },
+  {
+   "id": "H3",
+   "statement": "[AI-01] Indirect prompt injection across a share/collaboration boundary: Attacker plants instructions in shared content; victim queries the AI in their own context (owned accounts, canary in victim's private data). Success = canary disclosure or unauthorized action. Control = benign content.\n",
+   "violated_assumption": "A1",
+   "attacker_view": "seed from train:AI-01",
+   "defender_view": "vendor has standard mitigations; assume filtered until proven otherwise",
+   "devil_view": "most similar past attempts were rejected \u2014 the discriminating test must be single-variable with a control",
+   "investigator_test": "minimum controlled experiment with owned accounts/data only",
+   "killed_by": "control and variant behave identically, or mitigation demonstrably neutralizes it",
+   "impact": 4,
+   "novelty": 3,
+   "testability": 3,
+   "score": 36,
+   "status": "live",
+   "source": "manual",
+   "provenance": "",
+   "ts": "2026-10-01T10:04:09Z"
+  }
+ ],
+ "tests": [
+  {
+   "id": "T1",
+   "hypothesis_id": "H1",
+   "spec": {
+    "expected_observation": "variant differs from control in a security-relevant way",
+    "reason": "deephunt cycle 1 top seed",
+    "scope_hosts": [
+     "yahoo.com",
+     "aol.com",
+     "techcrunch.com"
+    ],
+    "auth_basis": "HackerOne public program (*.yahoo.com, *.aol.com, *.techcrunch.com).\nStandard HackerOne research rules: automated tools permitted at reasonable\nrates against in-scope assets only; no DoS; no real-user data access.\nnuclei at -rate-limit 20, high/critical templates only. Owned accounts/data only.\n",
+    "success_criteria": "unauthorized disclosure/action across the trust boundary",
+    "failure_criteria": "control == variant, or demonstrable neutralization",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "vendor has standard mitigations; assume filtered until proven otherwise",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T1",
+    "hypothesis_id": "H1",
+    "session_id": "63618a373409",
+    "scope_hosts": [
+     "yahoo.com",
+     "aol.com",
+     "techcrunch.com"
+    ],
+    "issued_at": 1790849049.364315,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-10-01T10:04:09Z"
+  },
+  {
+   "id": "T2",
+   "hypothesis_id": "H2",
+   "spec": {
+    "expected_observation": "variant differs from control in a security-relevant way",
+    "reason": "deephunt cycle 1 top seed",
+    "scope_hosts": [
+     "yahoo.com",
+     "aol.com",
+     "techcrunch.com"
+    ],
+    "auth_basis": "HackerOne public program (*.yahoo.com, *.aol.com, *.techcrunch.com).\nStandard HackerOne research rules: automated tools permitted at reasonable\nrates against in-scope assets only; no DoS; no real-user data access.\nnuclei at -rate-limit 20, high/critical templates only. Owned accounts/data only.\n",
+    "success_criteria": "unauthorized disclosure/action across the trust boundary",
+    "failure_criteria": "control == variant, or demonstrable neutralization",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "vendor has standard mitigations; assume filtered until proven otherwise",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T2",
+    "hypothesis_id": "H2",
+    "session_id": "63618a373409",
+    "scope_hosts": [
+     "yahoo.com",
+     "aol.com",
+     "techcrunch.com"
+    ],
+    "issued_at": 1790849049.370142,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-10-01T10:04:09Z"
+  },
+  {
+   "id": "T3",
+   "hypothesis_id": "H3",
+   "spec": {
+    "expected_observation": "variant differs from control in a security-relevant way",
+    "reason": "deephunt cycle 1 top seed",
+    "scope_hosts": [
+     "yahoo.com",
+     "aol.com",
+     "techcrunch.com"
+    ],
+    "auth_basis": "HackerOne public program (*.yahoo.com, *.aol.com, *.techcrunch.com).\nStandard HackerOne research rules: automated tools permitted at reasonable\nrates against in-scope assets only; no DoS; no real-user data access.\nnuclei at -rate-limit 20, high/critical templates only. Owned accounts/data only.\n",
+    "success_criteria": "unauthorized disclosure/action across the trust boundary",
+    "failure_criteria": "control == variant, or demonstrable neutralization",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "vendor has standard mitigations; assume filtered until proven otherwise",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T3",
+    "hypothesis_id": "H3",
+    "session_id": "63618a373409",
+    "scope_hosts": [
+     "yahoo.com",
+     "aol.com",
+     "techcrunch.com"
+    ],
+    "issued_at": 1790849049.3768375,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-10-01T10:04:09Z"
+  }
+ ],
+ "results": [],
+ "rejected_hypotheses": [],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [],
+ "facts": [],
+ "lessons": [],
+ "next_actions": [
+  "run T1 (hypothesis H1)",
+  "run T2 (hypothesis H2)",
+  "run T3 (hypothesis H3)"
+ ],
+ "id": "63618a373409"
+}

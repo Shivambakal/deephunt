@@ -1,0 +1,114 @@
+{
+ "objective": "DEEPHUNT autonomous hunt: adobe (Intigriti adobepublic (verified live 2026-09-01))",
+ "created": "2026-10-01T11:08:24Z",
+ "updated": "2026-10-01T11:08:52Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [],
+  "trust_boundaries": [],
+  "state_machines": {}
+ },
+ "observations": [
+  {
+   "ts": "2026-10-01T11:08:27Z",
+   "kind": "fact",
+   "text": "cors_probe: cors_probe: no misconfig found \u2014 "
+  },
+  {
+   "ts": "2026-10-01T11:08:28Z",
+   "kind": "fact",
+   "text": "crtsh: crt.sh failed for adobe.com \u2014 "
+  },
+  {
+   "ts": "2026-10-01T11:08:28Z",
+   "kind": "fact",
+   "text": "gau: gau: 0 urls for acrobat.adobe.com \u2014 0 param/api urls"
+  },
+  {
+   "ts": "2026-10-01T11:08:30Z",
+   "kind": "fact",
+   "text": "github_recon: github adobe: 100 repos \u2014 9 keyword hits"
+  },
+  {
+   "ts": "2026-10-01T11:08:31Z",
+   "kind": "fact",
+   "text": "headers: headers: acrobat.adobe.com \u2014 missing: none"
+  },
+  {
+   "ts": "2026-10-01T11:08:35Z",
+   "kind": "fact",
+   "text": "httpx: httpx: 1 live of 1 probed \u2014 1 live"
+  },
+  {
+   "ts": "2026-10-01T11:08:40Z",
+   "kind": "fact",
+   "text": "js_extract: JS mining: 4 bundles, 1 api paths, 2 params, 19 urls \u2014 4 bundles fetched"
+  },
+  {
+   "ts": "2026-10-01T11:08:42Z",
+   "kind": "fact",
+   "text": "js_secrets: 1 possible secrets in JS bundles \u2014 "
+  },
+  {
+   "ts": "2026-10-01T11:08:42Z",
+   "kind": "fact",
+   "text": "jwt_probe: jwt_probe: no token \u2014 "
+  },
+  {
+   "ts": "2026-10-01T11:08:42Z",
+   "kind": "fact",
+   "text": "param_miner: param_miner: 0 params, 0 paths \u2014 "
+  },
+  {
+   "ts": "2026-10-01T11:08:46Z",
+   "kind": "fact",
+   "text": "proxy_route: intercept proxy start: up \u2014 proxy/start.sh 8080"
+  },
+  {
+   "ts": "2026-10-01T11:08:48Z",
+   "kind": "fact",
+   "text": "robots_sitemap: acrobat.adobe.com/robots.txt exposed \u2014 249 entries"
+  },
+  {
+   "ts": "2026-10-01T11:08:48Z",
+   "kind": "fact",
+   "text": "robots_sitemap: acrobat.adobe.com/sitemap.xml exposed \u2014 24 entries"
+  },
+  {
+   "ts": "2026-10-01T11:08:49Z",
+   "kind": "fact",
+   "text": "subfinder: subfinder: 0 subs for adobe.com \u2014 rc=0"
+  },
+  {
+   "ts": "2026-10-01T11:08:49Z",
+   "kind": "fact",
+   "text": "t100-dnsrecon: t100-dnsrecon: completed (rc=0) \u2014 category=recon cmd=dnsrecon -d adobe.com -t std"
+  },
+  {
+   "ts": "2026-10-01T11:08:50Z",
+   "kind": "fact",
+   "text": "t100-linkfinder: t100-linkfinder: completed (rc=0) \u2014 category=discovery cmd=linkfinder -i https://acrobat.adobe.com -o cli"
+  },
+  {
+   "ts": "2026-10-01T11:08:52Z",
+   "kind": "fact",
+   "text": "t100-secretfinder: t100-secretfinder: completed (rc=0) \u2014 category=discovery cmd=secretfinder -i https://acrobat.adobe.com -o cli"
+  }
+ ],
+ "assumptions": [],
+ "hypotheses": [],
+ "tests": [],
+ "results": [],
+ "rejected_hypotheses": [],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [],
+ "facts": [],
+ "lessons": [],
+ "next_actions": [],
+ "id": "9bc8d7f67414"
+}

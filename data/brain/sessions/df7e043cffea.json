@@ -1,0 +1,122 @@
+{
+ "objective": "e2e:mockshop",
+ "created": "2026-09-27T03:27:39Z",
+ "updated": "2026-09-27T03:27:39Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [],
+  "trust_boundaries": [],
+  "state_machines": {}
+ },
+ "observations": [],
+ "assumptions": [],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "statement": "BOLA: bob can read alice's order via /api/orders/1",
+   "violated_assumption": "",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "GET /api/orders/1 as bob",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "supported",
+   "source": "manual",
+   "provenance": "e2e",
+   "ts": "2026-09-27T03:27:39Z"
+  }
+ ],
+ "tests": [
+  {
+   "id": "T1",
+   "hypothesis_id": "H1",
+   "spec": {
+    "expected_observation": "bob receives alice's order data (200)",
+    "reason": "differential pair: alice vs bob on same object",
+    "scope_hosts": [
+     "mockshop"
+    ],
+    "auth_basis": "synthetic-fixture",
+    "success_criteria": "bob gets 200 with alice's data",
+    "failure_criteria": "bob gets 403/404",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "no benign explanation recorded",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T1",
+    "hypothesis_id": "H1",
+    "session_id": "df7e043cffea",
+    "scope_hosts": [
+     "mockshop"
+    ],
+    "issued_at": 1790479659.5806992,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-27T03:27:39Z"
+  }
+ ],
+ "results": [
+  {
+   "id": "R1",
+   "test_id": "T1",
+   "hypothesis_id": "H1",
+   "outcome": "confirmed",
+   "observed": "200 object owned by alice, served to bob",
+   "why_failed": "",
+   "learned": "synthetic IDOR reproduced on mock target",
+   "false_explanation": "",
+   "environment": "",
+   "technology": "",
+   "preconditions": "",
+   "ts": "2026-09-27T03:27:39Z"
+  }
+ ],
+ "rejected_hypotheses": [],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [
+  {
+   "hypothesis_id": "H1",
+   "claim": "BOLA: bob can read alice's order via /api/orders/1",
+   "evidence": "200 object owned by alice, served to bob",
+   "ts": "2026-09-27T03:27:39Z"
+  }
+ ],
+ "facts": [],
+ "lessons": [],
+ "next_actions": [
+  "run T1 (hypothesis H1)"
+ ],
+ "id": "df7e043cffea"
+}

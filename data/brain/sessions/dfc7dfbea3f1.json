@@ -1,0 +1,28 @@
+{
+ "objective": "DEEPHUNT autonomous hunt: yahoo (HackerOne yahoo (public; scope per published program summary 2026-09-27))",
+ "created": "2026-09-26T19:32:48Z",
+ "updated": "2026-09-26T19:32:48Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [],
+  "trust_boundaries": [],
+  "state_machines": {}
+ },
+ "observations": [],
+ "assumptions": [],
+ "hypotheses": [],
+ "tests": [],
+ "results": [],
+ "rejected_hypotheses": [],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [],
+ "facts": [],
+ "lessons": [],
+ "next_actions": [],
+ "id": "dfc7dfbea3f1"
+}

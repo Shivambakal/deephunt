@@ -1,0 +1,199 @@
+{
+ "objective": "DEEPHUNT autonomous hunt: adobe (Intigriti adobepublic (verified live 2026-09-01))",
+ "created": "2026-09-27T05:19:38Z",
+ "updated": "2026-09-27T05:21:04Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [],
+  "trust_boundaries": [],
+  "state_machines": {}
+ },
+ "observations": [
+  {
+   "ts": "2026-09-27T05:19:42Z",
+   "kind": "fact",
+   "text": "cors_probe: cors_probe: no misconfig found \u2014 "
+  },
+  {
+   "ts": "2026-09-27T05:19:55Z",
+   "kind": "fact",
+   "text": "crtsh: crt.sh failed for adobe.com \u2014 "
+  },
+  {
+   "ts": "2026-09-27T05:19:55Z",
+   "kind": "fact",
+   "text": "gau: gau: 0 urls for acrobat.adobe.com \u2014 0 param/api urls"
+  },
+  {
+   "ts": "2026-09-27T05:19:58Z",
+   "kind": "fact",
+   "text": "github_recon: github adobe: 100 repos \u2014 9 keyword hits"
+  },
+  {
+   "ts": "2026-09-27T05:19:59Z",
+   "kind": "fact",
+   "text": "headers: headers: acrobat.adobe.com \u2014 missing: none"
+  },
+  {
+   "ts": "2026-09-27T05:20:05Z",
+   "kind": "fact",
+   "text": "httpx: httpx: 1 live of 1 probed \u2014 1 live"
+  },
+  {
+   "ts": "2026-09-27T05:20:13Z",
+   "kind": "fact",
+   "text": "js_extract: JS mining: 4 bundles, 1 api paths, 2 params, 19 urls \u2014 4 bundles fetched"
+  },
+  {
+   "ts": "2026-09-27T05:20:19Z",
+   "kind": "fact",
+   "text": "js_secrets: 1 possible secrets in JS bundles \u2014 "
+  },
+  {
+   "ts": "2026-09-27T05:20:19Z",
+   "kind": "fact",
+   "text": "jwt_probe: jwt_probe: no token \u2014 "
+  },
+  {
+   "ts": "2026-09-27T05:20:19Z",
+   "kind": "fact",
+   "text": "param_miner: param_miner: 0 params, 0 paths \u2014 "
+  },
+  {
+   "ts": "2026-09-27T05:20:19Z",
+   "kind": "fact",
+   "text": "proxy_route: intercept proxy already on :8080 \u2014 "
+  },
+  {
+   "ts": "2026-09-27T05:20:23Z",
+   "kind": "fact",
+   "text": "robots_sitemap: acrobat.adobe.com/robots.txt exposed \u2014 249 entries"
+  },
+  {
+   "ts": "2026-09-27T05:20:23Z",
+   "kind": "fact",
+   "text": "robots_sitemap: acrobat.adobe.com/sitemap.xml exposed \u2014 24 entries"
+  },
+  {
+   "ts": "2026-09-27T05:20:25Z",
+   "kind": "fact",
+   "text": "subfinder: subfinder: 0 subs for adobe.com \u2014 rc=0"
+  },
+  {
+   "ts": "2026-09-27T05:20:25Z",
+   "kind": "fact",
+   "text": "t100-dnsrecon: t100-dnsrecon failed \u2014 "
+  },
+  {
+   "ts": "2026-09-27T05:20:25Z",
+   "kind": "fact",
+   "text": "t100-linkfinder: t100-linkfinder failed \u2014 "
+  },
+  {
+   "ts": "2026-09-27T05:20:25Z",
+   "kind": "fact",
+   "text": "error_intel: error-study: unknown error from t100-linkfinder queued \u2014 t100-linkfinder failed t100-linkfinder failed fast (not transient): ValueError('not enough values to unpack (expected 9, got 8)') "
+  },
+  {
+   "ts": "2026-09-27T05:20:25Z",
+   "kind": "fact",
+   "text": "t100-secretfinder: t100-secretfinder failed \u2014 "
+  },
+  {
+   "ts": "2026-09-27T05:20:25Z",
+   "kind": "fact",
+   "text": "error_intel: error-study: unknown error from t100-secretfinder queued \u2014 t100-secretfinder failed t100-secretfinder failed fast (not transient): ValueError('not enough values to unpack (expected 9, got 8)') "
+  },
+  {
+   "ts": "2026-09-27T05:20:25Z",
+   "kind": "fact",
+   "text": "t100-testssl: t100-testssl failed \u2014 "
+  },
+  {
+   "ts": "2026-09-27T05:20:25Z",
+   "kind": "fact",
+   "text": "t100-wafw00f: t100-wafw00f failed \u2014 "
+  },
+  {
+   "ts": "2026-09-27T05:20:25Z",
+   "kind": "fact",
+   "text": "error_intel: error-study: unknown error from t100-wafw00f queued \u2014 t100-wafw00f failed t100-wafw00f failed fast (not transient): ValueError('not enough values to unpack (expected 9, got 8)') "
+  },
+  {
+   "ts": "2026-09-27T05:20:25Z",
+   "kind": "fact",
+   "text": "takeover: takeover: no subdomains yet \u2014 "
+  },
+  {
+   "ts": "2026-09-27T05:20:26Z",
+   "kind": "fact",
+   "text": "tech_detect: stack: acrobat.adobe.com \u2014 3 signals"
+  },
+  {
+   "ts": "2026-09-27T05:20:28Z",
+   "kind": "fact",
+   "text": "urlscan: urlscan: 50 scans for acrobat.adobe.com \u2014 2155 total"
+  },
+  {
+   "ts": "2026-09-27T05:20:34Z",
+   "kind": "fact",
+   "text": "wayback: wayback: 4000 historic urls for acrobat.adobe.com \u2014 120 api-shaped"
+  },
+  {
+   "ts": "2026-09-27T05:21:04Z",
+   "kind": "fact",
+   "text": "internet seed: Indirect Prompt Injection | The Bug Bounty Playbook (https://bugbounty.info/Attack-Surface/AI-LLM/Indirect-Prompt-Injection)"
+  },
+  {
+   "ts": "2026-09-27T05:21:04Z",
+   "kind": "fact",
+   "text": "internet seed: Prompt Injection in Bug Bounty: Vectors, Techniques, and Real-World ... (https://research.vyntra.sh/en/articles/prompt-injection-in-bug-bounty)"
+  },
+  {
+   "ts": "2026-09-27T05:21:04Z",
+   "kind": "fact",
+   "text": "internet seed: Prompt Injection in Bug Bounty: Vectors, Techniques, and Real-World ... (https://vyntra.sh/en/research/prompt-injection-in-bug-bounty)"
+  },
+  {
+   "ts": "2026-09-27T05:21:04Z",
+   "kind": "fact",
+   "text": "internet seed: Prompt Injection in Bug Bounty: Vectors, Techniques, and Real-World Impact (https://rafabd1.substack.com/p/prompt-injection-in-bug-bounty)"
+  },
+  {
+   "ts": "2026-09-27T05:21:04Z",
+   "kind": "fact",
+   "text": "internet seed: Awesome Prompt Injection - GitHub (https://github.com/Joe-B-Security/awesome-prompt-injection)"
+  },
+  {
+   "ts": "2026-09-27T05:21:04Z",
+   "kind": "fact",
+   "text": "internet seed: Security-writeups-labs/writeup-01-indirect-injection.md at main ... (https://github.com/attacker-codeninja/Security-writeups-labs/blob/main/writeup-01-indirect-injection.md)"
+  },
+  {
+   "ts": "2026-09-27T05:21:04Z",
+   "kind": "fact",
+   "text": "internet seed: How to Find Prompt Injection Vulnerabilities as a Bug Bounty Hunter ... (https://meetcyber.net/how-to-find-prompt-injection-vulnerabilities-as-a-bug-bounty-hunter-2026-guide-c1ed8ec726e7)"
+  },
+  {
+   "ts": "2026-09-27T05:21:04Z",
+   "kind": "fact",
+   "text": "internet seed: Prompt Injection Attack Guide and Cheat Sheet (https://hiddendoorsecurity.com/2025/08/29/prompt-injection-attack-guide-and-cheat-sheet/)"
+  }
+ ],
+ "assumptions": [],
+ "hypotheses": [],
+ "tests": [],
+ "results": [],
+ "rejected_hypotheses": [],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [],
+ "facts": [],
+ "lessons": [],
+ "next_actions": [],
+ "id": "018c0d5ff43e"
+}

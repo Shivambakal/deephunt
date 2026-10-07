@@ -1,0 +1,1301 @@
+{
+ "objective": "abf0b51b9f0f",
+ "created": "2026-09-26T19:38:05Z",
+ "updated": "2026-09-26T19:46:27Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [],
+  "trust_boundaries": [],
+  "state_machines": {}
+ },
+ "observations": [
+  {
+   "ts": "2026-09-26T19:38:05Z",
+   "kind": "fact",
+   "text": "admin.shopify.com/ -> 200, links to /login?errorHint=no_cookie_session"
+  },
+  {
+   "ts": "2026-09-26T19:38:05Z",
+   "kind": "fact",
+   "text": "/login?errorHint=no_cookie_session -> 200 with session-service link; bare /login -> 403"
+  },
+  {
+   "ts": "2026-09-26T19:38:05Z",
+   "kind": "fact",
+   "text": "accounts.shopify.com/session-service/login behind 'Verifying your connection' bot challenge"
+  },
+  {
+   "ts": "2026-09-26T19:38:53Z",
+   "kind": "fact",
+   "text": "www.shopify.com/search?q=X 301s to /?q=X; token reflected once, inside <script> JSON blob with \\\" escaping"
+  },
+  {
+   "ts": "2026-09-26T19:41:32Z",
+   "kind": "fact",
+   "text": "partners.shopify.com/signup 302s to accounts.shopify.com/oauth/authorize with first-party client_id 271e16d4... and redirect_uri https://partners.shopify.com/identity/callback"
+  },
+  {
+   "ts": "2026-09-26T19:44:28Z",
+   "kind": "fact",
+   "text": "partners page links admin.shopify.com/signup?locale=en and partners.shopify.com/signup?locale=en; locale is user-controlled input into the signup/OAuth entry"
+  },
+  {
+   "ts": "2026-09-26T19:45:35Z",
+   "kind": "fact",
+   "text": "admin /signup: single-use UUID chain + cookie -> 302 to session-service/login with ux flags, ui_locales, signup_uuid, verify token; ?locale=zzqxj9 defaults ui_locales to en (allowlisted)"
+  },
+  {
+   "ts": "2026-09-26T19:46:27Z",
+   "kind": "fact",
+   "text": "night hunt complete 05:45 IST; 7 rejected, 2 inconclusive, 0 candidates; log at deephunt/logs/night-2026-09-27.md"
+  }
+ ],
+ "assumptions": [],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "statement": "admin.shopify.com/login reflects an attacker-controlled redirect parameter into a redirect (open redirect)",
+   "violated_assumption": "login entry points only redirect to first-party destinations",
+   "attacker_view": "open redirect on the login host enables credential phishing and OAuth flow chaining",
+   "defender_view": "errorHint-style params suggest an allowlist; framework likely restricts redirects to relative paths",
+   "devil_view": "",
+   "investigator_test": "GET /login?redirect=https://example.com ; observe status + Location",
+   "killed_by": "redirect param ignored or constrained to first-party/relative targets",
+   "impact": 4,
+   "novelty": 3,
+   "testability": 5,
+   "score": 60,
+   "status": "rejected",
+   "source": "manual",
+   "ts": "2026-09-26T19:38:05Z"
+  },
+  {
+   "id": "H2",
+   "statement": "The rejection may be channel-specific; the same assumption may fail on a sibling endpoint.",
+   "violated_assumption": "login entry points only redirect to first-party destinations",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "Map sibling endpoints sharing the object and test the cheapest one.",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-26T19:38:29Z"
+  },
+  {
+   "id": "H3",
+   "statement": "www.shopify.com/?q= reflects input into the <script> JSON blob without escaping </script> (reflected XSS via script breakout)",
+   "violated_assumption": "user input embedded in JSON hydration blobs is safely encoded",
+   "attacker_view": "script-context breakout gives JS execution on shopify.com (session theft on the marketing domain)",
+   "defender_view": "JSON string escaping (\\\") observed; frameworks usually also escape < as \\u003c",
+   "devil_view": "",
+   "investigator_test": "GET /?q=zzqxj9</script> ; check whether literal </script> from input appears unescaped",
+   "killed_by": "</script> sequence neutralized (escaped/encoded) in the JSON blob",
+   "impact": 5,
+   "novelty": 3,
+   "testability": 5,
+   "score": 75,
+   "status": "rejected",
+   "source": "manual",
+   "ts": "2026-09-26T19:38:53Z"
+  },
+  {
+   "id": "H4",
+   "statement": "Identity is bound once at login but not re-bound at the sensitive step.",
+   "violated_assumption": "user input embedded in JSON hydration blobs is safely encoded",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "Fixate/swap the token between the check step and the action step.",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-26T19:39:56Z"
+  },
+  {
+   "id": "H5",
+   "statement": "accounts.shopify.com/oauth/authorize accepts a tampered redirect_uri for the first-party partners client_id (OAuth redirect_uri bypass -> code theft)",
+   "violated_assumption": "the authorize endpoint strictly validates redirect_uri against the client's allowlist",
+   "attacker_view": "code flows to attacker origin after victim login; classic high-severity OAuth bug",
+   "defender_view": "Shopify is mature; redirect_uri almost certainly allowlisted per client. Expect invalid_request errors",
+   "devil_view": "",
+   "investigator_test": "GET authorize with client_id=271e16d4... and redirect_uri=https://example.com; observe error vs login-render",
+   "killed_by": "tampered redirect_uri yields an explicit invalid redirect_uri error",
+   "impact": 5,
+   "novelty": 4,
+   "testability": 5,
+   "score": 100,
+   "status": "rejected",
+   "source": "manual",
+   "ts": "2026-09-26T19:41:32Z"
+  },
+  {
+   "id": "H6",
+   "statement": "The rejection may be channel-specific; the same assumption may fail on a sibling endpoint.",
+   "violated_assumption": "the authorize endpoint strictly validates redirect_uri against the client's allowlist",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "Map sibling endpoints sharing the object and test the cheapest one.",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-26T19:42:17Z"
+  },
+  {
+   "id": "H7",
+   "statement": "the OAuth invalid_request error page echoes the rejected redirect_uri without HTML-escaping (reflected XSS on accounts.shopify.com)",
+   "violated_assumption": "error pages safely encode reflected request parameters",
+   "attacker_view": "XSS on the identity host = session/token theft at the login boundary",
+   "defender_view": "the error title already showed &quot; escaping; the details section likely uses the same encoder",
+   "devil_view": "",
+   "investigator_test": "GET authorize with redirect_uri=zzqxj9\"><svg> ; inspect Show-request-details echo",
+   "killed_by": "echo is HTML-escaped in the details section",
+   "impact": 5,
+   "novelty": 4,
+   "testability": 5,
+   "score": 100,
+   "status": "rejected",
+   "source": "manual",
+   "ts": "2026-09-26T19:42:17Z"
+  },
+  {
+   "id": "H8",
+   "statement": "The rejection may be channel-specific; the same assumption may fail on a sibling endpoint.",
+   "violated_assumption": "error pages safely encode reflected request parameters",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "Map sibling endpoints sharing the object and test the cheapest one.",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-26T19:42:44Z"
+  },
+  {
+   "id": "H9",
+   "statement": "www.shopify.com trusts X-Forwarded-Host and reflects it into page URLs (host-header poisoning -> cache poisoning / link hijack)",
+   "violated_assumption": "the app builds absolute URLs from the real Host, ignoring proxy headers",
+   "attacker_view": "poisoned canonical URLs cached and served to victims; reset-link theft primitive",
+   "defender_view": "Cloudflare in front usually strips/overwrites XFH; Hydrogen likely uses request.url from the edge",
+   "devil_view": "",
+   "investigator_test": "GET / with X-Forwarded-Host: evil.example.com; grep body for evil.example.com",
+   "killed_by": "no reflection of the injected host in body or cache",
+   "impact": 4,
+   "novelty": 3,
+   "testability": 5,
+   "score": 60,
+   "status": "rejected",
+   "source": "manual",
+   "ts": "2026-09-26T19:42:50Z"
+  },
+  {
+   "id": "H10",
+   "statement": "The rejection may be channel-specific; the same assumption may fail on a sibling endpoint.",
+   "violated_assumption": "the app builds absolute URLs from the real Host, ignoring proxy headers",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "Map sibling endpoints sharing the object and test the cheapest one.",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-26T19:43:37Z"
+  },
+  {
+   "id": "H11",
+   "statement": "www.shopify.com sets cookies scoped to .shopify.com that an attacker-influenced subdomain/page could toss to poison admin/accounts sessions (cookie-tossing primitive)",
+   "violated_assumption": "marketing-site cookies are host-scoped or __Host-prefixed",
+   "attacker_view": "tossed cookie on shared domain could fixate or confuse auth flows on sibling hosts",
+   "defender_view": "auth hosts almost certainly use __Host- cookies; marketing cookies likely host-only",
+   "devil_view": "",
+   "investigator_test": "inspect Set-Cookie headers on www.shopify.com for Domain=.shopify.com without __Host- prefix",
+   "killed_by": "no Domain=.shopify.com cookies, or all auth cookies __Host-",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 5,
+   "score": 45,
+   "status": "rejected",
+   "source": "manual",
+   "ts": "2026-09-26T19:43:58Z"
+  },
+  {
+   "id": "H12",
+   "statement": "The rejection may be channel-specific; the same assumption may fail on a sibling endpoint.",
+   "violated_assumption": "marketing-site cookies are host-scoped or __Host-prefixed",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "Map sibling endpoints sharing the object and test the cheapest one.",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-26T19:44:12Z"
+  },
+  {
+   "id": "H13",
+   "statement": "the locale param on /signup is reflected unescaped or alters the OAuth redirect chain (XSS / redirect manipulation via locale)",
+   "violated_assumption": "locale is validated against a language allowlist and never reflected raw",
+   "attacker_view": "reflected XSS on partners/admin signup entry; or locale smuggled into redirect_uri",
+   "defender_view": "locale almost certainly allowlisted (en/fr/de...); invalid values ignored",
+   "devil_view": "",
+   "investigator_test": "GET /signup?locale=zzqxj9\"><svg> vs ?locale=en; compare 302 Location + any reflection",
+   "killed_by": "invalid locale ignored, no reflection, identical 302 chain",
+   "impact": 4,
+   "novelty": 3,
+   "testability": 5,
+   "score": 60,
+   "status": "rejected",
+   "source": "manual",
+   "ts": "2026-09-26T19:44:28Z"
+  },
+  {
+   "id": "H14",
+   "statement": "Ownership is enforced on GET but not re-checked on state-changing verbs.",
+   "violated_assumption": "locale is validated against a language allowlist and never reflected raw",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "Replay the same object access via PATCH/PUT/DELETE as non-owner; diff against GET.",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-26T19:45:03Z"
+  },
+  {
+   "id": "H15",
+   "statement": "Ownership is enforced at the controller but skipped on a nested/member route.",
+   "violated_assumption": "locale is validated against a language allowlist and never reflected raw",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "Reach the same object through nested routes (/parent/:id/child) and member actions.",
+   "killed_by": "",
+   "impact": 3,
+   "novelty": 3,
+   "testability": 3,
+   "score": 27,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-26T19:45:03Z"
+  },
+  {
+   "id": "H16",
+   "statement": "admin.shopify.com/signup uses a different OAuth client whose redirect_uri validation may differ from the partners client",
+   "violated_assumption": "all first-party clients share the same strict redirect_uri allowlist enforcement",
+   "attacker_view": "a second client doubles the bypass lottery tickets",
+   "defender_view": "same identity platform, same enforcement; expect identical strictness",
+   "devil_view": "",
+   "investigator_test": "capture admin /signup 302; extract client_id + redirect_uri; run evil.com redirect_uri variant",
+   "killed_by": "tampered redirect_uri -> 400 redirect_uri mismatch",
+   "impact": 5,
+   "novelty": 3,
+   "testability": 5,
+   "score": 75,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-26T19:45:03Z"
+  },
+  {
+   "id": "H17",
+   "statement": "accounts.shopify.com/oauth/authorize honors response_type=token or silently widens scope (implicit-flow / scope-escalation primitive)",
+   "violated_assumption": "only response_type=code is honored and scope is restricted to the client's registered set",
+   "attacker_view": "token in URL fragment leaks via referrer/log; over-scoped code = privilege escalation",
+   "defender_view": "mature IdP; expect invalid_request for token and scope mismatch errors",
+   "devil_view": "",
+   "investigator_test": "authorize with response_type=token; authorize with scope=openid+https://api.shopify.com/auth/evil; observe 400 vs 302",
+   "killed_by": "both tamperings -> explicit errors",
+   "impact": 5,
+   "novelty": 3,
+   "testability": 5,
+   "score": 75,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-26T19:45:35Z"
+  },
+  {
+   "id": "H18",
+   "statement": "partners.shopify.com 404 page reflects the request path without encoding (reflected XSS via path)",
+   "violated_assumption": "error pages encode the requested path",
+   "attacker_view": "reflected XSS on the partner entry host",
+   "defender_view": "CDN/gateway 404s are static; expect no reflection",
+   "devil_view": "",
+   "investigator_test": "GET /zzqxj9\"><svg> ; check 404 body for unescaped marker",
+   "killed_by": "no reflection or encoded reflection",
+   "impact": 4,
+   "novelty": 2,
+   "testability": 5,
+   "score": 40,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-26T19:46:00Z"
+  }
+ ],
+ "tests": [
+  {
+   "id": "T1",
+   "hypothesis_id": "H1",
+   "spec": {
+    "expected_observation": "302 with Location: https://example.com.<|>200/302 staying on shopify.com (param ignored or allowlisted)",
+    "reason": "single cheapest discriminating probe: one added query param, response headers tell the story",
+    "scope_hosts": [
+     "admin.shopify.com"
+    ],
+    "auth_basis": "HackerOne public program shopify; unauthenticated read-only probe of in-scope login host; no credentials, no state change",
+    "success_criteria": "Location header points to example.com",
+    "failure_criteria": "no external redirect; param ignored or restricted",
+    "single_variable": true,
+    "repeater_spec": {
+     "base_seq": 30,
+     "method": "GET",
+     "params": {
+      "redirect": "https://example.com"
+     }
+    }
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [],
+    "answers": {
+     "supporting_evidence": [
+      "admin.shopify.com/ -> 200, links to /login?errorHint=no_cookie_session",
+      "accounts.shopify.com/session-service/login behind 'Verifying your connection' bot challenge"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "errorHint-style params suggest an allowlist; framework likely restricts redirects to relative paths",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 3
+   },
+   "status": "executed",
+   "authorization": {
+    "test_id": "T1",
+    "hypothesis_id": "H1",
+    "session_id": "727a55cdb3cb",
+    "scope_hosts": [
+     "admin.shopify.com"
+    ],
+    "issued_at": 1790451485.9641957,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-26T19:38:05Z",
+   "executed_at": "2026-09-26T19:38:17Z"
+  },
+  {
+   "id": "T2",
+   "hypothesis_id": "H3",
+   "spec": {
+    "expected_observation": "literal '</script>' from the q param appears unescaped in the JSON blob <|> appears escaped (e.g. <\\/script> or \\u003c)",
+    "reason": "single-variable mutation on the reflected param; response body is the whole oracle",
+    "scope_hosts": [
+     "www.shopify.com"
+    ],
+    "auth_basis": "HackerOne public program shopify; unauthenticated read-only GET on in-scope marketing host; inert non-executing marker string, no payload delivery",
+    "success_criteria": "unescaped </script> attributable to q param in response",
+    "failure_criteria": "marker escaped/encoded or absent",
+    "single_variable": true,
+    "repeater_spec": {
+     "base_seq": 49,
+     "method": "GET",
+     "params": {
+      "q": "zzqxj9</script>"
+     }
+    }
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [],
+    "answers": {
+     "supporting_evidence": [
+      "www.shopify.com/search?q=X 301s to /?q=X; token reflected once, inside <script> JSON blob with \\\" escaping"
+     ],
+     "contradicting_evidence": [
+      "www.shopify.com/search?q=X 301s to /?q=X; token reflected once, inside <script> JSON blob with \\\" escaping"
+     ],
+     "benign_explanation": "JSON string escaping (\\\") observed; frameworks usually also escape < as \\u003c",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 5
+   },
+   "status": "executed",
+   "authorization": {
+    "test_id": "T2",
+    "hypothesis_id": "H3",
+    "session_id": "727a55cdb3cb",
+    "scope_hosts": [
+     "www.shopify.com"
+    ],
+    "issued_at": 1790451533.5854506,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-26T19:38:53Z",
+   "executed_at": "2026-09-26T19:38:58Z"
+  },
+  {
+   "id": "T3",
+   "hypothesis_id": "H5",
+   "spec": {
+    "expected_observation": "tampered redirect_uri -> error page mentioning redirect_uri <|> renders login normally (validation missing)",
+    "reason": "pure validation oracle: one param changed, server error-vs-render is the whole signal; no login performed, no code obtained",
+    "scope_hosts": [
+     "accounts.shopify.com"
+    ],
+    "auth_basis": "HackerOne public program shopify; unauthenticated read-only GETs to in-scope OAuth endpoint; OAuth flow abuse is a listed vuln class; no credentials submitted, no state changed",
+    "success_criteria": "authorize accepts example.com redirect (renders login / redirects there)",
+    "failure_criteria": "explicit redirect_uri validation error",
+    "single_variable": true,
+    "repeater_spec": {
+     "base_seq": null,
+     "method": "GET",
+     "params": {}
+    }
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [],
+    "answers": {
+     "supporting_evidence": [
+      "accounts.shopify.com/session-service/login behind 'Verifying your connection' bot challenge",
+      "partners.shopify.com/signup 302s to accounts.shopify.com/oauth/authorize with first-party client_id 271e16d4... and redirect_uri https://partners.shopify.com/id"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "Shopify is mature; redirect_uri almost certainly allowlisted per client. Expect invalid_request errors",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 3
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T3",
+    "hypothesis_id": "H5",
+    "session_id": "727a55cdb3cb",
+    "scope_hosts": [
+     "accounts.shopify.com"
+    ],
+    "issued_at": 1790451692.9690404,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-26T19:41:32Z"
+  },
+  {
+   "id": "T4",
+   "hypothesis_id": "H7",
+   "spec": {
+    "expected_observation": "unescaped markup from redirect_uri in error details <|> escaped echo",
+    "reason": "the mismatch error guarantees the echo path renders; single param changed; body is the oracle",
+    "scope_hosts": [
+     "accounts.shopify.com"
+    ],
+    "auth_basis": "HackerOne public program shopify; unauthenticated read-only GET; OAuth flow abuse is a listed vuln class; inert marker, no login, no state change",
+    "success_criteria": "unescaped <svg> attributable to redirect_uri in 400 page",
+    "failure_criteria": "echo escaped or absent",
+    "single_variable": true,
+    "repeater_spec": {
+     "base_seq": 98,
+     "method": "GET",
+     "params": {}
+    }
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [],
+    "answers": {
+     "supporting_evidence": [
+      "accounts.shopify.com/session-service/login behind 'Verifying your connection' bot challenge",
+      "www.shopify.com/search?q=X 301s to /?q=X; token reflected once, inside <script> JSON blob with \\\" escaping",
+      "partners.shopify.com/signup 302s to accounts.shopify.com/oauth/authorize with first-party client_id 271e16d4... and redirect_uri https://partners.shopify.com/id"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "the error title already showed &quot; escaping; the details section likely uses the same encoder",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 3
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T4",
+    "hypothesis_id": "H7",
+    "session_id": "727a55cdb3cb",
+    "scope_hosts": [
+     "accounts.shopify.com"
+    ],
+    "issued_at": 1790451737.8601427,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-26T19:42:17Z"
+  },
+  {
+   "id": "T5",
+   "hypothesis_id": "H9",
+   "spec": {
+    "expected_observation": "evil.example.com appears in page URLs <|> absent",
+    "reason": "single header added; body grep is the oracle; read-only",
+    "scope_hosts": [
+     "www.shopify.com"
+    ],
+    "auth_basis": "HackerOne public program shopify; unauthenticated read-only GET on in-scope host; header-injection observation only, no cache writes attempted",
+    "success_criteria": "injected host reflected in absolute URLs in body",
+    "failure_criteria": "no reflection",
+    "single_variable": true,
+    "repeater_spec": {
+     "base_seq": 49,
+     "method": "GET",
+     "headers": {
+      "X-Forwarded-Host": "evil.example.com"
+     }
+    }
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "Cloudflare in front usually strips/overwrites XFH; Hydrogen likely uses request.url from the edge",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T5",
+    "hypothesis_id": "H9",
+    "session_id": "727a55cdb3cb",
+    "scope_hosts": [
+     "www.shopify.com"
+    ],
+    "issued_at": 1790451770.4416375,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-26T19:42:50Z"
+  },
+  {
+   "id": "T6",
+   "hypothesis_id": "H11",
+   "spec": {
+    "expected_observation": "Domain=.shopify.com cookie without __Host- prefix <|> none",
+    "reason": "header inspection only; zero body parsing needed; read-only",
+    "scope_hosts": [
+     "www.shopify.com"
+    ],
+    "auth_basis": "HackerOne public program shopify; unauthenticated read-only GET; response-header analysis only",
+    "success_criteria": "tossable cookie found (Domain=.shopify.com, no __Host-)",
+    "failure_criteria": "no such cookies",
+    "single_variable": true,
+    "repeater_spec": {
+     "base_seq": 49,
+     "method": "GET"
+    }
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [],
+    "answers": {
+     "supporting_evidence": [
+      "admin.shopify.com/ -> 200, links to /login?errorHint=no_cookie_session",
+      "accounts.shopify.com/session-service/login behind 'Verifying your connection' bot challenge",
+      "partners.shopify.com/signup 302s to accounts.shopify.com/oauth/authorize with first-party client_id 271e16d4... and redirect_uri https://partners.shopify.com/id"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "auth hosts almost certainly use __Host- cookies; marketing cookies likely host-only",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 3
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T6",
+    "hypothesis_id": "H11",
+    "session_id": "727a55cdb3cb",
+    "scope_hosts": [
+     "www.shopify.com"
+    ],
+    "issued_at": 1790451838.7259226,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-26T19:43:58Z"
+  },
+  {
+   "id": "T7",
+   "hypothesis_id": "H13",
+   "spec": {
+    "expected_observation": "locale value reflected in Location/body <|> ignored",
+    "reason": "single param differential; 302 Location + body are the oracles; read-only",
+    "scope_hosts": [
+     "partners.shopify.com"
+    ],
+    "auth_basis": "HackerOne public program shopify; unauthenticated read-only GET on in-scope host; inert marker",
+    "success_criteria": "unescaped reflection of locale value",
+    "failure_criteria": "locale ignored or allowlisted, no reflection",
+    "single_variable": true,
+    "repeater_spec": {
+     "base_seq": null,
+     "method": "GET",
+     "params": {}
+    }
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [],
+    "answers": {
+     "supporting_evidence": [
+      "partners.shopify.com/signup 302s to accounts.shopify.com/oauth/authorize with first-party client_id 271e16d4... and redirect_uri https://partners.shopify.com/id",
+      "partners page links admin.shopify.com/signup?locale=en and partners.shopify.com/signup?locale=en; locale is user-controlled input into the signup/OAuth entry"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "locale almost certainly allowlisted (en/fr/de...); invalid values ignored",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 3
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T7",
+    "hypothesis_id": "H13",
+    "session_id": "727a55cdb3cb",
+    "scope_hosts": [
+     "partners.shopify.com"
+    ],
+    "issued_at": 1790451868.4881585,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-26T19:44:28Z"
+  },
+  {
+   "id": "T8",
+   "hypothesis_id": "H16",
+   "spec": {
+    "expected_observation": "admin authorize accepts evil redirect_uri <|> 400 mismatch",
+    "reason": "direct analog of T3 on a second first-party client; same safe oracle",
+    "scope_hosts": [
+     "admin.shopify.com",
+     "accounts.shopify.com"
+    ],
+    "auth_basis": "HackerOne public program shopify; unauthenticated read-only GETs; OAuth flow abuse is a listed vuln class; inert values, no login",
+    "success_criteria": "evil redirect_uri accepted (302/normal render)",
+    "failure_criteria": "400 redirect_uri mismatch",
+    "single_variable": true,
+    "repeater_spec": {
+     "base_seq": null,
+     "method": "GET",
+     "params": {}
+    }
+   },
+   "adversarial_review": {
+    "rejections": [
+     "test is unnecessary: already answered by result(s) ['R3']"
+    ],
+    "warnings": [],
+    "answers": {
+     "supporting_evidence": [
+      "admin.shopify.com/ -> 200, links to /login?errorHint=no_cookie_session",
+      "partners.shopify.com/signup 302s to accounts.shopify.com/oauth/authorize with first-party client_id 271e16d4... and redirect_uri https://partners.shopify.com/id",
+      "partners page links admin.shopify.com/signup?locale=en and partners.shopify.com/signup?locale=en; locale is user-controlled input into the signup/OAuth entry"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "same identity platform, same enforcement; expect identical strictness",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "R3"
+     ]
+    },
+    "info_value": 3
+   },
+   "status": "rejected",
+   "authorization": null,
+   "ts": "2026-09-26T19:45:03Z"
+  },
+  {
+   "id": "T9",
+   "hypothesis_id": "H17",
+   "spec": {
+    "expected_observation": "token honored or scope widened <|> both rejected with errors",
+    "reason": "final OAuth differential; same safe error-oracle; two variants one test",
+    "scope_hosts": [
+     "accounts.shopify.com"
+    ],
+    "auth_basis": "HackerOne public program shopify; unauthenticated read-only GETs; OAuth flow abuse is a listed vuln class; inert values",
+    "success_criteria": "response_type=token honored OR extra scope accepted",
+    "failure_criteria": "explicit invalid_request/scope errors on both",
+    "single_variable": false,
+    "repeater_spec": {
+     "base_seq": 98,
+     "method": "GET",
+     "params": {}
+    }
+   },
+   "adversarial_review": {
+    "rejections": [
+     "not the smallest safe experiment: declare exactly one variable changed between control and variant"
+    ],
+    "warnings": [],
+    "answers": {
+     "supporting_evidence": [
+      "accounts.shopify.com/session-service/login behind 'Verifying your connection' bot challenge",
+      "www.shopify.com/search?q=X 301s to /?q=X; token reflected once, inside <script> JSON blob with \\\" escaping",
+      "partners.shopify.com/signup 302s to accounts.shopify.com/oauth/authorize with first-party client_id 271e16d4... and redirect_uri https://partners.shopify.com/id",
+      "partners page links admin.shopify.com/signup?locale=en and partners.shopify.com/signup?locale=en; locale is user-controlled input into the signup/OAuth entry"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "mature IdP; expect invalid_request for token and scope mismatch errors",
+     "smallest_safe_experiment": "NOT single-variable: control and variant differ in more than one declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 3
+   },
+   "status": "rejected",
+   "authorization": null,
+   "ts": "2026-09-26T19:45:35Z"
+  },
+  {
+   "id": "T10",
+   "hypothesis_id": "H17",
+   "spec": {
+    "expected_observation": "response_type=token: honored <|> explicit error",
+    "reason": "single OAuth param changed; error-oracle; read-only",
+    "scope_hosts": [
+     "accounts.shopify.com"
+    ],
+    "auth_basis": "HackerOne public program shopify; unauthenticated read-only GET; OAuth flow abuse is a listed vuln class; inert values",
+    "success_criteria": "response_type=token accepted",
+    "failure_criteria": "explicit error",
+    "single_variable": true,
+    "repeater_spec": {
+     "base_seq": 98,
+     "method": "GET",
+     "params": {
+      "response_type": "token"
+     }
+    }
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [],
+    "answers": {
+     "supporting_evidence": [
+      "accounts.shopify.com/session-service/login behind 'Verifying your connection' bot challenge",
+      "www.shopify.com/search?q=X 301s to /?q=X; token reflected once, inside <script> JSON blob with \\\" escaping",
+      "partners.shopify.com/signup 302s to accounts.shopify.com/oauth/authorize with first-party client_id 271e16d4... and redirect_uri https://partners.shopify.com/id",
+      "partners page links admin.shopify.com/signup?locale=en and partners.shopify.com/signup?locale=en; locale is user-controlled input into the signup/OAuth entry"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "mature IdP; expect invalid_request for token and scope mismatch errors",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 3
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T10",
+    "hypothesis_id": "H17",
+    "session_id": "727a55cdb3cb",
+    "scope_hosts": [
+     "accounts.shopify.com"
+    ],
+    "issued_at": 1790451938.1574495,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-26T19:45:38Z"
+  },
+  {
+   "id": "T11",
+   "hypothesis_id": "H17",
+   "spec": {
+    "expected_observation": "scope+evil: honored <|> explicit error",
+    "reason": "single OAuth param changed; error-oracle; read-only",
+    "scope_hosts": [
+     "accounts.shopify.com"
+    ],
+    "auth_basis": "HackerOne public program shopify; unauthenticated read-only GET; OAuth flow abuse is a listed vuln class; inert values",
+    "success_criteria": "scope+evil accepted",
+    "failure_criteria": "explicit error",
+    "single_variable": true,
+    "repeater_spec": {
+     "base_seq": 98,
+     "method": "GET",
+     "params": {
+      "scope": "openid https://api.shopify.com/auth/evil.test"
+     }
+    }
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [],
+    "answers": {
+     "supporting_evidence": [
+      "accounts.shopify.com/session-service/login behind 'Verifying your connection' bot challenge",
+      "www.shopify.com/search?q=X 301s to /?q=X; token reflected once, inside <script> JSON blob with \\\" escaping",
+      "partners.shopify.com/signup 302s to accounts.shopify.com/oauth/authorize with first-party client_id 271e16d4... and redirect_uri https://partners.shopify.com/id",
+      "partners page links admin.shopify.com/signup?locale=en and partners.shopify.com/signup?locale=en; locale is user-controlled input into the signup/OAuth entry"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "mature IdP; expect invalid_request for token and scope mismatch errors",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 3
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T11",
+    "hypothesis_id": "H17",
+    "session_id": "727a55cdb3cb",
+    "scope_hosts": [
+     "accounts.shopify.com"
+    ],
+    "issued_at": 1790451938.166134,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-26T19:45:38Z"
+  },
+  {
+   "id": "T12",
+   "hypothesis_id": "H18",
+   "spec": {
+    "expected_observation": "unescaped marker in 404 body <|> absent/encoded",
+    "reason": "single request; body grep is the oracle; read-only",
+    "scope_hosts": [
+     "partners.shopify.com"
+    ],
+    "auth_basis": "HackerOne public program shopify; unauthenticated read-only GET; inert marker",
+    "success_criteria": "unescaped markup attributable to path in 404 body",
+    "failure_criteria": "no/encoded reflection",
+    "single_variable": true,
+    "repeater_spec": {
+     "base_seq": null,
+     "method": "GET",
+     "path": "/zzqxj9\"><svg>"
+    }
+   },
+   "adversarial_review": {
+    "rejections": [
+     "test is unnecessary: already answered by result(s) ['R7']"
+    ],
+    "warnings": [],
+    "answers": {
+     "supporting_evidence": [
+      "www.shopify.com/search?q=X 301s to /?q=X; token reflected once, inside <script> JSON blob with \\\" escaping",
+      "partners.shopify.com/signup 302s to accounts.shopify.com/oauth/authorize with first-party client_id 271e16d4... and redirect_uri https://partners.shopify.com/id",
+      "partners page links admin.shopify.com/signup?locale=en and partners.shopify.com/signup?locale=en; locale is user-controlled input into the signup/OAuth entry"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "CDN/gateway 404s are static; expect no reflection",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "R7"
+     ]
+    },
+    "info_value": 3
+   },
+   "status": "rejected",
+   "authorization": null,
+   "ts": "2026-09-26T19:46:00Z"
+  }
+ ],
+ "results": [
+  {
+   "id": "R1",
+   "test_id": "T1",
+   "hypothesis_id": "H1",
+   "outcome": "rejected",
+   "observed": "control and variant both 403 (bot challenge), no Location header; transient 502 on first variant run did not reproduce",
+   "why_failed": "endpoint behind 'Verifying your connection' challenge; redirect param never processed",
+   "learned": "admin.shopify.com/login ignores redirect params; direct hits get 403 challenge \u2014 only the errorHint variant rendered 200 earlier",
+   "false_explanation": "transient 502 was proxy/egress artifact, not a differential signal",
+   "environment": "via mitmproxy 127.0.0.1:8080",
+   "technology": "Cloudflare-style bot check",
+   "preconditions": "unauthenticated GET, single added query param",
+   "ts": "2026-09-26T19:38:29Z"
+  },
+  {
+   "id": "R2",
+   "test_id": "T2",
+   "hypothesis_id": "H3",
+   "outcome": "rejected",
+   "observed": "q=<zz> -> 302 to CF worker-challenge URL; q=</script> -> 403 CF challenge page; plain token reflected once inside script JSON with proper escaping",
+   "why_failed": "edge WAF challenges any angle brackets in q before app logic; markup never reaches the reflection sink",
+   "learned": "www.shopify.com q-param: Cloudflare bot-management neutralizes markup payloads at edge; reflected-XSS surface dead",
+   "false_explanation": "initial 502 on variant was egress/proxy artifact, not server behavior",
+   "environment": "via mitmproxy 127.0.0.1:8080",
+   "technology": "Cloudflare bot management",
+   "preconditions": "unauthenticated GET, inert marker strings only",
+   "ts": "2026-09-26T19:39:56Z"
+  },
+  {
+   "id": "R3",
+   "test_id": "T3",
+   "hypothesis_id": "H5",
+   "outcome": "rejected",
+   "observed": "legit redirect_uri -> 302 to /signup?rid=; tampered (evil.com, subdomain-confusion, userinfo) -> 400 invalid_request 'redirect_uri mismatch'; nonce reuse ruled out (baseline replay still 302)",
+   "why_failed": "strict allowlist validation per client_id; explicit mismatch error page",
+   "learned": "partners OAuth client 271e16d4: redirect_uri strictly validated; error page echoes request details - check echo escaping next",
+   "false_explanation": "none; differential clean",
+   "environment": "via mitmproxy",
+   "technology": "accounts.shopify.com OAuth",
+   "preconditions": "unauthenticated GET, first-party client_id from /signup 302",
+   "ts": "2026-09-26T19:42:17Z"
+  },
+  {
+   "id": "R4",
+   "test_id": "T4",
+   "hypothesis_id": "H7",
+   "outcome": "rejected",
+   "observed": "non-URI redirect_uri -> bare 400 (11B, no echo); URI-shaped markup -> 400 details page but echo is percent-encoded (zzqxj9%22%3E%3Csvg%3E)",
+   "why_failed": "error page echoes the raw encoded query string; percent-encoding neutralizes markup",
+   "learned": "accounts.shopify.com OAuth error echo sink is encoding-safe; no XSS there",
+   "false_explanation": "none",
+   "environment": "via mitmproxy",
+   "technology": "accounts.shopify.com OAuth",
+   "preconditions": "unauthenticated GET, first-party client_id",
+   "ts": "2026-09-26T19:42:44Z"
+  },
+  {
+   "id": "R5",
+   "test_id": "T5",
+   "hypothesis_id": "H9",
+   "outcome": "rejected",
+   "observed": "GET / with X-Forwarded-Host: evil.example.com -> 200, zero occurrences of injected host in 639KB body",
+   "why_failed": "edge/app ignores XFH; absolute URLs built from real host",
+   "learned": "www.shopify.com not susceptible to host-header poisoning via XFH",
+   "false_explanation": "none",
+   "environment": "via mitmproxy",
+   "technology": "Cloudflare + Hydrogen",
+   "preconditions": "unauthenticated GET, single header added",
+   "ts": "2026-09-26T19:43:37Z"
+  },
+  {
+   "id": "R6",
+   "test_id": "T6",
+   "hypothesis_id": "H11",
+   "outcome": "rejected",
+   "observed": "GET / -> 200, zero Set-Cookie headers in response",
+   "why_failed": "marketing host sets no cookies at all",
+   "learned": "no cookie-tossing primitive from www.shopify.com",
+   "false_explanation": "none",
+   "environment": "via mitmproxy",
+   "technology": "Cloudflare",
+   "preconditions": "unauthenticated GET",
+   "ts": "2026-09-26T19:44:12Z"
+  },
+  {
+   "id": "R7",
+   "test_id": "T7",
+   "hypothesis_id": "H13",
+   "outcome": "rejected",
+   "observed": "locale -> passed as locales= (URL-encoded) into authorize 302; authorize 302s normally to /signup?rid=; rid page is CF-challenged (403); no unescaped reflection anywhere observable",
+   "why_failed": "values percent-encoded in transit; render surface behind bot challenge",
+   "learned": "locale chain is encoding-safe at every observable hop",
+   "false_explanation": "none",
+   "environment": "via mitmproxy",
+   "technology": "partners/accounts OAuth",
+   "preconditions": "unauthenticated GETs, inert markers",
+   "ts": "2026-09-26T19:45:03Z"
+  },
+  {
+   "id": "R8",
+   "test_id": "T10",
+   "hypothesis_id": "H17",
+   "outcome": "inconclusive",
+   "observed": "response_type=token -> <<< 302 0 bytes in 851ms",
+   "why_failed": "pre-login authorize 302s to /signup?rid= identically to baseline; param enforcement (if any) happens post-authentication, unobservable without credentials",
+   "learned": "authorize defers response_type/scope enforcement to post-auth; cannot rule out implicit-flow or scope issues without a login session",
+   "false_explanation": "none",
+   "environment": "via mitmproxy",
+   "technology": "accounts.shopify.com OAuth",
+   "preconditions": "unauthenticated GET",
+   "ts": "2026-09-26T19:45:42Z"
+  },
+  {
+   "id": "R9",
+   "test_id": "T11",
+   "hypothesis_id": "H17",
+   "outcome": "inconclusive",
+   "observed": "scope=openid https://api.shopify.com/auth/evil.test -> <<< 302 0 bytes in 522ms",
+   "why_failed": "pre-login authorize 302s to /signup?rid= identically to baseline; param enforcement (if any) happens post-authentication, unobservable without credentials",
+   "learned": "authorize defers response_type/scope enforcement to post-auth; cannot rule out implicit-flow or scope issues without a login session",
+   "false_explanation": "none",
+   "environment": "via mitmproxy",
+   "technology": "accounts.shopify.com OAuth",
+   "preconditions": "unauthenticated GET",
+   "ts": "2026-09-26T19:45:43Z"
+  }
+ ],
+ "rejected_hypotheses": [
+  {
+   "id": "H1",
+   "statement": "admin.shopify.com/login reflects an attacker-controlled redirect parameter into a redirect (open redirect)",
+   "believed": "admin.shopify.com/login reflects an attacker-controlled redirect parameter into a redirect (open redirect)",
+   "tested": "single cheapest discriminating probe: one added query param, response headers tell the story",
+   "observed_result": "control and variant both 403 (bot challenge), no Location header; transient 502 on first variant run did not reproduce",
+   "why_failed": "endpoint behind 'Verifying your connection' challenge; redirect param never processed",
+   "learned": "admin.shopify.com/login ignores redirect params; direct hits get 403 challenge \u2014 only the errorHint variant rendered 200 earlier",
+   "false_explanation": "transient 502 was proxy/egress artifact, not a differential signal",
+   "environment": "via mitmproxy 127.0.0.1:8080",
+   "technology": "Cloudflare-style bot check",
+   "preconditions": "unauthenticated GET, single added query param",
+   "changes_future": [
+    "The rejection may be channel-specific; the same assumption may fail on a sibling endpoint."
+   ]
+  },
+  {
+   "statement": "Exposed API key in Adobe public JS bundle imslib.min.js (js_secrets generic-api-key match)",
+   "why_failed": "Match was a public-by-design browser-identification SDK identifier (FingerprintJS), origin-restricted and not a secret. No impact.",
+   "learned": "js_secrets generic-api-key pattern fires on public client-side SDK identifiers; validate by type before treating as leak.",
+   "ts": "2026-09-27T01:15:00+05:30",
+   "by": "night-inspector"
+  },
+  {
+   "id": "H3",
+   "statement": "www.shopify.com/?q= reflects input into the <script> JSON blob without escaping </script> (reflected XSS via script breakout)",
+   "believed": "www.shopify.com/?q= reflects input into the <script> JSON blob without escaping </script> (reflected XSS via script breakout)",
+   "tested": "single-variable mutation on the reflected param; response body is the whole oracle",
+   "observed_result": "q=<zz> -> 302 to CF worker-challenge URL; q=</script> -> 403 CF challenge page; plain token reflected once inside script JSON with proper escaping",
+   "why_failed": "edge WAF challenges any angle brackets in q before app logic; markup never reaches the reflection sink",
+   "learned": "www.shopify.com q-param: Cloudflare bot-management neutralizes markup payloads at edge; reflected-XSS surface dead",
+   "false_explanation": "initial 502 on variant was egress/proxy artifact, not server behavior",
+   "environment": "via mitmproxy 127.0.0.1:8080",
+   "technology": "Cloudflare bot management",
+   "preconditions": "unauthenticated GET, inert marker strings only",
+   "changes_future": [
+    "Identity is bound once at login but not re-bound at the sensitive step."
+   ]
+  },
+  {
+   "id": "H5",
+   "statement": "accounts.shopify.com/oauth/authorize accepts a tampered redirect_uri for the first-party partners client_id (OAuth redirect_uri bypass -> code theft)",
+   "believed": "accounts.shopify.com/oauth/authorize accepts a tampered redirect_uri for the first-party partners client_id (OAuth redirect_uri bypass -> code theft)",
+   "tested": "pure validation oracle: one param changed, server error-vs-render is the whole signal; no login performed, no code obtained",
+   "observed_result": "legit redirect_uri -> 302 to /signup?rid=; tampered (evil.com, subdomain-confusion, userinfo) -> 400 invalid_request 'redirect_uri mismatch'; nonce reuse ruled out (baseline replay still 302)",
+   "why_failed": "strict allowlist validation per client_id; explicit mismatch error page",
+   "learned": "partners OAuth client 271e16d4: redirect_uri strictly validated; error page echoes request details - check echo escaping next",
+   "false_explanation": "none; differential clean",
+   "environment": "via mitmproxy",
+   "technology": "accounts.shopify.com OAuth",
+   "preconditions": "unauthenticated GET, first-party client_id from /signup 302",
+   "changes_future": [
+    "The rejection may be channel-specific; the same assumption may fail on a sibling endpoint."
+   ]
+  },
+  {
+   "id": "H7",
+   "statement": "the OAuth invalid_request error page echoes the rejected redirect_uri without HTML-escaping (reflected XSS on accounts.shopify.com)",
+   "believed": "the OAuth invalid_request error page echoes the rejected redirect_uri without HTML-escaping (reflected XSS on accounts.shopify.com)",
+   "tested": "the mismatch error guarantees the echo path renders; single param changed; body is the oracle",
+   "observed_result": "non-URI redirect_uri -> bare 400 (11B, no echo); URI-shaped markup -> 400 details page but echo is percent-encoded (zzqxj9%22%3E%3Csvg%3E)",
+   "why_failed": "error page echoes the raw encoded query string; percent-encoding neutralizes markup",
+   "learned": "accounts.shopify.com OAuth error echo sink is encoding-safe; no XSS there",
+   "false_explanation": "none",
+   "environment": "via mitmproxy",
+   "technology": "accounts.shopify.com OAuth",
+   "preconditions": "unauthenticated GET, first-party client_id",
+   "changes_future": [
+    "The rejection may be channel-specific; the same assumption may fail on a sibling endpoint."
+   ]
+  },
+  {
+   "id": "H9",
+   "statement": "www.shopify.com trusts X-Forwarded-Host and reflects it into page URLs (host-header poisoning -> cache poisoning / link hijack)",
+   "believed": "www.shopify.com trusts X-Forwarded-Host and reflects it into page URLs (host-header poisoning -> cache poisoning / link hijack)",
+   "tested": "single header added; body grep is the oracle; read-only",
+   "observed_result": "GET / with X-Forwarded-Host: evil.example.com -> 200, zero occurrences of injected host in 639KB body",
+   "why_failed": "edge/app ignores XFH; absolute URLs built from real host",
+   "learned": "www.shopify.com not susceptible to host-header poisoning via XFH",
+   "false_explanation": "none",
+   "environment": "via mitmproxy",
+   "technology": "Cloudflare + Hydrogen",
+   "preconditions": "unauthenticated GET, single header added",
+   "changes_future": [
+    "The rejection may be channel-specific; the same assumption may fail on a sibling endpoint."
+   ]
+  },
+  {
+   "id": "H11",
+   "statement": "www.shopify.com sets cookies scoped to .shopify.com that an attacker-influenced subdomain/page could toss to poison admin/accounts sessions (cookie-tossing primitive)",
+   "believed": "www.shopify.com sets cookies scoped to .shopify.com that an attacker-influenced subdomain/page could toss to poison admin/accounts sessions (cookie-tossing primitive)",
+   "tested": "header inspection only; zero body parsing needed; read-only",
+   "observed_result": "GET / -> 200, zero Set-Cookie headers in response",
+   "why_failed": "marketing host sets no cookies at all",
+   "learned": "no cookie-tossing primitive from www.shopify.com",
+   "false_explanation": "none",
+   "environment": "via mitmproxy",
+   "technology": "Cloudflare",
+   "preconditions": "unauthenticated GET",
+   "changes_future": [
+    "The rejection may be channel-specific; the same assumption may fail on a sibling endpoint."
+   ]
+  },
+  {
+   "id": "H13",
+   "statement": "the locale param on /signup is reflected unescaped or alters the OAuth redirect chain (XSS / redirect manipulation via locale)",
+   "believed": "the locale param on /signup is reflected unescaped or alters the OAuth redirect chain (XSS / redirect manipulation via locale)",
+   "tested": "single param differential; 302 Location + body are the oracles; read-only",
+   "observed_result": "locale -> passed as locales= (URL-encoded) into authorize 302; authorize 302s normally to /signup?rid=; rid page is CF-challenged (403); no unescaped reflection anywhere observable",
+   "why_failed": "values percent-encoded in transit; render surface behind bot challenge",
+   "learned": "locale chain is encoding-safe at every observable hop",
+   "false_explanation": "none",
+   "environment": "via mitmproxy",
+   "technology": "partners/accounts OAuth",
+   "preconditions": "unauthenticated GETs, inert markers",
+   "changes_future": [
+    "Ownership is enforced on GET but not re-checked on state-changing verbs.",
+    "Ownership is enforced at the controller but skipped on a nested/member route."
+   ]
+  }
+ ],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [],
+ "facts": [],
+ "lessons": [
+  {
+   "ts": "2026-09-26T19:38:29Z",
+   "text": "H1 rejected: endpoint behind 'Verifying your connection' challenge; redirect param never processed -> learned: admin.shopify.com/login ignores redirect params; direct hits get 403 challenge \u2014 only the errorHint variant rendered 200 earlier"
+  },
+  {
+   "ts": "2026-09-26T19:39:56Z",
+   "text": "H3 rejected: edge WAF challenges any angle brackets in q before app logic; markup never reaches the reflection sink -> learned: www.shopify.com q-param: Cloudflare bot-management neutralizes markup payloads at edge; reflected-XSS surface dead"
+  },
+  {
+   "ts": "2026-09-26T19:42:17Z",
+   "text": "H5 rejected: strict allowlist validation per client_id; explicit mismatch error page -> learned: partners OAuth client 271e16d4: redirect_uri strictly validated; error page echoes request details - check echo escaping next"
+  },
+  {
+   "ts": "2026-09-26T19:42:44Z",
+   "text": "H7 rejected: error page echoes the raw encoded query string; percent-encoding neutralizes markup -> learned: accounts.shopify.com OAuth error echo sink is encoding-safe; no XSS there"
+  },
+  {
+   "ts": "2026-09-26T19:43:37Z",
+   "text": "H9 rejected: edge/app ignores XFH; absolute URLs built from real host -> learned: www.shopify.com not susceptible to host-header poisoning via XFH"
+  },
+  {
+   "ts": "2026-09-26T19:44:12Z",
+   "text": "H11 rejected: marketing host sets no cookies at all -> learned: no cookie-tossing primitive from www.shopify.com"
+  },
+  {
+   "ts": "2026-09-26T19:45:03Z",
+   "text": "H13 rejected: values percent-encoded in transit; render surface behind bot challenge -> learned: locale chain is encoding-safe at every observable hop"
+  }
+ ],
+ "next_actions": [
+  "run T3 (hypothesis H5)",
+  "run T4 (hypothesis H7)",
+  "run T5 (hypothesis H9)",
+  "run T6 (hypothesis H11)",
+  "run T7 (hypothesis H13)",
+  "run T10 (hypothesis H17)",
+  "run T11 (hypothesis H17)",
+  "design test for H2: The rejection may be channel-specific; the same assumption may fail on...",
+  "design test for H4: Identity is bound once at login but not re-bound at the sensitive step...",
+  "design test for H6: The rejection may be channel-specific; the same assumption may fail on...",
+  "design test for H8: The rejection may be channel-specific; the same assumption may fail on...",
+  "design test for H10: The rejection may be channel-specific; the same assumption may fail on...",
+  "design test for H12: The rejection may be channel-specific; the same assumption may fail on...",
+  "design test for H14: Ownership is enforced on GET but not re-checked on state-changing verb...",
+  "design test for H15: Ownership is enforced at the controller but skipped on a nested/member..."
+ ],
+ "id": "727a55cdb3cb"
+}

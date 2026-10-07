@@ -1,0 +1,179 @@
+{
+ "objective": "DEEPHUNT autonomous hunt: adobe (Intigriti adobepublic (verified live 2026-09-01))",
+ "created": "2026-10-01T12:57:31Z",
+ "updated": "2026-10-01T12:59:40Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [],
+  "trust_boundaries": [],
+  "state_machines": {}
+ },
+ "observations": [
+  {
+   "ts": "2026-10-01T12:57:37Z",
+   "kind": "fact",
+   "text": "cors_probe: cors_probe: no misconfig found \u2014 "
+  },
+  {
+   "ts": "2026-10-01T12:57:38Z",
+   "kind": "fact",
+   "text": "crtsh: crt.sh failed for adobe.com \u2014 "
+  },
+  {
+   "ts": "2026-10-01T12:57:38Z",
+   "kind": "fact",
+   "text": "gau: gau: 0 urls for acrobat.adobe.com \u2014 0 param/api urls"
+  },
+  {
+   "ts": "2026-10-01T12:57:40Z",
+   "kind": "fact",
+   "text": "github_recon: github adobe: 100 repos \u2014 9 keyword hits"
+  },
+  {
+   "ts": "2026-10-01T12:57:42Z",
+   "kind": "fact",
+   "text": "headers: headers: acrobat.adobe.com \u2014 missing: none"
+  },
+  {
+   "ts": "2026-10-01T12:57:47Z",
+   "kind": "fact",
+   "text": "httpx: httpx: 1 live of 1 probed \u2014 1 live"
+  },
+  {
+   "ts": "2026-10-01T12:58:00Z",
+   "kind": "fact",
+   "text": "js_extract: JS mining: 4 bundles, 1 api paths, 3 params, 22 urls \u2014 4 bundles fetched"
+  },
+  {
+   "ts": "2026-10-01T12:58:04Z",
+   "kind": "fact",
+   "text": "js_secrets: 1 possible secrets in JS bundles \u2014 "
+  },
+  {
+   "ts": "2026-10-01T12:58:04Z",
+   "kind": "fact",
+   "text": "jwt_probe: jwt_probe: no token \u2014 "
+  },
+  {
+   "ts": "2026-10-01T12:58:04Z",
+   "kind": "fact",
+   "text": "param_miner: param_miner: 0 params, 0 paths \u2014 "
+  },
+  {
+   "ts": "2026-10-01T12:58:08Z",
+   "kind": "fact",
+   "text": "proxy_route: intercept proxy start: up \u2014 proxy/start.sh 8080"
+  },
+  {
+   "ts": "2026-10-01T12:58:11Z",
+   "kind": "fact",
+   "text": "robots_sitemap: acrobat.adobe.com/robots.txt exposed \u2014 249 entries"
+  },
+  {
+   "ts": "2026-10-01T12:58:11Z",
+   "kind": "fact",
+   "text": "robots_sitemap: acrobat.adobe.com/sitemap.xml exposed \u2014 24 entries"
+  },
+  {
+   "ts": "2026-10-01T12:58:12Z",
+   "kind": "fact",
+   "text": "subfinder: subfinder: 0 subs for adobe.com \u2014 rc=0"
+  },
+  {
+   "ts": "2026-10-01T12:58:13Z",
+   "kind": "fact",
+   "text": "t100-dnsrecon: t100-dnsrecon: completed (rc=0) \u2014 category=recon cmd=dnsrecon -d adobe.com -t std"
+  },
+  {
+   "ts": "2026-10-01T12:58:15Z",
+   "kind": "fact",
+   "text": "t100-linkfinder: t100-linkfinder: completed (rc=0) \u2014 category=discovery cmd=linkfinder -i https://acrobat.adobe.com -o cli"
+  },
+  {
+   "ts": "2026-10-01T12:58:18Z",
+   "kind": "fact",
+   "text": "t100-secretfinder: t100-secretfinder: completed (rc=0) \u2014 category=discovery cmd=secretfinder -i https://acrobat.adobe.com -o cli"
+  },
+  {
+   "ts": "2026-10-01T12:58:23Z",
+   "kind": "fact",
+   "text": "t100-testssl: t100-testssl: completed (rc=245) \u2014 category=protocol cmd=testssl.sh --fast acrobat.adobe.com"
+  },
+  {
+   "ts": "2026-10-01T12:58:27Z",
+   "kind": "fact",
+   "text": "t100-wafw00f: t100-wafw00f: completed (rc=0) \u2014 category=protocol cmd=wafw00f https://acrobat.adobe.com"
+  },
+  {
+   "ts": "2026-10-01T12:58:27Z",
+   "kind": "fact",
+   "text": "takeover: takeover: no subdomains yet \u2014 "
+  },
+  {
+   "ts": "2026-10-01T12:58:29Z",
+   "kind": "fact",
+   "text": "tech_detect: stack: acrobat.adobe.com \u2014 3 signals"
+  },
+  {
+   "ts": "2026-10-01T12:58:31Z",
+   "kind": "fact",
+   "text": "urlscan: urlscan: 50 scans for acrobat.adobe.com \u2014 2155 total"
+  },
+  {
+   "ts": "2026-10-01T12:59:40Z",
+   "kind": "fact",
+   "text": "internet seed: Indirect Prompt Injection | The Bug Bounty Playbook (https://bugbounty.info/Attack-Surface/AI-LLM/Indirect-Prompt-Injection)"
+  },
+  {
+   "ts": "2026-10-01T12:59:40Z",
+   "kind": "fact",
+   "text": "internet seed: Prompt Injection in Bug Bounty: Vectors, Techniques, and Real-World ... (https://research.vyntra.sh/en/articles/prompt-injection-in-bug-bounty)"
+  },
+  {
+   "ts": "2026-10-01T12:59:40Z",
+   "kind": "fact",
+   "text": "internet seed: Prompt Injection in Bug Bounty: Vectors, Techniques, and Real-World ... (https://vyntra.sh/en/research/prompt-injection-in-bug-bounty)"
+  },
+  {
+   "ts": "2026-10-01T12:59:40Z",
+   "kind": "fact",
+   "text": "internet seed: How to Find Prompt Injection Vulnerabilities as a Bug Bounty Hunter ... (https://meetcyber.net/how-to-find-prompt-injection-vulnerabilities-as-a-bug-bounty-hunter-2026-guide-c1ed8ec726e7)"
+  },
+  {
+   "ts": "2026-10-01T12:59:40Z",
+   "kind": "fact",
+   "text": "internet seed: Indirect Prompt Injection in RAG & Documents \u2014 Attack Vectors ... (https://www.promptinjectiondatabase.com/kb/indirect-injection-vectors.php)"
+  },
+  {
+   "ts": "2026-10-01T12:59:40Z",
+   "kind": "fact",
+   "text": "internet seed: What is Indirect Prompt Injection and Its Examples - Medium (https://medium.com/@langprotect/what-is-indirect-prompt-injection-and-its-examples-603db917ac5b)"
+  },
+  {
+   "ts": "2026-10-01T12:59:40Z",
+   "kind": "fact",
+   "text": "internet seed: bug-bounty-writeup/src/idor.md at main \u00b7 x1337loser/bug ... - GitHub (https://github.com/x1337loser/bug-bounty-writeup/blob/main/src/idor.md)"
+  },
+  {
+   "ts": "2026-10-01T12:59:40Z",
+   "kind": "fact",
+   "text": "internet seed: IDOR Hunting \u2014 Zero to Advanced (https://nrshafi.github.io/idor-guide/)"
+  }
+ ],
+ "assumptions": [],
+ "hypotheses": [],
+ "tests": [],
+ "results": [],
+ "rejected_hypotheses": [],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [],
+ "facts": [],
+ "lessons": [],
+ "next_actions": [],
+ "id": "780bb7d1fadf"
+}

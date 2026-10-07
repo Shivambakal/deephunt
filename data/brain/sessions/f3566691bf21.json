@@ -1,0 +1,28 @@
+{
+ "objective": "DEEPHUNT autonomous hunt: adobe (Intigriti adobepublic (verified live 2026-09-01))",
+ "created": "2026-09-26T19:33:56Z",
+ "updated": "2026-09-26T19:33:56Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [],
+  "trust_boundaries": [],
+  "state_machines": {}
+ },
+ "observations": [],
+ "assumptions": [],
+ "hypotheses": [],
+ "tests": [],
+ "results": [],
+ "rejected_hypotheses": [],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [],
+ "facts": [],
+ "lessons": [],
+ "next_actions": [],
+ "id": "f3566691bf21"
+}

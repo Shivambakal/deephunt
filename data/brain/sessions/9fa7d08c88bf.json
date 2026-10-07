@@ -1,0 +1,505 @@
+{
+ "objective": "DEEPHUNT autonomous hunt: robinhood (HackerOne robinhood \u2014 Robinhood Markets Bounty (paid; scope verified via official public policy 2026-09-27))",
+ "created": "2026-09-27T02:28:08Z",
+ "updated": "2026-09-27T02:32:14Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [],
+  "trust_boundaries": [],
+  "state_machines": {}
+ },
+ "observations": [
+  {
+   "ts": "2026-09-27T02:28:20Z",
+   "kind": "fact",
+   "text": "cors_probe: cors_probe: no misconfig found \u2014 "
+  },
+  {
+   "ts": "2026-09-27T02:28:31Z",
+   "kind": "fact",
+   "text": "crtsh: crt.sh: 164 subdomains under robinhood.com \u2014 164 unique names"
+  },
+  {
+   "ts": "2026-09-27T02:28:31Z",
+   "kind": "fact",
+   "text": "crtsh: crt.sh: 111 subdomains under say.rocks \u2014 111 unique names"
+  },
+  {
+   "ts": "2026-09-27T02:28:31Z",
+   "kind": "fact",
+   "text": "crtsh: crt.sh: 34 subdomains under bitstamp.net \u2014 34 unique names"
+  },
+  {
+   "ts": "2026-09-27T02:28:31Z",
+   "kind": "fact",
+   "text": "gau: gau: 0 urls for robinhood.com \u2014 0 param/api urls"
+  },
+  {
+   "ts": "2026-09-27T02:28:31Z",
+   "kind": "fact",
+   "text": "gau: gau: 0 urls for api.robinhood.com \u2014 0 param/api urls"
+  },
+  {
+   "ts": "2026-09-27T02:28:31Z",
+   "kind": "fact",
+   "text": "gau: gau: 0 urls for nummus.robinhood.com \u2014 0 param/api urls"
+  },
+  {
+   "ts": "2026-09-27T02:28:31Z",
+   "kind": "fact",
+   "text": "gau: gau: 0 urls for oak.robinhood.com \u2014 0 param/api urls"
+  },
+  {
+   "ts": "2026-09-27T02:28:42Z",
+   "kind": "fact",
+   "text": "headers: headers: robinhood.com \u2014 missing: content-security-policy, x-frame-options"
+  },
+  {
+   "ts": "2026-09-27T02:28:42Z",
+   "kind": "fact",
+   "text": "headers: headers: api.robinhood.com \u2014 missing: strict-transport-security, content-security-policy, x-frame-options"
+  },
+  {
+   "ts": "2026-09-27T02:28:42Z",
+   "kind": "fact",
+   "text": "headers: headers: nummus.robinhood.com \u2014 missing: strict-transport-security, content-security-policy, x-frame-options"
+  },
+  {
+   "ts": "2026-09-27T02:28:42Z",
+   "kind": "fact",
+   "text": "headers: headers: oak.robinhood.com \u2014 missing: strict-transport-security, content-security-policy, x-frame-options"
+  },
+  {
+   "ts": "2026-09-27T02:28:42Z",
+   "kind": "fact",
+   "text": "headers: headers: www.bitstamp.net \u2014 missing: strict-transport-security, content-security-policy, x-frame-options"
+  },
+  {
+   "ts": "2026-09-27T02:28:42Z",
+   "kind": "fact",
+   "text": "headers: headers: saytechnologies.com \u2014 missing: strict-transport-security, content-security-policy, x-frame-options"
+  },
+  {
+   "ts": "2026-09-27T02:28:53Z",
+   "kind": "fact",
+   "text": "httpx: httpx: 14 live of 14 probed \u2014 14 live"
+  },
+  {
+   "ts": "2026-09-27T02:29:17Z",
+   "kind": "fact",
+   "text": "js_extract: JS mining: 13 bundles, 1 api paths, 39 params, 88 urls \u2014 13 bundles fetched"
+  },
+  {
+   "ts": "2026-09-27T02:29:28Z",
+   "kind": "fact",
+   "text": "js_secrets: js_secrets: 12 bundles, no key patterns \u2014 "
+  },
+  {
+   "ts": "2026-09-27T02:29:28Z",
+   "kind": "fact",
+   "text": "param_miner: param_miner: 0 params, 1 paths \u2014 "
+  },
+  {
+   "ts": "2026-09-27T02:29:28Z",
+   "kind": "fact",
+   "text": "proxy_route: intercept proxy already on :8080 \u2014 "
+  },
+  {
+   "ts": "2026-09-27T02:29:56Z",
+   "kind": "fact",
+   "text": "robots_sitemap: robinhood.com/robots.txt exposed \u2014 9 entries"
+  },
+  {
+   "ts": "2026-09-27T02:29:56Z",
+   "kind": "fact",
+   "text": "robots_sitemap: robinhood.com/sitemap.xml exposed \u2014 11 entries"
+  },
+  {
+   "ts": "2026-09-27T02:29:56Z",
+   "kind": "fact",
+   "text": "robots_sitemap: www.bitstamp.net/robots.txt exposed \u2014 11 entries"
+  },
+  {
+   "ts": "2026-09-27T02:29:56Z",
+   "kind": "fact",
+   "text": "robots_sitemap: www.bitstamp.net/sitemap.xml exposed \u2014 4 entries"
+  },
+  {
+   "ts": "2026-09-27T02:29:56Z",
+   "kind": "fact",
+   "text": "robots_sitemap: saytechnologies.com/robots.txt exposed \u2014 0 entries"
+  },
+  {
+   "ts": "2026-09-27T02:29:56Z",
+   "kind": "fact",
+   "text": "robots_sitemap: saytechnologies.com/sitemap.xml exposed \u2014 0 entries"
+  },
+  {
+   "ts": "2026-09-27T02:30:00Z",
+   "kind": "fact",
+   "text": "subfinder: subfinder: 0 subs for robinhood.com \u2014 rc=0"
+  },
+  {
+   "ts": "2026-09-27T02:30:00Z",
+   "kind": "fact",
+   "text": "subfinder: subfinder: 0 subs for say.rocks \u2014 rc=0"
+  },
+  {
+   "ts": "2026-09-27T02:30:00Z",
+   "kind": "fact",
+   "text": "subfinder: subfinder: 0 subs for bitstamp.net \u2014 rc=0"
+  },
+  {
+   "ts": "2026-09-27T02:30:01Z",
+   "kind": "fact",
+   "text": "takeover: takeover: no dangling CNAMEs found \u2014 "
+  },
+  {
+   "ts": "2026-09-27T02:30:05Z",
+   "kind": "fact",
+   "text": "tech_detect: stack: robinhood.com \u2014 1 signals"
+  },
+  {
+   "ts": "2026-09-27T02:30:05Z",
+   "kind": "fact",
+   "text": "tech_detect: stack: api.robinhood.com \u2014 0 signals"
+  },
+  {
+   "ts": "2026-09-27T02:30:05Z",
+   "kind": "fact",
+   "text": "tech_detect: stack: nummus.robinhood.com \u2014 0 signals"
+  },
+  {
+   "ts": "2026-09-27T02:30:13Z",
+   "kind": "fact",
+   "text": "urlscan: urlscan: 50 scans for robinhood.com \u2014 10000 total"
+  },
+  {
+   "ts": "2026-09-27T02:30:13Z",
+   "kind": "fact",
+   "text": "urlscan: urlscan: 50 scans for api.robinhood.com \u2014 1112 total"
+  },
+  {
+   "ts": "2026-09-27T02:30:13Z",
+   "kind": "fact",
+   "text": "urlscan: urlscan: 50 scans for nummus.robinhood.com \u2014 294 total"
+  },
+  {
+   "ts": "2026-09-27T02:31:40Z",
+   "kind": "fact",
+   "text": "wayback: wayback: 4000 historic urls for robinhood.com \u2014 120 api-shaped"
+  },
+  {
+   "ts": "2026-09-27T02:31:40Z",
+   "kind": "fact",
+   "text": "wayback: wayback: 4000 historic urls for api.robinhood.com \u2014 120 api-shaped"
+  },
+  {
+   "ts": "2026-09-27T02:31:40Z",
+   "kind": "fact",
+   "text": "wayback: wayback: 1 historic urls for oak.robinhood.com \u2014 0 api-shaped"
+  }
+ ],
+ "assumptions": [],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "statement": "[BLO-05] Email change without re-authentication (account takeover primitive): Change the owned account's email without re-entering the password; check whether the switch is immediate and whether a reset to the new address yields control. Grounded: HackerOne #1250037 vs Stripe ($3,000) \u2014 email/ personal-data change on the account; classic ATO primitive.\n",
+   "violated_assumption": "A1",
+   "attacker_view": "seed from train:BLO-05",
+   "defender_view": "vendor has standard mitigations; assume filtered until proven otherwise",
+   "devil_view": "most similar past attempts were rejected \u2014 the discriminating test must be single-variable with a control",
+   "investigator_test": "minimum controlled experiment with owned accounts/data only",
+   "killed_by": "control and variant behave identically, or mitigation demonstrably neutralizes it",
+   "impact": 4,
+   "novelty": 3,
+   "testability": 3,
+   "score": 36,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-27T02:32:13Z"
+  },
+  {
+   "id": "H2",
+   "statement": "[API-01] Excessive data exposure / mass assignment: Diff the API response against what the UI shows (owned account) \u2014 look for emails, hashes, tokens, internal flags. Try mass-assignment: add {\"role\":\"admin\",\"is_verified\":true} to update calls.\n",
+   "violated_assumption": "A1",
+   "attacker_view": "seed from train:API-01",
+   "defender_view": "vendor has standard mitigations; assume filtered until proven otherwise",
+   "devil_view": "most similar past attempts were rejected \u2014 the discriminating test must be single-variable with a control",
+   "investigator_test": "minimum controlled experiment with owned accounts/data only",
+   "killed_by": "control and variant behave identically, or mitigation demonstrably neutralizes it",
+   "impact": 4,
+   "novelty": 3,
+   "testability": 3,
+   "score": 36,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-27T02:32:13Z"
+  },
+  {
+   "id": "H3",
+   "statement": "[novel/combo] Missing rate limits enabling enumeration or cost abuse x CORS convenience on websocket (robinhood): Send attacker Origins with credentials. A reflection is a token-theft primitive waiting for a victim visit.\n",
+   "violated_assumption": "A1",
+   "attacker_view": "seed from heretic",
+   "defender_view": "vendor has standard mitigations; assume filtered until proven otherwise",
+   "devil_view": "most similar past attempts were rejected \u2014 the discriminating test must be single-variable with a control",
+   "investigator_test": "minimum controlled experiment with owned accounts/data only",
+   "killed_by": "control and variant behave identically, or mitigation demonstrably neutralizes it",
+   "impact": 4,
+   "novelty": 3,
+   "testability": 3,
+   "score": 36,
+   "status": "live",
+   "source": "manual",
+   "ts": "2026-09-27T02:32:14Z"
+  }
+ ],
+ "tests": [
+  {
+   "id": "T1",
+   "hypothesis_id": "H1",
+   "spec": {
+    "expected_observation": "variant differs from control in a security-relevant way",
+    "reason": "deephunt cycle 1 top seed",
+    "scope_hosts": [
+     "robinhood.com",
+     "api.robinhood.com",
+     "nummus.robinhood.com",
+     "oak.robinhood.com",
+     "www.bitstamp.net",
+     "saytechnologies.com",
+     "say.rocks",
+     "1integrations.com",
+     "x1.co",
+     "x1creditcard.com",
+     "fusion.tradepmr.com",
+     "www.tradepmr.com",
+     "insight2.tradepmr.com",
+     "bitstamp.net"
+    ],
+    "auth_basis": "HackerOne paid program \"Robinhood Markets Bounty\", Gold Standard Safe Harbor.\nMANDATORY attribution headers on ALL test traffic:\n  X-Bug-Bounty: shiva92\n  X-Test-Account-Email: <test account email>\nRules: ONLY test accounts the researcher owns \u2014 never other users' accounts.\nNo DoS, no social engineering/phishing, no fraud. $1,000 USD cap when testing\nunbounded-loss vulnerabilities \u2014 file the report at $1,000. No large data\nvolumes to websockets. No mass support-ticket creation. Findings dependent on\naccount takeover typically NOT accepted (small bonus only if novel).\nDo NOT disclose reports outside the HackerOne platform, ever.\nThrottled open-source tooling only; nuclei -rate-limit 20, high/critical\ntemplates. No real-user data. Major Oak (oak.robinhood.*) is internal admin\ntooling \u2014 treat as extremely sensitive, passive recon only unless a clear\nin-scope misconfiguration appears.\n",
+    "success_criteria": "unauthorized disclosure/action across the trust boundary",
+    "failure_criteria": "control == variant, or demonstrable neutralization",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "vendor has standard mitigations; assume filtered until proven otherwise",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T1",
+    "hypothesis_id": "H1",
+    "session_id": "9fa7d08c88bf",
+    "scope_hosts": [
+     "robinhood.com",
+     "api.robinhood.com",
+     "nummus.robinhood.com",
+     "oak.robinhood.com",
+     "www.bitstamp.net",
+     "saytechnologies.com",
+     "say.rocks",
+     "1integrations.com",
+     "x1.co",
+     "x1creditcard.com",
+     "fusion.tradepmr.com",
+     "www.tradepmr.com",
+     "insight2.tradepmr.com",
+     "bitstamp.net"
+    ],
+    "issued_at": 1790476333.9986298,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-27T02:32:13Z"
+  },
+  {
+   "id": "T2",
+   "hypothesis_id": "H2",
+   "spec": {
+    "expected_observation": "variant differs from control in a security-relevant way",
+    "reason": "deephunt cycle 1 top seed",
+    "scope_hosts": [
+     "robinhood.com",
+     "api.robinhood.com",
+     "nummus.robinhood.com",
+     "oak.robinhood.com",
+     "www.bitstamp.net",
+     "saytechnologies.com",
+     "say.rocks",
+     "1integrations.com",
+     "x1.co",
+     "x1creditcard.com",
+     "fusion.tradepmr.com",
+     "www.tradepmr.com",
+     "insight2.tradepmr.com",
+     "bitstamp.net"
+    ],
+    "auth_basis": "HackerOne paid program \"Robinhood Markets Bounty\", Gold Standard Safe Harbor.\nMANDATORY attribution headers on ALL test traffic:\n  X-Bug-Bounty: shiva92\n  X-Test-Account-Email: <test account email>\nRules: ONLY test accounts the researcher owns \u2014 never other users' accounts.\nNo DoS, no social engineering/phishing, no fraud. $1,000 USD cap when testing\nunbounded-loss vulnerabilities \u2014 file the report at $1,000. No large data\nvolumes to websockets. No mass support-ticket creation. Findings dependent on\naccount takeover typically NOT accepted (small bonus only if novel).\nDo NOT disclose reports outside the HackerOne platform, ever.\nThrottled open-source tooling only; nuclei -rate-limit 20, high/critical\ntemplates. No real-user data. Major Oak (oak.robinhood.*) is internal admin\ntooling \u2014 treat as extremely sensitive, passive recon only unless a clear\nin-scope misconfiguration appears.\n",
+    "success_criteria": "unauthorized disclosure/action across the trust boundary",
+    "failure_criteria": "control == variant, or demonstrable neutralization",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "vendor has standard mitigations; assume filtered until proven otherwise",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T2",
+    "hypothesis_id": "H2",
+    "session_id": "9fa7d08c88bf",
+    "scope_hosts": [
+     "robinhood.com",
+     "api.robinhood.com",
+     "nummus.robinhood.com",
+     "oak.robinhood.com",
+     "www.bitstamp.net",
+     "saytechnologies.com",
+     "say.rocks",
+     "1integrations.com",
+     "x1.co",
+     "x1creditcard.com",
+     "fusion.tradepmr.com",
+     "www.tradepmr.com",
+     "insight2.tradepmr.com",
+     "bitstamp.net"
+    ],
+    "issued_at": 1790476334.0016072,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-27T02:32:14Z"
+  },
+  {
+   "id": "T3",
+   "hypothesis_id": "H3",
+   "spec": {
+    "expected_observation": "variant differs from control in a security-relevant way",
+    "reason": "deephunt cycle 1 top seed",
+    "scope_hosts": [
+     "robinhood.com",
+     "api.robinhood.com",
+     "nummus.robinhood.com",
+     "oak.robinhood.com",
+     "www.bitstamp.net",
+     "saytechnologies.com",
+     "say.rocks",
+     "1integrations.com",
+     "x1.co",
+     "x1creditcard.com",
+     "fusion.tradepmr.com",
+     "www.tradepmr.com",
+     "insight2.tradepmr.com",
+     "bitstamp.net"
+    ],
+    "auth_basis": "HackerOne paid program \"Robinhood Markets Bounty\", Gold Standard Safe Harbor.\nMANDATORY attribution headers on ALL test traffic:\n  X-Bug-Bounty: shiva92\n  X-Test-Account-Email: <test account email>\nRules: ONLY test accounts the researcher owns \u2014 never other users' accounts.\nNo DoS, no social engineering/phishing, no fraud. $1,000 USD cap when testing\nunbounded-loss vulnerabilities \u2014 file the report at $1,000. No large data\nvolumes to websockets. No mass support-ticket creation. Findings dependent on\naccount takeover typically NOT accepted (small bonus only if novel).\nDo NOT disclose reports outside the HackerOne platform, ever.\nThrottled open-source tooling only; nuclei -rate-limit 20, high/critical\ntemplates. No real-user data. Major Oak (oak.robinhood.*) is internal admin\ntooling \u2014 treat as extremely sensitive, passive recon only unless a clear\nin-scope misconfiguration appears.\n",
+    "success_criteria": "unauthorized disclosure/action across the trust boundary",
+    "failure_criteria": "control == variant, or demonstrable neutralization",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [],
+    "answers": {
+     "supporting_evidence": [
+      "headers: headers: robinhood.com \u2014 missing: content-security-policy, x-frame-options",
+      "headers: headers: api.robinhood.com \u2014 missing: strict-transport-security, content-security-policy, x-frame-options",
+      "headers: headers: nummus.robinhood.com \u2014 missing: strict-transport-security, content-security-policy, x-frame-options",
+      "headers: headers: oak.robinhood.com \u2014 missing: strict-transport-security, content-security-policy, x-frame-options"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "vendor has standard mitigations; assume filtered until proven otherwise",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 3
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T3",
+    "hypothesis_id": "H3",
+    "session_id": "9fa7d08c88bf",
+    "scope_hosts": [
+     "robinhood.com",
+     "api.robinhood.com",
+     "nummus.robinhood.com",
+     "oak.robinhood.com",
+     "www.bitstamp.net",
+     "saytechnologies.com",
+     "say.rocks",
+     "1integrations.com",
+     "x1.co",
+     "x1creditcard.com",
+     "fusion.tradepmr.com",
+     "www.tradepmr.com",
+     "insight2.tradepmr.com",
+     "bitstamp.net"
+    ],
+    "issued_at": 1790476334.00433,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-09-27T02:32:14Z"
+  }
+ ],
+ "results": [],
+ "rejected_hypotheses": [],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [],
+ "facts": [],
+ "lessons": [],
+ "next_actions": [
+  "run T1 (hypothesis H1)",
+  "run T2 (hypothesis H2)",
+  "run T3 (hypothesis H3)"
+ ],
+ "id": "9fa7d08c88bf"
+}

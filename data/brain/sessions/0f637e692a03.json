@@ -1,0 +1,34 @@
+{
+ "objective": "test:ai-wire",
+ "created": "2026-09-27T03:20:40Z",
+ "updated": "2026-09-27T03:20:40Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [],
+  "trust_boundaries": [],
+  "state_machines": {}
+ },
+ "observations": [
+  {
+   "ts": "2026-09-27T03:20:40Z",
+   "kind": "stage:ai-attacks",
+   "text": "[pipeline:ai-attacks] 1 AI surface(s), 4 hypothesis seeds"
+  }
+ ],
+ "assumptions": [],
+ "hypotheses": [],
+ "tests": [],
+ "results": [],
+ "rejected_hypotheses": [],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [],
+ "facts": [],
+ "lessons": [],
+ "next_actions": [],
+ "id": "0f637e692a03"
+}

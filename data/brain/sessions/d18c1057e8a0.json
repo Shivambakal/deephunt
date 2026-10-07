@@ -1,0 +1,54 @@
+{
+ "objective": "Kiteworks unauthenticated blitz (2026-09-27) results log",
+ "created": "2026-09-27T06:20:30Z",
+ "updated": "2026-09-27T06:20:30Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [],
+  "trust_boundaries": [],
+  "state_machines": {}
+ },
+ "observations": [
+  {
+   "ts": "2026-09-27T06:20:30Z",
+   "kind": "result",
+   "text": "H-JS-1 RESULT: desanitize RULED OUT client-side (zero call sites in 24 chunks; outputs reach only React-escaped text children). redirectUrl->window.location.assign() CONFIRMED with NO client-side validation on 4 paths in signin.f7b86212.js (login @19975, OTP @12987, preauth @35931, passkey redirectUri @33062). Server reflection of attacker input UNTESTED."
+  },
+  {
+   "ts": "2026-09-27T06:20:30Z",
+   "kind": "result",
+   "text": "H-REDIR-1 RESULT: open-redirect lead verified client-side; exploitability hinges on server echoing referral (window.location.href sent with login/preauth/otp requests). Needs live form submission; login POST currently 404s."
+  },
+  {
+   "ts": "2026-09-27T06:20:30Z",
+   "kind": "result",
+   "text": "H-CFG-1 RESULT: /login_config verbatim dump captured (password-only, sso:[], oauth:[] , passkey empty, captchaChecking 1, apiVersion 28, no LDAP/SAML fields). Zero Set-Cookie on /login and /register GETs. Full CSP/HSTS/XFO header set captured verbatim; no Server or X-Accellion-Version headers."
+  },
+  {
+   "ts": "2026-09-27T06:20:30Z",
+   "kind": "result",
+   "text": "H-ERR-1 RESULT: POST /rest/users/actions/login -> 404 {\"message\":\"Not found\"} (no credential evaluation). POST /rest/users/register -> 405 Allow: GET, DELETE, PUT (registration API unreachable). Doubled-scheme header observed: X-Accellion-Location: https://https://.... Wrong-user vs wrong-password UNTESTED."
+  },
+  {
+   "ts": "2026-09-27T06:20:30Z",
+   "kind": "observation",
+   "text": "ROUTE MAP: /login /register / -> 200 SPA shells. /rest/ -> 404. /rest/index.html -> 302 -> /login?LoginRedir=%2Frest%2Findex.html. All other probed paths -> 302 /error?status=404 -> 200. /rest/profiles (User Roles doc) -> 401. No 403s, no 429/503 anywhere."
+  }
+ ],
+ "assumptions": [],
+ "hypotheses": [],
+ "tests": [],
+ "results": [],
+ "rejected_hypotheses": [],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [],
+ "facts": [],
+ "lessons": [],
+ "next_actions": [],
+ "id": "d18c1057e8a0"
+}

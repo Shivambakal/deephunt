@@ -1,0 +1,945 @@
+{
+ "objective": "DEEPHUNT autonomous hunt: shopify (HackerOne shopify (public; scope verified via published policy 2026-09-27))",
+ "created": "2026-10-01T05:35:29Z",
+ "updated": "2026-10-01T07:00:10Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [],
+  "trust_boundaries": [],
+  "state_machines": {}
+ },
+ "observations": [
+  {
+   "ts": "2026-10-01T05:35:34Z",
+   "kind": "fact",
+   "text": "cors_probe: cors_probe: no misconfig found \u2014 "
+  },
+  {
+   "ts": "2026-10-01T05:35:35Z",
+   "kind": "fact",
+   "text": "crtsh: crt.sh failed for shopify.com \u2014 "
+  },
+  {
+   "ts": "2026-10-01T05:35:35Z",
+   "kind": "fact",
+   "text": "gau: gau: 0 urls for shopify.com \u2014 0 param/api urls"
+  },
+  {
+   "ts": "2026-10-01T05:35:35Z",
+   "kind": "fact",
+   "text": "gau: gau: 0 urls for admin.shopify.com \u2014 0 param/api urls"
+  },
+  {
+   "ts": "2026-10-01T05:35:35Z",
+   "kind": "fact",
+   "text": "gau: gau: 0 urls for accounts.shopify.com \u2014 0 param/api urls"
+  },
+  {
+   "ts": "2026-10-01T05:35:35Z",
+   "kind": "fact",
+   "text": "gau: gau: 0 urls for partners.shopify.com \u2014 0 param/api urls"
+  },
+  {
+   "ts": "2026-10-01T05:35:37Z",
+   "kind": "fact",
+   "text": "github_recon: github Shopify: 100 repos \u2014 100 keyword hits"
+  },
+  {
+   "ts": "2026-10-01T05:35:39Z",
+   "kind": "fact",
+   "text": "headers: headers: shopify.com \u2014 missing: strict-transport-security, content-security-policy, x-frame-options"
+  },
+  {
+   "ts": "2026-10-01T05:35:39Z",
+   "kind": "fact",
+   "text": "headers: headers: admin.shopify.com \u2014 missing: none"
+  },
+  {
+   "ts": "2026-10-01T05:35:39Z",
+   "kind": "fact",
+   "text": "headers: headers: accounts.shopify.com \u2014 missing: none"
+  },
+  {
+   "ts": "2026-10-01T05:35:39Z",
+   "kind": "fact",
+   "text": "headers: headers: partners.shopify.com \u2014 missing: x-frame-options"
+  },
+  {
+   "ts": "2026-10-01T05:35:39Z",
+   "kind": "fact",
+   "text": "error_intel: error-intel: Cloudflare edge in front \u2014 expect JS challenge / managed rules; tune evasion per WAF-01. \u2014 patterns=['waf-cloudflare'] techniques=['WAF-01'] src=headers:headers: shopify.com"
+  },
+  {
+   "ts": "2026-10-01T05:35:39Z",
+   "kind": "fact",
+   "text": "error_intel: error-intel: Cloudflare edge in front \u2014 expect JS challenge / managed rules; tune evasion per WAF-01. \u2014 patterns=['waf-cloudflare'] techniques=['WAF-01'] src=headers:headers: accounts.shopify.com"
+  },
+  {
+   "ts": "2026-10-01T05:35:42Z",
+   "kind": "fact",
+   "text": "httpx: httpx: 4 live of 4 probed \u2014 4 live"
+  },
+  {
+   "ts": "2026-10-01T05:35:49Z",
+   "kind": "fact",
+   "text": "js_extract: JS mining: 3 bundles, 4 api paths, 34 params, 21 urls \u2014 3 bundles fetched"
+  },
+  {
+   "ts": "2026-10-01T05:35:54Z",
+   "kind": "fact",
+   "text": "js_secrets: js_secrets: 3 bundles, no key patterns \u2014 "
+  },
+  {
+   "ts": "2026-10-01T05:35:54Z",
+   "kind": "fact",
+   "text": "jwt_probe: jwt_probe: no token \u2014 "
+  },
+  {
+   "ts": "2026-10-01T05:35:54Z",
+   "kind": "fact",
+   "text": "param_miner: param_miner: 0 params, 2 paths \u2014 "
+  },
+  {
+   "ts": "2026-10-01T05:35:54Z",
+   "kind": "fact",
+   "text": "proxy_route: intercept proxy already on :8080 \u2014 "
+  },
+  {
+   "ts": "2026-10-01T05:35:59Z",
+   "kind": "fact",
+   "text": "robots_sitemap: shopify.com/robots.txt exposed \u2014 2 entries"
+  },
+  {
+   "ts": "2026-10-01T05:35:59Z",
+   "kind": "fact",
+   "text": "robots_sitemap: shopify.com/sitemap.xml exposed \u2014 50 entries"
+  },
+  {
+   "ts": "2026-10-01T05:35:59Z",
+   "kind": "fact",
+   "text": "robots_sitemap: admin.shopify.com/robots.txt exposed \u2014 1 entries"
+  },
+  {
+   "ts": "2026-10-01T05:35:59Z",
+   "kind": "fact",
+   "text": "robots_sitemap: admin.shopify.com/sitemap.xml exposed \u2014 0 entries"
+  },
+  {
+   "ts": "2026-10-01T05:35:59Z",
+   "kind": "fact",
+   "text": "robots_sitemap: accounts.shopify.com/robots.txt exposed \u2014 7 entries"
+  },
+  {
+   "ts": "2026-10-01T05:35:59Z",
+   "kind": "fact",
+   "text": "robots_sitemap: partners.shopify.com/robots.txt exposed \u2014 2 entries"
+  },
+  {
+   "ts": "2026-10-01T05:36:00Z",
+   "kind": "fact",
+   "text": "subfinder: subfinder: 0 subs for shopify.com \u2014 rc=0"
+  },
+  {
+   "ts": "2026-10-01T05:36:00Z",
+   "kind": "fact",
+   "text": "t100-dnsrecon: t100-dnsrecon: completed (rc=0) \u2014 category=recon cmd=dnsrecon -d shopify.com -t std"
+  },
+  {
+   "ts": "2026-10-01T05:36:11Z",
+   "kind": "fact",
+   "text": "t100-linkfinder: t100-linkfinder: completed (rc=0) \u2014 category=discovery cmd=linkfinder -i https://shopify.com -o cli"
+  },
+  {
+   "ts": "2026-10-01T05:36:14Z",
+   "kind": "fact",
+   "text": "t100-secretfinder: t100-secretfinder: completed (rc=0) \u2014 category=discovery cmd=secretfinder -i https://shopify.com -o cli"
+  },
+  {
+   "ts": "2026-10-01T05:36:19Z",
+   "kind": "fact",
+   "text": "t100-testssl: t100-testssl: completed (rc=245) \u2014 category=protocol cmd=testssl.sh --fast shopify.com"
+  },
+  {
+   "ts": "2026-10-01T05:36:25Z",
+   "kind": "fact",
+   "text": "t100-wafw00f: t100-wafw00f: completed (rc=0) \u2014 category=protocol cmd=wafw00f https://shopify.com"
+  },
+  {
+   "ts": "2026-10-01T05:36:25Z",
+   "kind": "fact",
+   "text": "takeover: takeover: no subdomains yet \u2014 "
+  },
+  {
+   "ts": "2026-10-01T05:36:29Z",
+   "kind": "fact",
+   "text": "tech_detect: stack: shopify.com \u2014 1 signals"
+  },
+  {
+   "ts": "2026-10-01T05:36:29Z",
+   "kind": "fact",
+   "text": "tech_detect: stack: admin.shopify.com \u2014 0 signals"
+  },
+  {
+   "ts": "2026-10-01T05:36:29Z",
+   "kind": "fact",
+   "text": "tech_detect: stack: accounts.shopify.com \u2014 0 signals"
+  },
+  {
+   "ts": "2026-10-01T05:36:29Z",
+   "kind": "fact",
+   "text": "tech_detect: stack: partners.shopify.com \u2014 1 signals"
+  },
+  {
+   "ts": "2026-10-01T05:36:34Z",
+   "kind": "fact",
+   "text": "urlscan: urlscan: 50 scans for shopify.com \u2014 10000 total"
+  },
+  {
+   "ts": "2026-10-01T05:36:34Z",
+   "kind": "fact",
+   "text": "urlscan: urlscan: 50 scans for admin.shopify.com \u2014 10000 total"
+  },
+  {
+   "ts": "2026-10-01T05:36:34Z",
+   "kind": "fact",
+   "text": "urlscan: urlscan: 50 scans for accounts.shopify.com \u2014 4407 total"
+  },
+  {
+   "ts": "2026-10-01T05:37:57Z",
+   "kind": "fact",
+   "text": "wayback: wayback: 4000 historic urls for partners.shopify.com \u2014 120 api-shaped"
+  },
+  {
+   "ts": "2026-10-01T05:38:21Z",
+   "kind": "fact",
+   "text": "internet seed: IDOR in Shopify - Bug Bounty Reports (https://bountyread.redtrib3.in/reports/20231012-shopify-IDOR/)"
+  },
+  {
+   "ts": "2026-10-01T05:38:21Z",
+   "kind": "fact",
+   "text": "internet seed: bug-bounty-writeup/src/idor.md at main \u00b7 x1337loser/bug ... - GitHub (https://github.com/x1337loser/bug-bounty-writeup/blob/main/src/idor.md)"
+  },
+  {
+   "ts": "2026-10-01T05:38:21Z",
+   "kind": "fact",
+   "text": "internet seed: The Bug Bounty Playbook: IDOR - Medium (https://medium.com/@Aacle/the-bug-bounty-playbook-idor-72038e510337)"
+  },
+  {
+   "ts": "2026-10-01T05:38:21Z",
+   "kind": "fact",
+   "text": "internet seed: Resources | Shopify Bug Bounty (https://www.shopify.com/bugbounty/resources)"
+  },
+  {
+   "ts": "2026-10-01T05:38:21Z",
+   "kind": "fact",
+   "text": "internet seed: #bugbounty #idor #shopify #graphql #hackerone #appsec # ... - LinkedIn (https://www.linkedin.com/posts/junior0x01_bugbounty-idor-shopify-activity-7435539662083006464-IcWB)"
+  },
+  {
+   "ts": "2026-10-01T05:38:21Z",
+   "kind": "fact",
+   "text": "internet seed: How I Found a $5,300 Stored XSS Bug in Shopify's Admin Panel (https://blog.ashketchumsecurity.com/post.php?slug=how-i-found-a-5-300-stored-xss-bug-in-shopify-s-admin-panel)"
+  },
+  {
+   "ts": "2026-10-01T05:38:21Z",
+   "kind": "fact",
+   "text": "internet seed: $500 Bounty on Reflected XSS on Shopify | by Cyberbeat | Bug ... - Medium (https://medium.com/bug-bounty-writeups/500-bounty-on-reflected-xss-on-shopify-083925879077)"
+  },
+  {
+   "ts": "2026-10-01T05:38:21Z",
+   "kind": "fact",
+   "text": "internet seed: Stored XSS | The Bug Bounty Playbook (https://bugbounty.info/Attack-Surface/Web/Injection/XSS/Stored-XSS)"
+  }
+ ],
+ "assumptions": [],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "statement": "[novel/combo] AI action/tool abuse (unauthorized tool calls from injected context) x Dependency neglect on websocket (shopify): Fingerprint library versions passively; match against OSV/GitHub advisories for known-vulnerable components wi",
+   "violated_assumption": "A1",
+   "attacker_view": "seed from heretic",
+   "defender_view": "vendor has standard mitigations; assume filtered until proven otherwise",
+   "devil_view": "most similar past attempts were rejected \u2014 the discriminating test must be single-variable with a control",
+   "investigator_test": "minimum controlled experiment with owned accounts/data only",
+   "killed_by": "control and variant behave identically, or mitigation demonstrably neutralizes it",
+   "impact": 4,
+   "novelty": 3,
+   "testability": 3,
+   "score": 36,
+   "status": "live",
+   "source": "manual",
+   "provenance": "",
+   "ts": "2026-10-01T05:38:22Z"
+  },
+  {
+   "id": "H2",
+   "statement": "[F1-004] Raced IDOR: IDOR via parameter pollution / duplicate para\u2026 against TOCTOU on email change / invite / share revoc\u2026 revocation window: repeat with varied race offsets; confirm single-threaded baseline denies; check audit log for revocation timestamp vs response timestamp",
+   "violated_assumption": "A1",
+   "attacker_view": "seed from train:F1-004",
+   "defender_view": "vendor has standard mitigations; assume filtered until proven otherwise",
+   "devil_view": "most similar past attempts were rejected \u2014 the discriminating test must be single-variable with a control",
+   "investigator_test": "minimum controlled experiment with owned accounts/data only",
+   "killed_by": "control and variant behave identically, or mitigation demonstrably neutralizes it",
+   "impact": 4,
+   "novelty": 3,
+   "testability": 3,
+   "score": 36,
+   "status": "live",
+   "source": "manual",
+   "provenance": "",
+   "ts": "2026-10-01T05:38:22Z"
+  },
+  {
+   "id": "H3",
+   "statement": "[F1-023] Ownership transfer via mass assignment: BOLA on numeric/UUID object IDs \u00d7 Excessive data exposure / mass assignment: enumerate bindable fields via error messages; test nested objects (user[id]); confirm persistence across sessions",
+   "violated_assumption": "A1",
+   "attacker_view": "seed from train:F1-023",
+   "defender_view": "vendor has standard mitigations; assume filtered until proven otherwise",
+   "devil_view": "most similar past attempts were rejected \u2014 the discriminating test must be single-variable with a control",
+   "investigator_test": "minimum controlled experiment with owned accounts/data only",
+   "killed_by": "control and variant behave identically, or mitigation demonstrably neutralizes it",
+   "impact": 4,
+   "novelty": 3,
+   "testability": 3,
+   "score": 36,
+   "status": "live",
+   "source": "manual",
+   "provenance": "",
+   "ts": "2026-10-01T05:38:22Z"
+  },
+  {
+   "id": "H4",
+   "statement": "[F1-004] Raced IDOR: IDOR via parameter pollution / duplicate para\u2026 against TOCTOU on email change / invite / share revoc\u2026 revocation window: repeat with varied race offsets; confirm single-threaded baseline denies; check audit log for revocation timestamp vs response timestamp",
+   "violated_assumption": "A1",
+   "attacker_view": "seed from train:F1-004",
+   "defender_view": "vendor has standard mitigations; assume filtered until proven otherwise",
+   "devil_view": "most similar past attempts were rejected \u2014 the discriminating test must be single-variable with a control",
+   "investigator_test": "minimum controlled experiment with owned accounts/data only",
+   "killed_by": "control and variant behave identically, or mitigation demonstrably neutralizes it",
+   "impact": 4,
+   "novelty": 3,
+   "testability": 3,
+   "score": 36,
+   "status": "live",
+   "source": "manual",
+   "provenance": "",
+   "ts": "2026-10-01T06:19:50Z"
+  },
+  {
+   "id": "H5",
+   "statement": "[F1-023] Ownership transfer via mass assignment: BOLA on numeric/UUID object IDs \u00d7 Excessive data exposure / mass assignment: enumerate bindable fields via error messages; test nested objects (user[id]); confirm persistence across sessions",
+   "violated_assumption": "A1",
+   "attacker_view": "seed from train:F1-023",
+   "defender_view": "vendor has standard mitigations; assume filtered until proven otherwise",
+   "devil_view": "most similar past attempts were rejected \u2014 the discriminating test must be single-variable with a control",
+   "investigator_test": "minimum controlled experiment with owned accounts/data only",
+   "killed_by": "control and variant behave identically, or mitigation demonstrably neutralizes it",
+   "impact": 4,
+   "novelty": 3,
+   "testability": 3,
+   "score": 36,
+   "status": "live",
+   "source": "manual",
+   "provenance": "",
+   "ts": "2026-10-01T06:19:50Z"
+  },
+  {
+   "id": "H6",
+   "statement": "[F1-017] Auth-boundary cache poisoning: Web cache poisoning / deception \u00d7 Authorization code replay race (single-use vi\u2026: identify the unkeyed input; test session-cookie-keyed variants; confirm with fresh identities",
+   "violated_assumption": "A1",
+   "attacker_view": "seed from train:F1-017",
+   "defender_view": "vendor has standard mitigations; assume filtered until proven otherwise",
+   "devil_view": "most similar past attempts were rejected \u2014 the discriminating test must be single-variable with a control",
+   "investigator_test": "minimum controlled experiment with owned accounts/data only",
+   "killed_by": "control and variant behave identically, or mitigation demonstrably neutralizes it",
+   "impact": 4,
+   "novelty": 3,
+   "testability": 3,
+   "score": 36,
+   "status": "live",
+   "source": "manual",
+   "provenance": "",
+   "ts": "2026-10-01T06:19:50Z"
+  },
+  {
+   "id": "H7",
+   "statement": "[F1-004] Raced IDOR: IDOR via parameter pollution / duplicate para\u2026 against TOCTOU on email change / invite / share revoc\u2026 revocation window: repeat with varied race offsets; confirm single-threaded baseline denies; check audit log for revocation timestamp vs response timestamp",
+   "violated_assumption": "A1",
+   "attacker_view": "seed from train:F1-004",
+   "defender_view": "vendor has standard mitigations; assume filtered until proven otherwise",
+   "devil_view": "most similar past attempts were rejected \u2014 the discriminating test must be single-variable with a control",
+   "investigator_test": "minimum controlled experiment with owned accounts/data only",
+   "killed_by": "control and variant behave identically, or mitigation demonstrably neutralizes it",
+   "impact": 4,
+   "novelty": 3,
+   "testability": 3,
+   "score": 36,
+   "status": "live",
+   "source": "manual",
+   "provenance": "",
+   "ts": "2026-10-01T07:00:10Z"
+  },
+  {
+   "id": "H8",
+   "statement": "[F1-023] Ownership transfer via mass assignment: BOLA on numeric/UUID object IDs \u00d7 Excessive data exposure / mass assignment: enumerate bindable fields via error messages; test nested objects (user[id]); confirm persistence across sessions",
+   "violated_assumption": "A1",
+   "attacker_view": "seed from train:F1-023",
+   "defender_view": "vendor has standard mitigations; assume filtered until proven otherwise",
+   "devil_view": "most similar past attempts were rejected \u2014 the discriminating test must be single-variable with a control",
+   "investigator_test": "minimum controlled experiment with owned accounts/data only",
+   "killed_by": "control and variant behave identically, or mitigation demonstrably neutralizes it",
+   "impact": 4,
+   "novelty": 3,
+   "testability": 3,
+   "score": 36,
+   "status": "live",
+   "source": "manual",
+   "provenance": "",
+   "ts": "2026-10-01T07:00:10Z"
+  },
+  {
+   "id": "H9",
+   "statement": "[F1-017] Auth-boundary cache poisoning: Web cache poisoning / deception \u00d7 Authorization code replay race (single-use vi\u2026: identify the unkeyed input; test session-cookie-keyed variants; confirm with fresh identities",
+   "violated_assumption": "A1",
+   "attacker_view": "seed from train:F1-017",
+   "defender_view": "vendor has standard mitigations; assume filtered until proven otherwise",
+   "devil_view": "most similar past attempts were rejected \u2014 the discriminating test must be single-variable with a control",
+   "investigator_test": "minimum controlled experiment with owned accounts/data only",
+   "killed_by": "control and variant behave identically, or mitigation demonstrably neutralizes it",
+   "impact": 4,
+   "novelty": 3,
+   "testability": 3,
+   "score": 36,
+   "status": "live",
+   "source": "manual",
+   "provenance": "",
+   "ts": "2026-10-01T07:00:10Z"
+  }
+ ],
+ "tests": [
+  {
+   "id": "T1",
+   "hypothesis_id": "H1",
+   "spec": {
+    "expected_observation": "variant differs from control in a security-relevant way",
+    "reason": "deephunt cycle 1 top seed",
+    "scope_hosts": [
+     "shopify.com",
+     "admin.shopify.com",
+     "accounts.shopify.com",
+     "partners.shopify.com"
+    ],
+    "auth_basis": "HackerOne public program. Published rules: automated testing permitted at\nreasonable request rates; COMMERCIAL scanners (e.g. Nessus) PROHIBITED \u2014\nuse open-source tools only (nuclei/ffuf/katana are open source).\nCRITICAL BOUNDARY: only test shops the researcher created; NEVER touch\nmerchant storefronts or other users' stores. nuclei runs at -rate-limit 20\nwith high/critical templates only. Owned test data only, no real-user data.\n",
+    "success_criteria": "unauthorized disclosure/action across the trust boundary",
+    "failure_criteria": "control == variant, or demonstrable neutralization",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [],
+    "answers": {
+     "supporting_evidence": [
+      "github_recon: github Shopify: 100 repos \u2014 100 keyword hits"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "vendor has standard mitigations; assume filtered until proven otherwise",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 3
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T1",
+    "hypothesis_id": "H1",
+    "session_id": "94b389284c98",
+    "scope_hosts": [
+     "shopify.com",
+     "admin.shopify.com",
+     "accounts.shopify.com",
+     "partners.shopify.com"
+    ],
+    "issued_at": 1790833102.2211766,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-10-01T05:38:22Z"
+  },
+  {
+   "id": "T2",
+   "hypothesis_id": "H2",
+   "spec": {
+    "expected_observation": "variant differs from control in a security-relevant way",
+    "reason": "deephunt cycle 1 top seed",
+    "scope_hosts": [
+     "shopify.com",
+     "admin.shopify.com",
+     "accounts.shopify.com",
+     "partners.shopify.com"
+    ],
+    "auth_basis": "HackerOne public program. Published rules: automated testing permitted at\nreasonable request rates; COMMERCIAL scanners (e.g. Nessus) PROHIBITED \u2014\nuse open-source tools only (nuclei/ffuf/katana are open source).\nCRITICAL BOUNDARY: only test shops the researcher created; NEVER touch\nmerchant storefronts or other users' stores. nuclei runs at -rate-limit 20\nwith high/critical templates only. Owned test data only, no real-user data.\n",
+    "success_criteria": "unauthorized disclosure/action across the trust boundary",
+    "failure_criteria": "control == variant, or demonstrable neutralization",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "vendor has standard mitigations; assume filtered until proven otherwise",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T2",
+    "hypothesis_id": "H2",
+    "session_id": "94b389284c98",
+    "scope_hosts": [
+     "shopify.com",
+     "admin.shopify.com",
+     "accounts.shopify.com",
+     "partners.shopify.com"
+    ],
+    "issued_at": 1790833102.2253456,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-10-01T05:38:22Z"
+  },
+  {
+   "id": "T3",
+   "hypothesis_id": "H3",
+   "spec": {
+    "expected_observation": "variant differs from control in a security-relevant way",
+    "reason": "deephunt cycle 1 top seed",
+    "scope_hosts": [
+     "shopify.com",
+     "admin.shopify.com",
+     "accounts.shopify.com",
+     "partners.shopify.com"
+    ],
+    "auth_basis": "HackerOne public program. Published rules: automated testing permitted at\nreasonable request rates; COMMERCIAL scanners (e.g. Nessus) PROHIBITED \u2014\nuse open-source tools only (nuclei/ffuf/katana are open source).\nCRITICAL BOUNDARY: only test shops the researcher created; NEVER touch\nmerchant storefronts or other users' stores. nuclei runs at -rate-limit 20\nwith high/critical templates only. Owned test data only, no real-user data.\n",
+    "success_criteria": "unauthorized disclosure/action across the trust boundary",
+    "failure_criteria": "control == variant, or demonstrable neutralization",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "vendor has standard mitigations; assume filtered until proven otherwise",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T3",
+    "hypothesis_id": "H3",
+    "session_id": "94b389284c98",
+    "scope_hosts": [
+     "shopify.com",
+     "admin.shopify.com",
+     "accounts.shopify.com",
+     "partners.shopify.com"
+    ],
+    "issued_at": 1790833102.228843,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-10-01T05:38:22Z"
+  },
+  {
+   "id": "T4",
+   "hypothesis_id": "H4",
+   "spec": {
+    "expected_observation": "variant differs from control in a security-relevant way",
+    "reason": "deephunt cycle 2 top seed",
+    "scope_hosts": [
+     "shopify.com",
+     "admin.shopify.com",
+     "accounts.shopify.com",
+     "partners.shopify.com"
+    ],
+    "auth_basis": "HackerOne public program. Published rules: automated testing permitted at\nreasonable request rates; COMMERCIAL scanners (e.g. Nessus) PROHIBITED \u2014\nuse open-source tools only (nuclei/ffuf/katana are open source).\nCRITICAL BOUNDARY: only test shops the researcher created; NEVER touch\nmerchant storefronts or other users' stores. nuclei runs at -rate-limit 20\nwith high/critical templates only. Owned test data only, no real-user data.\n",
+    "success_criteria": "unauthorized disclosure/action across the trust boundary",
+    "failure_criteria": "control == variant, or demonstrable neutralization",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "vendor has standard mitigations; assume filtered until proven otherwise",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T4",
+    "hypothesis_id": "H4",
+    "session_id": "94b389284c98",
+    "scope_hosts": [
+     "shopify.com",
+     "admin.shopify.com",
+     "accounts.shopify.com",
+     "partners.shopify.com"
+    ],
+    "issued_at": 1790835590.5982041,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-10-01T06:19:50Z"
+  },
+  {
+   "id": "T5",
+   "hypothesis_id": "H5",
+   "spec": {
+    "expected_observation": "variant differs from control in a security-relevant way",
+    "reason": "deephunt cycle 2 top seed",
+    "scope_hosts": [
+     "shopify.com",
+     "admin.shopify.com",
+     "accounts.shopify.com",
+     "partners.shopify.com"
+    ],
+    "auth_basis": "HackerOne public program. Published rules: automated testing permitted at\nreasonable request rates; COMMERCIAL scanners (e.g. Nessus) PROHIBITED \u2014\nuse open-source tools only (nuclei/ffuf/katana are open source).\nCRITICAL BOUNDARY: only test shops the researcher created; NEVER touch\nmerchant storefronts or other users' stores. nuclei runs at -rate-limit 20\nwith high/critical templates only. Owned test data only, no real-user data.\n",
+    "success_criteria": "unauthorized disclosure/action across the trust boundary",
+    "failure_criteria": "control == variant, or demonstrable neutralization",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "vendor has standard mitigations; assume filtered until proven otherwise",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T5",
+    "hypothesis_id": "H5",
+    "session_id": "94b389284c98",
+    "scope_hosts": [
+     "shopify.com",
+     "admin.shopify.com",
+     "accounts.shopify.com",
+     "partners.shopify.com"
+    ],
+    "issued_at": 1790835590.611656,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-10-01T06:19:50Z"
+  },
+  {
+   "id": "T6",
+   "hypothesis_id": "H6",
+   "spec": {
+    "expected_observation": "variant differs from control in a security-relevant way",
+    "reason": "deephunt cycle 2 top seed",
+    "scope_hosts": [
+     "shopify.com",
+     "admin.shopify.com",
+     "accounts.shopify.com",
+     "partners.shopify.com"
+    ],
+    "auth_basis": "HackerOne public program. Published rules: automated testing permitted at\nreasonable request rates; COMMERCIAL scanners (e.g. Nessus) PROHIBITED \u2014\nuse open-source tools only (nuclei/ffuf/katana are open source).\nCRITICAL BOUNDARY: only test shops the researcher created; NEVER touch\nmerchant storefronts or other users' stores. nuclei runs at -rate-limit 20\nwith high/critical templates only. Owned test data only, no real-user data.\n",
+    "success_criteria": "unauthorized disclosure/action across the trust boundary",
+    "failure_criteria": "control == variant, or demonstrable neutralization",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "vendor has standard mitigations; assume filtered until proven otherwise",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T6",
+    "hypothesis_id": "H6",
+    "session_id": "94b389284c98",
+    "scope_hosts": [
+     "shopify.com",
+     "admin.shopify.com",
+     "accounts.shopify.com",
+     "partners.shopify.com"
+    ],
+    "issued_at": 1790835590.616195,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-10-01T06:19:50Z"
+  },
+  {
+   "id": "T7",
+   "hypothesis_id": "H7",
+   "spec": {
+    "expected_observation": "variant differs from control in a security-relevant way",
+    "reason": "deephunt cycle 3 top seed",
+    "scope_hosts": [
+     "shopify.com",
+     "admin.shopify.com",
+     "accounts.shopify.com",
+     "partners.shopify.com"
+    ],
+    "auth_basis": "HackerOne public program. Published rules: automated testing permitted at\nreasonable request rates; COMMERCIAL scanners (e.g. Nessus) PROHIBITED \u2014\nuse open-source tools only (nuclei/ffuf/katana are open source).\nCRITICAL BOUNDARY: only test shops the researcher created; NEVER touch\nmerchant storefronts or other users' stores. nuclei runs at -rate-limit 20\nwith high/critical templates only. Owned test data only, no real-user data.\n",
+    "success_criteria": "unauthorized disclosure/action across the trust boundary",
+    "failure_criteria": "control == variant, or demonstrable neutralization",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "vendor has standard mitigations; assume filtered until proven otherwise",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T7",
+    "hypothesis_id": "H7",
+    "session_id": "94b389284c98",
+    "scope_hosts": [
+     "shopify.com",
+     "admin.shopify.com",
+     "accounts.shopify.com",
+     "partners.shopify.com"
+    ],
+    "issued_at": 1790838010.8613372,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-10-01T07:00:10Z"
+  },
+  {
+   "id": "T8",
+   "hypothesis_id": "H8",
+   "spec": {
+    "expected_observation": "variant differs from control in a security-relevant way",
+    "reason": "deephunt cycle 3 top seed",
+    "scope_hosts": [
+     "shopify.com",
+     "admin.shopify.com",
+     "accounts.shopify.com",
+     "partners.shopify.com"
+    ],
+    "auth_basis": "HackerOne public program. Published rules: automated testing permitted at\nreasonable request rates; COMMERCIAL scanners (e.g. Nessus) PROHIBITED \u2014\nuse open-source tools only (nuclei/ffuf/katana are open source).\nCRITICAL BOUNDARY: only test shops the researcher created; NEVER touch\nmerchant storefronts or other users' stores. nuclei runs at -rate-limit 20\nwith high/critical templates only. Owned test data only, no real-user data.\n",
+    "success_criteria": "unauthorized disclosure/action across the trust boundary",
+    "failure_criteria": "control == variant, or demonstrable neutralization",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "vendor has standard mitigations; assume filtered until proven otherwise",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T8",
+    "hypothesis_id": "H8",
+    "session_id": "94b389284c98",
+    "scope_hosts": [
+     "shopify.com",
+     "admin.shopify.com",
+     "accounts.shopify.com",
+     "partners.shopify.com"
+    ],
+    "issued_at": 1790838010.872705,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-10-01T07:00:10Z"
+  },
+  {
+   "id": "T9",
+   "hypothesis_id": "H9",
+   "spec": {
+    "expected_observation": "variant differs from control in a security-relevant way",
+    "reason": "deephunt cycle 3 top seed",
+    "scope_hosts": [
+     "shopify.com",
+     "admin.shopify.com",
+     "accounts.shopify.com",
+     "partners.shopify.com"
+    ],
+    "auth_basis": "HackerOne public program. Published rules: automated testing permitted at\nreasonable request rates; COMMERCIAL scanners (e.g. Nessus) PROHIBITED \u2014\nuse open-source tools only (nuclei/ffuf/katana are open source).\nCRITICAL BOUNDARY: only test shops the researcher created; NEVER touch\nmerchant storefronts or other users' stores. nuclei runs at -rate-limit 20\nwith high/critical templates only. Owned test data only, no real-user data.\n",
+    "success_criteria": "unauthorized disclosure/action across the trust boundary",
+    "failure_criteria": "control == variant, or demonstrable neutralization",
+    "single_variable": true,
+    "repeater_spec": {}
+   },
+   "adversarial_review": {
+    "rejections": [],
+    "warnings": [
+     "no evidence either way: low prior, keep the experiment minimal"
+    ],
+    "answers": {
+     "supporting_evidence": [
+      "none found in observations"
+     ],
+     "contradicting_evidence": [
+      "none found"
+     ],
+     "benign_explanation": "vendor has standard mitigations; assume filtered until proven otherwise",
+     "smallest_safe_experiment": "single declared variable",
+     "already_answered_by": [
+      "no prior result answers this"
+     ]
+    },
+    "info_value": 1
+   },
+   "status": "approved",
+   "authorization": {
+    "test_id": "T9",
+    "hypothesis_id": "H9",
+    "session_id": "94b389284c98",
+    "scope_hosts": [
+     "shopify.com",
+     "admin.shopify.com",
+     "accounts.shopify.com",
+     "partners.shopify.com"
+    ],
+    "issued_at": 1790838010.8777888,
+    "minted_by": "ResearchSession",
+    "revoked": false,
+    "ttl_seconds": 86400
+   },
+   "ts": "2026-10-01T07:00:10Z"
+  }
+ ],
+ "results": [],
+ "rejected_hypotheses": [],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [],
+ "facts": [],
+ "lessons": [],
+ "next_actions": [
+  "run T1 (hypothesis H1)",
+  "run T2 (hypothesis H2)",
+  "run T3 (hypothesis H3)",
+  "run T4 (hypothesis H4)",
+  "run T5 (hypothesis H5)",
+  "run T6 (hypothesis H6)",
+  "run T7 (hypothesis H7)",
+  "run T8 (hypothesis H8)",
+  "run T9 (hypothesis H9)"
+ ],
+ "id": "94b389284c98"
+}

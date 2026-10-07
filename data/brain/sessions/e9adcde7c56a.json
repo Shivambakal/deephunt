@@ -1,0 +1,39 @@
+{
+ "objective": "Kiteworks unauthenticated blitz (2026-09-27): static JS-bundle teardown, /login_config + cookie surface, unauthenticated route map, server error-behavior capture. Read-only recon + single benign probes on the authorized YesWeHack hunting env.",
+ "created": "2026-09-27T06:17:19Z",
+ "updated": "2026-09-27T06:17:19Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [],
+  "trust_boundaries": [],
+  "state_machines": {}
+ },
+ "observations": [
+  {
+   "ts": "2026-09-27T06:17:19Z",
+   "kind": "observation",
+   "text": "REACHABILITY: GET /login_config -> HTTP 200, 1190 bytes, 1.76s. Body is JS defining desanitize(str) entity-decoder and var vue_config. Framework evidence: Vue (vue_config)."
+  },
+  {
+   "ts": "2026-09-27T06:17:19Z",
+   "kind": "observation",
+   "text": "desanitize() definition captured verbatim from /login_config into /tmp/kw_login_config.json: entity-decode map for backslash, &#039;, &amp;, &quot;, &lt;, &gt; applied via str.replace with regex; applied to tenant config strings like serviceName and ipBlockMsg in vue_config."
+  }
+ ],
+ "assumptions": [],
+ "hypotheses": [],
+ "tests": [],
+ "results": [],
+ "rejected_hypotheses": [],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [],
+ "facts": [],
+ "lessons": [],
+ "next_actions": [],
+ "id": "e9adcde7c56a"
+}

@@ -1,0 +1,62 @@
+{
+ "facts": [],
+ "lessons": [
+  {
+   "ts": "2026-09-27T02:58:29Z",
+   "text": "H1 rejected: authz held -> learned: 403 is the control working"
+  },
+  {
+   "ts": "2026-09-27T02:58:36Z",
+   "text": "H1 rejected: authz held -> learned: 403 is the control working"
+  },
+  {
+   "ts": "2026-09-27T03:00:57Z",
+   "text": "H1 rejected: authz held -> learned: 403 is the control working"
+  },
+  {
+   "ts": "2026-09-27T03:01:47Z",
+   "text": "H1 rejected: authz held -> learned: 403 is the control working"
+  },
+  {
+   "ts": "2026-09-27T03:01:58Z",
+   "text": "H1 rejected: authz held -> learned: 403 is the control working"
+  },
+  {
+   "ts": "2026-09-27T03:13:37Z",
+   "text": "H1 rejected: authz held -> learned: 403 is the control working"
+  },
+  {
+   "ts": "2026-09-27T03:20:58Z",
+   "text": "H1 rejected: authz held -> learned: 403 is the control working"
+  },
+  {
+   "ts": "2026-09-27T03:21:19Z",
+   "text": "H1 rejected: authz held -> learned: 403 is the control working"
+  },
+  {
+   "ts": "2026-09-27T03:22:45Z",
+   "text": "H1 rejected: authz held -> learned: 403 is the control working"
+  },
+  {
+   "ts": "2026-09-27T03:26:01Z",
+   "text": "H1 rejected: authz held -> learned: 403 is the control working"
+  },
+  {
+   "ts": "2026-09-27T03:26:50Z",
+   "text": "H1 rejected: authz held -> learned: 403 is the control working"
+  },
+  {
+   "ts": "2026-09-27T03:27:39Z",
+   "text": "H1 rejected: authz held -> learned: 403 is the control working"
+  },
+  {
+   "ts": "2026-09-27T03:32:22Z",
+   "text": "H1 rejected: authz held -> learned: 403 is the control working"
+  },
+  {
+   "ts": "2026-09-27T03:37:43Z",
+   "text": "H1 rejected: authz held -> learned: 403 is the control working"
+  }
+ ],
+ "confirmed_findings": []
+}

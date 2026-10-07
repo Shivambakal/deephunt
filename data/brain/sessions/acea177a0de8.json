@@ -1,0 +1,117 @@
+{
+ "objective": "test:ai-wire",
+ "created": "2026-09-27T03:20:44Z",
+ "updated": "2026-09-27T03:20:44Z",
+ "model": {
+  "users": [
+   "anonymous",
+   "user_a",
+   "user_b",
+   "admin"
+  ],
+  "objects": [],
+  "trust_boundaries": [],
+  "state_machines": {}
+ },
+ "observations": [
+  {
+   "ts": "2026-09-27T03:20:44Z",
+   "kind": "stage:ai-attacks",
+   "text": "[pipeline:ai-attacks] 1 AI surface(s), 4 hypothesis seeds"
+  },
+  {
+   "ts": "2026-09-27T03:20:44Z",
+   "kind": "stage:hypotheses",
+   "text": "[pipeline:hypotheses] 4 candidates -> 4 registered (0 skipped)"
+  }
+ ],
+ "assumptions": [],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "statement": "[demo-ai-co] AI surface (rag; signals: chatbot, gpt, langchain, openai, rag): prompt injection possible \u2014 17 probe cases generated (direct/indirect/multi-turn/delimiter)",
+   "violated_assumption": "user input is treated as data, never as instructions",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "[ai_attacks:prompt_injection] ai_attacks seed; 17 cases; cards AI-01/AI-04/AI-08/AI-13",
+   "killed_by": "",
+   "impact": 4,
+   "novelty": 4,
+   "testability": 3,
+   "score": 48,
+   "status": "live",
+   "source": "manual",
+   "provenance": "ai_attacks seed; 17 cases; cards AI-01/AI-04/AI-08/AI-13",
+   "ts": "2026-09-27T03:20:44Z"
+  },
+  {
+   "id": "H2",
+   "statement": "[demo-ai-co] AI surface (rag; signals: chatbot, gpt, langchain, openai, rag): RAG pipeline may retrieve poisoned content \u2014 9 carrier patterns",
+   "violated_assumption": "retrieved documents are trusted content",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "[ai_attacks:rag_poison] ai_attacks seed; cards AI-06/AI-15; LLM04/LLM08",
+   "killed_by": "",
+   "impact": 4,
+   "novelty": 4,
+   "testability": 3,
+   "score": 48,
+   "status": "live",
+   "source": "manual",
+   "provenance": "ai_attacks seed; cards AI-06/AI-15; LLM04/LLM08",
+   "ts": "2026-09-27T03:20:44Z"
+  },
+  {
+   "id": "H3",
+   "statement": "[demo-ai-co] AI surface (rag; signals: chatbot, gpt, langchain, openai, rag): jailbreak resistance unknown \u2014 13 jailbreak techniques available",
+   "violated_assumption": "safety alignment cannot be bypassed by framing",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "[ai_attacks:jailbreak] ai_attacks seed; techniques.yaml JB-01..JB-13; card AI-14",
+   "killed_by": "",
+   "impact": 4,
+   "novelty": 4,
+   "testability": 3,
+   "score": 48,
+   "status": "live",
+   "source": "manual",
+   "provenance": "ai_attacks seed; techniques.yaml JB-01..JB-13; card AI-14",
+   "ts": "2026-09-27T03:20:44Z"
+  },
+  {
+   "id": "H4",
+   "statement": "[demo-ai-co] AI surface (rag; signals: chatbot, gpt, langchain, openai, rag): system prompt / training data extraction untested \u2014 12 extraction probes",
+   "violated_assumption": "system instructions are not disclosable",
+   "attacker_view": "",
+   "defender_view": "",
+   "devil_view": "",
+   "investigator_test": "[ai_attacks:extraction] ai_attacks seed; cards AI-09/AI-10; LLM02/LLM07",
+   "killed_by": "",
+   "impact": 4,
+   "novelty": 4,
+   "testability": 3,
+   "score": 48,
+   "status": "live",
+   "source": "manual",
+   "provenance": "ai_attacks seed; cards AI-09/AI-10; LLM02/LLM07",
+   "ts": "2026-09-27T03:20:44Z"
+  }
+ ],
+ "tests": [],
+ "results": [],
+ "rejected_hypotheses": [],
+ "confirmed_findings": [],
+ "unconfirmed_findings": [],
+ "facts": [],
+ "lessons": [],
+ "next_actions": [
+  "design test for H1: [demo-ai-co] AI surface (rag; signals: chatbot, gpt, langchain, openai...",
+  "design test for H2: [demo-ai-co] AI surface (rag; signals: chatbot, gpt, langchain, openai...",
+  "design test for H3: [demo-ai-co] AI surface (rag; signals: chatbot, gpt, langchain, openai...",
+  "design test for H4: [demo-ai-co] AI surface (rag; signals: chatbot, gpt, langchain, openai..."
+ ],
+ "id": "acea177a0de8"
+}
